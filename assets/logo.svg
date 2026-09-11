@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Motorhome Tools">
+  <!-- Shared family: pine tile + white motorhome. Green is #1e4f43. -->
+  <rect width="64" height="64" rx="14" fill="#1e4f43"/>
+  <path fill="#fff" d="M9.5 38.2V23.4c0-2.3 1.9-4.2 4.2-4.2h23.2c1.5 0 2.9.78 3.7 2.05L50.2 32.4c.4.66.6 1.42.6 2.2v3.6H9.5z"/>
+  <rect x="16.2" y="22.1" width="16.4" height="5.2" rx="1.2" fill="#1e4f43"/>
+  <polygon fill="#1e4f43" points="40.2,22.4 47.8,32.2 40.2,32.2"/>
+  <circle cx="20.8" cy="44.2" r="5.1" fill="#fff"/>
+  <circle cx="43.4" cy="44.2" r="5.1" fill="#fff"/>
+  <circle cx="20.8" cy="44.2" r="1.7" fill="#1e4f43"/>
+  <circle cx="43.4" cy="44.2" r="1.7" fill="#1e4f43"/>
+</svg>

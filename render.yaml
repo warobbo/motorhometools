@@ -1,0 +1,8 @@
+services:
+  - type: web
+    runtime: static
+    name: motorhometools
+    staticPublishPath: .
+    envVars:
+      - key: SKIP_INSTALL_DEPS
+        value: "true"
