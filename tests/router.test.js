@@ -1,7 +1,7 @@
 "use strict";
 
 const assert = require("node:assert/strict");
-const { routeAsk } = require("../assets/router.js");
+const { routeAsk, POWER_STARTER_ASKS } = require("../assets/router.js");
 
 function expectRoute(query, id) {
   const hit = routeAsk(query);
@@ -61,6 +61,21 @@ assert.equal(routeAsk("microwave").href, "https://motorhomepower.co.uk/");
 assert.equal(routeAsk("fridge").href, "https://motorhomepower.co.uk/");
 assert.equal(routeAsk("freezer").href, "https://motorhomepower.co.uk/");
 
+assert.ok(POWER_STARTER_ASKS.length >= 12, "expected live Power STARTER rows");
+POWER_STARTER_ASKS.forEach(function (row) {
+  expectRoute(row.ask, "power");
+});
+expectRoute("compressor fridge", "power");
+expectRoute("LED lights", "power");
+expectRoute("water pump", "power");
+expectRoute("diesel heater", "power");
+expectRoute("tablet", "power");
+expectRoute("MaxxFan", "power");
+expectRoute("roof fan", "power");
+expectRoute("monitor", "power");
+expectRoute("phantom", "power");
+expectRoute("induction", "power");
+
 expectRoute("leisure battery size", "battery");
 expectRoute("leisure battery", "battery");
 expectRoute("solar panels for a week", "solar");
@@ -79,10 +94,22 @@ expectRoute("heater pressure", "tyres");
 expectNone("cable");
 
 expectRoute("fresh water for two people", "water");
+expectRoute("fresh water", "water");
+expectRoute("grey water", "water");
+expectRoute("shower", "water");
 expectRoute("gas bottle for a winter week", "gas");
 expectRoute("LPG days left", "gas");
 expectRoute("bbq", "gas");
 expectRoute("BBQ", "gas");
+expectRoute("barbecue", "gas");
+expectRoute("barbeque", "gas");
+expectRoute("calor", "gas");
+expectRoute("camping gaz", "gas");
+expectRoute("gas bottle", "gas");
+expectRoute("gas cylinder", "gas");
+expectRoute("cooking", "gas");
+expectRoute("heating", "gas");
+expectRoute("boiler", "gas");
 expectRoute("gas fridge", "gas");
 expectRoute("absorption fridge", "gas");
 expectRoute("3-way fridge", "gas");
