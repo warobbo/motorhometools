@@ -94,6 +94,7 @@ svg {
 
 .site-brand:focus-visible,
 .tile:focus-visible,
+.plate-wedge a:focus-visible,
 .footer-links a:focus-visible,
 button:focus-visible,
 input:focus-visible {
@@ -153,6 +154,19 @@ input:focus-visible {
 .tile-intro .tile-start {
   color: var(--ink);
   font-weight: 650;
+}
+
+.plate-wedge {
+  margin: 0.45rem 0 0;
+}
+
+.plate-wedge a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  color: var(--pine);
+  font-weight: 650;
+  text-underline-offset: 0.15em;
 }
 
 .tiles {
