@@ -94,7 +94,6 @@ svg {
 
 .site-brand:focus-visible,
 .tile:focus-visible,
-.ext-link:focus-visible,
 .footer-links a:focus-visible,
 button:focus-visible,
 input:focus-visible {
@@ -299,8 +298,17 @@ input:focus-visible {
   overflow: hidden;
 }
 
-.links {
+.route {
   margin: 1.15rem 0 0;
+}
+
+.route h2 {
+  margin: 0 0 0.6rem;
+  font-size: 1.15rem;
+}
+
+.soon-card {
+  margin: 0;
   padding: 1.05rem;
   background: var(--card);
   border: 1px solid var(--card-edge);
@@ -308,38 +316,16 @@ input:focus-visible {
   box-shadow: var(--shadow);
 }
 
-.links h2 {
-  margin: 0;
-  font-size: 1.15rem;
-}
-
-.links p {
-  margin: 0.4rem 0 0;
-  color: var(--muted);
-}
-
-.ext-link {
+.soon-card strong {
   display: block;
-  margin-top: 0.75rem;
-  padding: 0.85rem 0.95rem;
-  border-radius: 14px;
-  background: var(--pine-soft);
-  color: var(--pine-deep);
-  font-weight: 700;
-  text-decoration: none;
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
 }
 
-.ext-tag {
-  display: inline-block;
-  margin-left: 0.35rem;
-  padding: 0.05rem 0.45rem;
-  border-radius: 999px;
-  background: #fff;
+.soon-card span {
+  display: block;
+  margin-top: 0.35rem;
   color: var(--muted);
-  font-size: 0.68rem;
-  font-weight: 750;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
 }
 
 .site-footer {
