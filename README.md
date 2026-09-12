@@ -6,14 +6,16 @@ This is a **signpost**, not a campsite planner, not a route engine, and not anot
 
 | Tile | Goes to |
 | --- | --- |
-| Payload | [motorhomepayload.co.uk](https://motorhomepayload.co.uk/) |
+| Payload | [motorhomepayload.co.uk](https://motorhomepayload.co.uk/) (new tab) |
 | Tyres | [motorhomepayload.co.uk/tyres.html](https://motorhomepayload.co.uk/tyres.html) |
 | Power | [motorhomepower.co.uk](https://motorhomepower.co.uk/) |
 | Water | [motorhomewater.co.uk](https://motorhomewater.co.uk/) — gas, tanks and cassette are tabs on that hub |
+| Guides | [motorhometools.co.uk/guides/](https://motorhometools.co.uk/guides/) — Wave 1 payload articles |
+| Route | Coming soon (no fake maps) |
 
 The Ask box routes a few keywords (payload, tyres, power, water / gas / tanks / cassette). Toilet, loo and porta potty go to Cassette. If nothing matches it says **We’ve noted your question** and stores it. It does **not** invent tyre pressures, weights or legal advice.
 
-**Guides** and **Route** on the home page are coming-soon placeholders. They are not live how-tos or a route engine, and they do not link out.
+**Guides** on the home page links to Wave 1 payload articles. **Route** stays a coming-soon placeholder — not a route engine, and it does not link out.
 
 ## Run locally
 
@@ -69,7 +71,20 @@ This is the same A / CNAME pattern as the other hubs.
 4. Optional email is stored with the question. We will not email a pressure, a weight or legal advice.
 5. If you later want server logs (same idea as Payload’s `POST /api/missing-size`), copy `api/ask.example.js` onto a Node web service. Do not add a paid API.
 
-Cache-bust assets by bumping the `?v=` query in `index.html` (see the `ASSET_VERSION` comment).
+## Guides (Wave 1 — Payload)
+
+Static HTML under `guides/`. Copy locked from Wayne’s Notion drafts; polished for UK search, not invented safety numbers.
+
+| Page | Slug |
+| --- | --- |
+| Index | `/guides/` |
+| Weighbridge how-to | `/guides/weighbridge-how-to.html` |
+| Axle weights | `/guides/axle-weights-explained.html` |
+| MAM / Mass in Service / payload | `/guides/mam-mass-in-service-payload.html` |
+
+Each page has a unique title, meta description, one H1, canonical, and Open Graph basics. Payload links open in a new tab with `rel="noopener"`. Tyres, Power and Water guides are out of scope.
+
+Cache-bust assets by bumping the `?v=` query in `index.html` and `guides/*.html` (see the `ASSET_VERSION` comment).
 
 ## Out of scope
 

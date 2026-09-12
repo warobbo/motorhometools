@@ -98,6 +98,12 @@ svg {
 .footer-links a:focus-visible,
 .legal-links a:focus-visible,
 .legal a:focus-visible,
+.crumb a:focus-visible,
+.guide-card:focus-visible,
+.guide-next a:focus-visible,
+.related a:focus-visible,
+.prose a:focus-visible,
+.panel-more:focus-visible,
 button:focus-visible,
 input:focus-visible {
   outline: 3px solid #f0b25a;
@@ -435,6 +441,238 @@ input:focus-visible {
 .legal code {
   font-size: 0.88em;
   word-break: break-all;
+}
+
+.panel {
+  margin: 1.15rem 0 0;
+  padding: 1.05rem;
+  background: var(--card);
+  border: 1px solid var(--card-edge);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.panel h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.panel > p {
+  margin: 0.4rem 0 0;
+  color: var(--muted);
+}
+
+.soon-block .guide-list {
+  margin-top: 0;
+}
+
+.guide-list {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0.85rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.guide-card {
+  display: block;
+  padding: 1.05rem;
+  background: var(--card);
+  border: 1px solid var(--card-edge);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  color: inherit;
+  text-decoration: none;
+}
+
+.guide-card strong {
+  display: block;
+  color: var(--pine-deep);
+  font-size: 1.02rem;
+}
+
+.guide-card span {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.panel-more {
+  display: inline-block;
+  margin-top: 0.8rem;
+  color: var(--pine);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.soon-panel {
+  background: #f7f1e6;
+  border-color: #e2d1b4;
+  box-shadow: none;
+}
+
+.soon-kicker {
+  display: inline-block;
+  margin-bottom: 0.45rem;
+  padding: 0.12rem 0.5rem;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.crumb {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.45rem;
+  margin: 0.35rem 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.crumb a {
+  color: var(--pine);
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.crumb li:not(:last-child)::after {
+  content: "/";
+  margin-left: 0.45rem;
+  color: #8a7b66;
+}
+
+.article-header h1 {
+  margin: 0.85rem 0 0;
+  font-size: clamp(1.7rem, 6.6vw, 2.2rem);
+  line-height: 1.18;
+  letter-spacing: -0.03em;
+}
+
+.prose {
+  margin-top: 0.35rem;
+}
+
+.prose h2 {
+  margin: 1.35rem 0 0;
+  font-size: 1.18rem;
+  letter-spacing: -0.02em;
+}
+
+.prose p,
+.prose li {
+  color: var(--ink);
+}
+
+.prose p {
+  margin: 0.7rem 0 0;
+}
+
+.prose ul,
+.prose ol {
+  margin: 0.55rem 0 0;
+  padding-left: 1.2rem;
+}
+
+.prose li + li {
+  margin-top: 0.35rem;
+}
+
+.prose a {
+  color: var(--pine);
+  font-weight: 650;
+}
+
+.guide-table-wrap {
+  margin-top: 0.75rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.guide-table {
+  width: 100%;
+  min-width: 17rem;
+  border-collapse: collapse;
+  background: var(--card);
+  border: 1px solid var(--card-edge);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.guide-table th,
+.guide-table td {
+  padding: 0.7rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+  font-size: 0.95rem;
+}
+
+.guide-table th {
+  background: var(--pine);
+  color: #fff;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.guide-table tr + tr td {
+  border-top: 1px solid var(--card-edge);
+}
+
+.guide-table td:first-child {
+  font-weight: 700;
+  width: 42%;
+}
+
+.guide-next,
+.related {
+  margin: 1.2rem 0 0;
+  padding: 1.05rem;
+  border-radius: var(--radius);
+}
+
+.guide-next {
+  background: var(--pine-soft);
+  border: 1px solid #c5d7d1;
+}
+
+.guide-next h2,
+.related h2 {
+  margin: 0;
+  font-size: 1.12rem;
+}
+
+.guide-next p,
+.related p {
+  margin: 0.45rem 0 0;
+}
+
+.guide-next a,
+.related a {
+  color: var(--pine-deep);
+  font-weight: 700;
+}
+
+.related {
+  background: var(--card);
+  border: 1px solid var(--card-edge);
+  box-shadow: var(--shadow);
+}
+
+.related ul {
+  margin: 0.65rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.related li + li {
+  margin-top: 0.45rem;
 }
 
 @media (min-width: 640px) {
