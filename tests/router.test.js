@@ -26,10 +26,53 @@ expectRoute("what PSI should I run", "tyres");
 expectRoute("3.5 bar on the rear", "tyres");
 
 expectRoute("daily power use", "power");
-expectRoute("leisure battery size", "power");
-expectRoute("solar panels for a week", "power");
+expectRoute("Microwave", "power");
+expectRoute("fridge", "power");
+expectRoute("freezer", "power");
+expectRoute("kettle", "power");
+expectRoute("toaster", "power");
+expectRoute("hairdryer", "power");
+expectRoute("hair dryer", "power");
+expectRoute("heater", "power");
+expectRoute("lights", "power");
+expectRoute("LED", "power");
+expectRoute("USB", "power");
+expectRoute("laptop", "power");
+expectRoute("TV", "power");
+expectRoute("induction hob", "power");
+expectRoute("coffee machine", "power");
+expectRoute("blower", "power");
+expectRoute("fan", "power");
+expectRoute("compressor fridge", "power");
+expectRoute("amp draw", "power");
+expectRoute("Wh", "power");
+expectRoute("watt", "power");
+expectRoute("watts", "power");
+expectRoute("kWh", "power");
+expectRoute("12V", "power");
+expectRoute("24V", "power");
+expectRoute("alternator", "power");
 expectRoute("how many amp hours", "power");
-expectRoute("inverter for a kettle", "power");
+
+assert.equal(routeAsk("microwave").id, "power");
+assert.equal(routeAsk("microwave").href, "https://motorhomepower.co.uk/");
+
+expectRoute("leisure battery size", "battery");
+expectRoute("leisure battery", "battery");
+expectRoute("solar panels for a week", "solar");
+expectRoute("inverter for a kettle", "inverter");
+expectRoute("electrical cable", "wire");
+expectRoute("wire size", "wire");
+expectRoute("fuse", "wire");
+expectRoute("12V cable", "wire");
+
+assert.equal(routeAsk("leisure battery size").href, "https://motorhomepower.co.uk/battery.html");
+assert.equal(routeAsk("solar panels for a week").href, "https://motorhomepower.co.uk/solar.html");
+assert.equal(routeAsk("inverter for a kettle").href, "https://motorhomepower.co.uk/inverter.html");
+assert.equal(routeAsk("electrical cable").href, "https://motorhomepower.co.uk/wire.html");
+
+expectRoute("heater pressure", "tyres");
+expectNone("cable");
 
 expectRoute("fresh water for two people", "water");
 expectRoute("gas bottle for a winter week", "gas");
