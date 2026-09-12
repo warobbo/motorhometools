@@ -1,8 +1,16 @@
 services:
   - type: web
-    runtime: static
     name: motorhometools
-    staticPublishPath: .
+    runtime: node
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /
     envVars:
-      - key: SKIP_INSTALL_DEPS
-        value: "true"
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: ASK_NOTIFY_EMAIL
+        sync: false
+      - key: ASK_LOG_PATH
+        sync: false

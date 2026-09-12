@@ -263,6 +263,7 @@ input:focus-visible {
 }
 
 .ask-form {
+  position: relative;
   display: grid;
   gap: 0.65rem;
   margin-top: 0.85rem;
@@ -312,6 +313,13 @@ input:focus-visible {
   cursor: wait;
 }
 
+.ask-hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
 .ask-honesty {
   margin-top: 0.75rem;
   font-size: 0.92rem;
@@ -321,6 +329,11 @@ input:focus-visible {
   min-height: 1.35em;
   margin: 0.45rem 0 0;
   font-weight: 650;
+}
+
+.ask-status a {
+  color: var(--pine);
+  font-weight: 700;
 }
 
 .ask-status[data-kind="ok"] {

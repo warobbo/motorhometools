@@ -17,9 +17,16 @@
 
   if (!form || !questionInput || !statusEl) return;
 
-  function setStatus(message, kind) {
+  function setStatus(message, kind, extraLink) {
     statusEl.textContent = message;
     statusEl.dataset.kind = kind || "note";
+    if (extraLink && extraLink.href && extraLink.label) {
+      statusEl.appendChild(document.createTextNode(" "));
+      var link = document.createElement("a");
+      link.href = extraLink.href;
+      link.textContent = extraLink.label;
+      statusEl.appendChild(link);
+    }
   }
 
   function readStore() {
@@ -43,15 +50,40 @@
     }
   }
 
+  function mailtoFallback(record, to) {
+    if (!to || !record || !record.question) return "";
+    var body = [
+      "Unmatched Ask from motorhometools.co.uk.",
+      "Do not invent a tyre pressure, weight or legal answer.",
+      "",
+      "Question: " + record.question,
+      "Visitor email: " + (record.email || "(not given)")
+    ].join("\n");
+    return "mailto:" + to +
+      "?subject=" + encodeURIComponent("Ask: " + record.question.slice(0, 80)) +
+      "&body=" + encodeURIComponent(body);
+  }
+
+  function fetchMailto() {
+    return fetch(ASK_ENDPOINT, { method: "GET", headers: { "Accept": "application/json" } })
+      .then(function (res) { return res.ok ? res.json() : null; })
+      .then(function (json) { return json && json.mailto ? json.mailto : ""; })
+      .catch(function () { return ""; });
+  }
+
   function postAsk(record) {
     return fetch(ASK_ENDPOINT, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(record)
     }).then(function (res) {
-      return res.ok;
+      return res.json().then(function (json) {
+        return { ok: res.ok, status: res.status, json: json || {} };
+      }).catch(function () {
+        return { ok: res.ok, status: res.status, json: {} };
+      });
     }).catch(function () {
-      return false;
+      return { ok: false, status: 0, json: {} };
     });
   }
 
@@ -61,8 +93,27 @@
       email: email || null,
       at: new Date().toISOString(),
       href: window.location.href,
-      source: "motorhometools-ask"
+      source: "motorhometools-ask",
+      website: honeypot && honeypot.value ? honeypot.value : ""
     };
+  }
+
+  function showSaved(email) {
+    if (email) {
+      setStatus("We’ve passed your question to the site owner, with the email you left. Replies are not automated.", "ok");
+      return;
+    }
+    setStatus("We’ve passed your question to the site owner. Replies are not automated.", "ok");
+  }
+
+  function showFallback(record) {
+    var phoneNote = storeAsk(record)
+      ? "Saved on this phone. The note did not reach the site owner this time — we are not promising a reply."
+      : "The note did not reach the site owner this time — we are not promising a reply.";
+    fetchMailto().then(function (to) {
+      var href = mailtoFallback(record, to);
+      setStatus(phoneNote, "warn", href ? { href: href, label: "Email this instead" } : null);
+    });
   }
 
   form.addEventListener("submit", function (event) {
@@ -91,12 +142,22 @@
 
     var email = emailInput && String(emailInput.value || "").trim();
     var record = buildRecord(question, email);
-    storeAsk(record);
 
     if (submitBtn) submitBtn.disabled = true;
-    setStatus("We’ve noted your question.", "ok");
+    setStatus("Passing your question to the site owner…", "note");
 
-    postAsk(record).finally(function () {
+    postAsk(record).then(function (result) {
+      if (result && result.json && result.json.ok && result.json.saved) {
+        storeAsk(record);
+        showSaved(email);
+        return;
+      }
+      if (result && result.json && result.json.ok && result.json.ignored) {
+        setStatus("We’ve noted your question.", "ok");
+        return;
+      }
+      showFallback(record);
+    }).finally(function () {
       if (submitBtn) submitBtn.disabled = false;
     });
   });
