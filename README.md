@@ -9,8 +9,7 @@ This is a **signpost**, not a campsite planner, not a route engine, and not anot
 | Payload | [motorhomepayload.co.uk](https://motorhomepayload.co.uk/) |
 | Tyres | [motorhomepayload.co.uk/tyres.html](https://motorhomepayload.co.uk/tyres.html) |
 | Power | [motorhomepower.co.uk](https://motorhomepower.co.uk/) |
-| Water | [motorhomewater.co.uk](https://motorhomewater.co.uk/) |
-| Gas / Tanks / Cassette | pages on the Water hub |
+| Water | [motorhomewater.co.uk](https://motorhomewater.co.uk/) — gas, tanks and cassette are tabs on that hub |
 
 The Ask box routes a few keywords (payload, tyres, power, water / gas / tanks / cassette). If nothing matches it says **We’ve noted this for research** and stores the question. It does **not** invent tyre pressures, weights or legal advice.
 

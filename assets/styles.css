@@ -94,7 +94,6 @@ svg {
 
 .site-brand:focus-visible,
 .tile:focus-visible,
-.chip:focus-visible,
 .ext-link:focus-visible,
 .footer-links a:focus-visible,
 button:focus-visible,
@@ -203,31 +202,6 @@ input:focus-visible {
   margin-top: 0.15rem;
   color: var(--muted);
   font-size: 0.95rem;
-}
-
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin: 0.7rem 0 0;
-}
-
-.chip {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 2.75rem;
-  padding: 0.45rem 0.95rem;
-  border-radius: 999px;
-  border: 1px solid var(--card-edge);
-  background: #fff;
-  color: var(--ink);
-  font-weight: 650;
-  text-decoration: none;
-}
-
-.chip:active {
-  background: var(--pine-soft);
 }
 
 .ask {
