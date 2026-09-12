@@ -1,7 +1,7 @@
 "use strict";
 
 const assert = require("node:assert/strict");
-const { routeAsk, POWER_STARTER_ASKS } = require("../assets/router.js");
+const { routeAsk, POWER_STARTER_ASKS, SEARCH_PHRASE_ASKS } = require("../assets/router.js");
 
 function expectRoute(query, id) {
   const hit = routeAsk(query);
@@ -15,12 +15,18 @@ function expectNone(query) {
 }
 
 expectRoute("payload left on a 3500", "payload");
+expectRoute("payload left", "payload");
+expectRoute("MIRO", "payload");
+expectRoute("Mass in Service", "payload");
+expectRoute("Mass in Running Order", "payload");
 expectRoute("How do I weigh the van?", "payload");
 expectRoute("weighbridge near me", "payload");
 expectRoute("MAM on the VIN plate", "payload");
 expectRoute("what is my remaining weight", "payload");
 
 expectRoute("tyre pressure for new rubber", "tyres");
+expectRoute("tyre pressure motorhome", "tyres");
+expectRoute("CP tyres", "tyres");
 expectRoute("tyres not the originals", "tyres");
 expectRoute("what PSI should I run", "tyres");
 expectRoute("3.5 bar on the rear", "tyres");
@@ -76,6 +82,19 @@ expectRoute("monitor", "power");
 expectRoute("phantom", "power");
 expectRoute("induction", "power");
 
+expectRoute("how much battery for a microwave", "power");
+expectRoute("how many amp hours for a fridge", "power");
+expectRoute("how much power does a kettle use", "power");
+expectRoute("motorhome microwave", "power");
+expectRoute("campervan kettle", "power");
+assert.equal(routeAsk("how much battery for a microwave").id, "power");
+assert.equal(routeAsk("how much battery for a microwave").href, "https://motorhomepower.co.uk/");
+
+assert.ok(SEARCH_PHRASE_ASKS.length >= 6, "expected a search phrase per hub");
+SEARCH_PHRASE_ASKS.forEach(function (row) {
+  expectRoute(row.ask, row.id);
+});
+
 expectRoute("leisure battery size", "battery");
 expectRoute("leisure battery", "battery");
 expectRoute("solar panels for a week", "solar");
@@ -97,11 +116,17 @@ expectRoute("fresh water for two people", "water");
 expectRoute("fresh water", "water");
 expectRoute("grey water", "water");
 expectRoute("shower", "water");
+expectRoute("shower litres", "water");
+expectRoute("fresh water how much", "water");
 expectRoute("gas bottle for a winter week", "gas");
 expectRoute("LPG days left", "gas");
 expectRoute("bbq", "gas");
 expectRoute("BBQ", "gas");
 expectRoute("barbecue", "gas");
+expectRoute("external BBQ point", "gas");
+expectRoute("BBQ gas", "gas");
+expectRoute("Calor bottle how long", "gas");
+expectRoute("gas bottle days", "gas");
 expectRoute("barbeque", "gas");
 expectRoute("calor", "gas");
 expectRoute("camping gaz", "gas");
@@ -118,6 +143,7 @@ assert.equal(routeAsk("bbq").href, "https://motorhomewater.co.uk/gas.html");
 assert.equal(routeAsk("gas fridge").id, "gas");
 expectRoute("holding tanks planner", "tanks");
 expectRoute("when to empty the cassette", "cassette");
+expectRoute("empty cassette", "cassette");
 expectRoute("cassette", "cassette");
 expectRoute("cassette toilet", "cassette");
 expectRoute("toilet", "cassette");
