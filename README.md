@@ -13,7 +13,7 @@ This is a **signpost**, not a campsite planner, not a route engine, and not anot
 | Guides | [motorhometools.co.uk/guides/](https://motorhometools.co.uk/guides/) — Wave 1 payload articles |
 | Route | Coming soon (no fake maps) |
 
-The Ask box routes a few keywords (payload, tyres, power, water / gas / tanks / cassette). Toilet, loo and porta potty go to Cassette. If nothing matches, the question (and optional email) is passed to the site owner via `POST /api/ask`. It does **not** invent tyre pressures, weights or legal advice. Replies are not automated.
+The Ask box routes a few keywords (payload, tyres, power, water / gas / tanks / cassette). Toilet, loo and porta potty go to Cassette. Common electrical appliance words (microwave, fridge, kettle, heater, 12V, watts…) open Power — daily power by default, or Battery / Solar / Inverter / Wire when the query names that tool. Bare fridge / freezer go to Power; gas fridge, absorption fridge, 3-way fridge and BBQ go to Gas. Tyre pressure / psi / bar stay on Tyres. If nothing matches, the question (and optional email) is passed to the site owner via `POST /api/ask`. It does **not** invent tyre pressures, weights or legal advice. Replies are not automated.
 
 **Guides** on the home page links to Wave 1 payload articles. **Route** stays a coming-soon placeholder — not a route engine, and it does not link out.
 
