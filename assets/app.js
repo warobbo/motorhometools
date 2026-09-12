@@ -69,22 +69,22 @@
     event.preventDefault();
 
     if (honeypot && honeypot.value) {
-      setStatus("We’ve noted this for research.", "ok");
+      setStatus("We’ve noted your question.", "ok");
       return;
     }
 
     var question = String(questionInput.value || "").trim();
     if (!question) {
-      setStatus("Type a few words so we can point you to a tool.", "warn");
+      setStatus("Type a few words so we can open the right page.", "warn");
       questionInput.focus();
       return;
     }
 
     var match = router.routeAsk(question);
     if (match) {
-      setStatus("Opening " + match.label + " — we don’t invent numbers; the tool will ask for yours.", "ok");
+      setStatus("Opening " + match.label + " — we don’t invent numbers; that page will ask for yours.", "ok");
       window.setTimeout(function () {
-        window.location.assign(match.href);
+        window.open(match.href, "_blank", "noopener,noreferrer");
       }, 280);
       return;
     }
@@ -94,7 +94,7 @@
     storeAsk(record);
 
     if (submitBtn) submitBtn.disabled = true;
-    setStatus("We’ve noted this for research.", "ok");
+    setStatus("We’ve noted your question.", "ok");
 
     postAsk(record).finally(function () {
       if (submitBtn) submitBtn.disabled = false;
