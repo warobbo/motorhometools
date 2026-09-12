@@ -13,63 +13,112 @@ This is a **signpost**, not a campsite planner, not a route engine, and not anot
 | Guides | [motorhometools.co.uk/guides/](https://motorhometools.co.uk/guides/) — Wave 1 payload articles |
 | Route | Coming soon (no fake maps) |
 
-The Ask box routes a few keywords (payload, tyres, power, water / gas / tanks / cassette). Toilet, loo and porta potty go to Cassette. If nothing matches it says **We’ve noted your question** and stores it. It does **not** invent tyre pressures, weights or legal advice.
+The Ask box routes a few keywords (payload, tyres, power, water / gas / tanks / cassette). Toilet, loo and porta potty go to Cassette. If nothing matches, the question (and optional email) is passed to the site owner via `POST /api/ask`. It does **not** invent tyre pressures, weights or legal advice. Replies are not automated.
 
 **Guides** on the home page links to Wave 1 payload articles. **Route** stays a coming-soon placeholder — not a route engine, and it does not link out.
 
 ## Run locally
 
-No build step and no npm install.
+Tiny Node static server (same shape as [motorhome-payload-calculator](https://github.com/warobbo/motorhome-payload-calculator)).
 
 ```bash
-python3 -m http.server 8080
+npm start
 ```
 
-Open [http://127.0.0.1:8080/](http://127.0.0.1:8080/).
+Open [http://127.0.0.1:4173/](http://127.0.0.1:4173/).
 
-Keyword checks:
+Keyword checks and Ask capture:
 
 ```bash
-node tests/router.test.js
+npm test
 ```
 
-## Deploy on Render (static site)
+### Check Ask capture with curl
 
-Same shape as [power-tool](https://github.com/warobbo/power-tool) and [mhwater](https://github.com/warobbo/mhwater).
+```bash
+curl -s -X POST http://127.0.0.1:4173/api/ask \
+  -H 'Content-Type: application/json' \
+  -d '{"question":"best campsite near York","email":"visitor@example.com"}'
+```
 
-1. Merge this branch to `main`.
-2. In Render: **New → Static Site**.
+You should see `{"ok":true,"saved":true,...}` and a stdout line starting `[ask]` with JSON that includes the question, optional email and timestamp.
+
+Optional local env (copy `.env.example` to `.env` — do not commit addresses):
+
+| Variable | What it does |
+| --- | --- |
+| `ASK_NOTIFY_EMAIL` | Public contact used only for the **Email this instead** mailto fallback if the POST fails |
+| `ASK_LOG_PATH` | JSONL file path if you attach a Render disk. Leave blank on Render — the disk is ephemeral, so stdout / Render logs are the store |
+
+Locally (not production) the handler also appends `data/asks.jsonl` (gitignored).
+
+## Deploy on Render (Node web service)
+
+This is no longer a static-only site. `/api/ask` has to run in a Node process, same idea as Payload’s `POST /api/missing-size`.
+
+**Render cannot change an existing Static Site to a Node web service.** After this branch is merged to `main`, Wayne needs a **new Web Service** (or a replacement service) pointed at the same repo, then move `motorhometools.co.uk` onto it.
+
+### Click steps after merge
+
+1. Merge this PR to `main`. Do not expect the current Static Site to start logging Asks — it has no Node process.
+2. In Render: **New → Web Service**.
 3. Connect `warobbo/motorhometools`, branch `main`.
 4. Settings:
-   - **Build Command:** leave empty
-   - **Publish Directory:** `.` (repo root)
-5. Optional environment variable: `SKIP_INSTALL_DEPS=true`
-6. Deploy. The onrender host will be something like `motorhometools.onrender.com`.
+   - **Runtime:** Node
+   - **Build Command:** `npm install`
+   - **Start Command:** `npm start`
+   - **Instance:** a **paid** web service (Starter or above). Free web services cannot keep a custom domain.
+5. Environment (Dashboard → the new web service → **Environment**):
+   - `NODE_VERSION=22`
+   - `NODE_ENV=production`
+   - `ASK_NOTIFY_EMAIL` = Wayne’s contact address (optional; mailto fallback only — no paid email API)
+   - Leave `ASK_LOG_PATH` blank unless a disk is attached
+6. Deploy. Confirm `https://<new-service>.onrender.com/` loads and:
 
-A `render.yaml` Blueprint is included with the same static publish path.
+   ```bash
+   curl -s -X POST https://<new-service>.onrender.com/api/ask \
+     -H 'Content-Type: application/json' \
+     -d '{"question":"best campsite near York","email":"visitor@example.com"}'
+   ```
+
+7. Keep **motorhometools.co.uk** on the same custom domain:
+   - New service → **Custom Domains** → add `motorhometools.co.uk` and `www.motorhometools.co.uk`
+   - Remove those domains from the old Static Site so TLS can move
+   - DNS can stay as it is (A `@` → `216.24.57.1`, CNAME `www` → the Render host). If the new service’s `*.onrender.com` host differs, update the `www` CNAME to that host.
+8. When the domain is live on the Node service, suspend or delete the old Static Site so you are not paying for two copies.
+
+`render.yaml` describes the same Node web service. A Blueprint apply will **not** convert the existing static service in place (`runtime` is immutable).
+
+### How Wayne sees Asks
+
+1. Render Dashboard → the **Node** web service → **Logs**.
+2. Filter for `[ask]`.
+3. Each unmatched submission is one JSON line: `type`, `receivedAt`, `question`, optional `email`, `href`, `source`.
+4. If `ASK_NOTIFY_EMAIL` is set and the browser POST fails, the visitor may see **Email this instead** (a `mailto:` link). That is not an automated reply. Nothing invents a pressure, a weight or legal advice.
+
+Host logs rotate. There is no paid inbox and no Formspree. For a durable file, attach a Render disk and set `ASK_LOG_PATH`.
 
 ### Point motorhometools.co.uk at Render
 
-In the domain registrar DNS:
+In the domain registrar DNS (unchanged pattern):
 
 | Type | Name | Value |
 | --- | --- | --- |
 | **A** | `@` | `216.24.57.1` |
-| **CNAME** | `www` | `motorhometools.onrender.com` (your Render host) |
+| **CNAME** | `www` | the new web service `*.onrender.com` host |
 
-Then in Render → the static site → **Custom Domains** add `motorhometools.co.uk` and `www.motorhometools.co.uk`. Render issues TLS.
-
-This is the same A / CNAME pattern as the other hubs.
+Then in Render → the **Node** web service → **Custom Domains** add `motorhometools.co.uk` and `www.motorhometools.co.uk`. Render issues TLS.
 
 `robots.txt` and `sitemap.xml` already point at `https://motorhometools.co.uk/`. Privacy, cookies and disclaimer pages live at `privacy.html`, `cookies.html` and `disclaimer.html`.
 
 ## Ask box notes (no invented advice)
 
-1. Keywords open the matching hub in the browser.
-2. Unmatched questions are saved on the visitor’s phone (`localStorage` key `motorhometools.unansweredAsks`).
-3. The page also `POST`s JSON to `/api/ask`. On this **static** site that path 404s — that is expected. The visitor still sees “We’ve noted your question.”
-4. Optional email is stored with the question. We will not email a pressure, a weight or legal advice.
-5. If you later want server logs (same idea as Payload’s `POST /api/missing-size`), copy `api/ask.example.js` onto a Node web service. Do not add a paid API.
+1. Keywords open the matching hub in the browser. Those matched asks are **not** posted.
+2. Unmatched questions `POST` JSON to `/api/ask`. On success the visitor sees that the note reached the site owner, and that replies are not automated.
+3. If the POST fails, a copy may stay on the visitor’s phone (`localStorage` key `motorhometools.unansweredAsks`). The page does **not** pretend a human already has it.
+4. Optional email is stored with the question only if the visitor types one. We will not email a pressure, a weight or legal advice.
+5. Honeypot field `website` is ignored (no log line).
+6. Rate limit: 10 posts / 10 minutes per client.
 
 ## Guides (Wave 1 — Payload)
 
@@ -92,4 +141,4 @@ Campsite planner, routing engine, Money tile, Mission Control, inventing pressur
 
 ## Disclaimer
 
-We open the right page or note the question. We don’t invent tyre pressures, weights or legal advice.
+We open the right page or pass the question to the site owner. We don’t invent tyre pressures, weights or legal advice.
