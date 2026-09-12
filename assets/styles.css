@@ -96,6 +96,8 @@ svg {
 .tile:focus-visible,
 .plate-wedge a:focus-visible,
 .footer-links a:focus-visible,
+.legal-links a:focus-visible,
+.legal a:focus-visible,
 button:focus-visible,
 input:focus-visible {
   outline: 3px solid #f0b25a;
@@ -121,6 +123,9 @@ input:focus-visible {
 
 .site-header h1 {
   margin: 0.85rem 0 0;
+  padding: 0;
+  text-indent: 0;
+  text-align: left;
   font-size: clamp(1.85rem, 7vw, 2.35rem);
   line-height: 1.15;
   letter-spacing: -0.03em;
@@ -128,8 +133,12 @@ input:focus-visible {
 
 .lede {
   margin: 0.55rem 0 0;
+  margin-inline: 0;
+  padding: 0;
+  text-indent: 0;
+  text-align: left;
+  max-width: 100%;
   color: var(--muted);
-  max-width: 28rem;
 }
 
 .site-main {
@@ -384,6 +393,48 @@ input:focus-visible {
 
 .footer-hubs p {
   margin: 0.65rem 0 0;
+}
+
+.legal-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.45rem;
+  margin: 0.85rem 0 0;
+}
+
+.legal-links a {
+  color: var(--pine);
+  font-weight: 650;
+}
+
+.legal-sep {
+  color: var(--muted);
+}
+
+.legal h2 {
+  margin: 1.15rem 0 0;
+  font-size: 1.1rem;
+}
+
+.legal p,
+.legal ul {
+  margin: 0.4rem 0 0;
+  color: var(--muted);
+}
+
+.legal ul {
+  padding-left: 1.15rem;
+}
+
+.legal a {
+  color: var(--pine);
+  font-weight: 650;
+}
+
+.legal code {
+  font-size: 0.88em;
+  word-break: break-all;
 }
 
 @media (min-width: 640px) {

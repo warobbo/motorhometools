@@ -59,7 +59,7 @@
   // More specific phrases first. Word boundaries so “camping” does not match amp.
   var RULES = [
     { id: "tyres", re: /\b(tyres?|tires?|pressure|psi)\b|\bbar\b/i },
-    { id: "cassette", re: /\bcassettes?\b/i },
+    { id: "cassette", re: /\b(cassettes?|toilets?|loos?|chemical\s+toilets?|porta[\s-]?pott(?:y|ies)|portapott(?:y|ies))\b/i },
     { id: "tanks", re: /\btanks?\b/i },
     { id: "gas", re: /\b(gas|lpg|butane|propane)\b/i },
     { id: "power", re: /\b(power|batter(?:y|ies)|solar|amps?|amp-?hours?|inverter)\b/i },
