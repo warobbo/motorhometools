@@ -123,6 +123,9 @@ input:focus-visible {
 
 .site-header h1 {
   margin: 0.85rem 0 0;
+  padding: 0;
+  text-indent: 0;
+  text-align: left;
   font-size: clamp(1.85rem, 7vw, 2.35rem);
   line-height: 1.15;
   letter-spacing: -0.03em;
@@ -130,8 +133,12 @@ input:focus-visible {
 
 .lede {
   margin: 0.55rem 0 0;
+  margin-inline: 0;
+  padding: 0;
+  text-indent: 0;
+  text-align: left;
+  max-width: 100%;
   color: var(--muted);
-  max-width: 28rem;
 }
 
 .site-main {
