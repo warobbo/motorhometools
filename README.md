@@ -25,7 +25,7 @@ Tiny Node static server (same shape as [motorhome-payload-calculator](https://gi
 npm start
 ```
 
-Open [http://127.0.0.1:4173/](http://127.0.0.1:4173/).
+Open [http://127.0.0.1:4173/](http://127.0.0.1:4173/). Folders such as `/guides/` serve `index.html` (same as the old static site).
 
 Keyword checks and Ask capture:
 

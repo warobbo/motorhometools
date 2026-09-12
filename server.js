@@ -63,6 +63,33 @@ function isHidden(relativePath) {
   });
 }
 
+function resolvePublicFile(urlPath) {
+  const requested = path.normalize(
+    (urlPath === "/" ? "index.html" : urlPath).replace(/^\/+/, "")
+  );
+  if (requested === ".." || requested.startsWith(".." + path.sep)) return null;
+
+  let filePath = path.join(ROOT, requested);
+  if (!filePath.startsWith(ROOT)) return null;
+  if (isHidden(requested)) return null;
+
+  const baseName = path.basename(filePath);
+  if (baseName.startsWith(".") && baseName !== ".") return null;
+
+  try {
+    const stat = fs.statSync(filePath);
+    if (stat.isDirectory()) {
+      filePath = path.join(filePath, "index.html");
+    }
+  } catch (err) {
+    return filePath;
+  }
+
+  const relative = path.relative(ROOT, filePath);
+  if (isHidden(relative)) return null;
+  return filePath;
+}
+
 const server = http.createServer(function (req, res) {
   const urlPath = decodeURIComponent((req.url || "/").split("?")[0]);
 
@@ -85,19 +112,8 @@ const server = http.createServer(function (req, res) {
     return;
   }
 
-  const requested = path.normalize(
-    (urlPath === "/" ? "index.html" : urlPath).replace(/^\/+/, "")
-  );
-  const filePath = path.join(ROOT, requested);
-
-  if (!filePath.startsWith(ROOT)) {
-    res.writeHead(403);
-    res.end("Forbidden");
-    return;
-  }
-
-  const baseName = path.basename(filePath);
-  if ((baseName.startsWith(".") && baseName !== ".") || isHidden(requested)) {
+  const filePath = resolvePublicFile(urlPath);
+  if (!filePath) {
     res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
     res.end("Not found");
     return;
@@ -135,3 +151,4 @@ if (require.main === module) {
 }
 
 module.exports = server;
+module.exports.resolvePublicFile = resolvePublicFile;

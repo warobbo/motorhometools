@@ -4,7 +4,7 @@
   "description": "Phone-first front door for the UK leisure hubs, plus unmatched Ask capture.",
   "scripts": {
     "start": "node server.js",
-    "test": "node tests/router.test.js && node --test tests/ask.test.js"
+    "test": "node tests/router.test.js && node --test tests/ask.test.js tests/server.test.js"
   },
   "engines": {
     "node": ">=22 <23"
