@@ -150,6 +150,11 @@ input:focus-visible {
   color: var(--muted);
 }
 
+.tile-intro .tile-start {
+  color: var(--ink);
+  font-weight: 650;
+}
+
 .tiles {
   display: grid;
   grid-template-columns: 1fr;
