@@ -11,7 +11,7 @@ This is a **signpost**, not a campsite planner, not a route engine, and not anot
 | Power | [motorhomepower.co.uk](https://motorhomepower.co.uk/) |
 | Water | [motorhomewater.co.uk](https://motorhomewater.co.uk/) — gas, tanks and cassette are tabs on that hub |
 
-The Ask box routes a few keywords (payload, tyres, power, water / gas / tanks / cassette). If nothing matches it says **We’ve noted your question** and stores it. It does **not** invent tyre pressures, weights or legal advice.
+The Ask box routes a few keywords (payload, tyres, power, water / gas / tanks / cassette). Toilet, loo and porta potty go to Cassette. If nothing matches it says **We’ve noted your question** and stores it. It does **not** invent tyre pressures, weights or legal advice.
 
 **Guides** and **Route** on the home page are coming-soon placeholders. They are not live how-tos or a route engine, and they do not link out.
 

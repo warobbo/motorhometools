@@ -36,6 +36,20 @@ expectRoute("gas bottle for a winter week", "gas");
 expectRoute("LPG days left", "gas");
 expectRoute("holding tanks planner", "tanks");
 expectRoute("when to empty the cassette", "cassette");
+expectRoute("cassette", "cassette");
+expectRoute("cassette toilet", "cassette");
+expectRoute("toilet", "cassette");
+expectRoute("toilets", "cassette");
+expectRoute("loo", "cassette");
+expectRoute("loos", "cassette");
+expectRoute("chemical toilet", "cassette");
+expectRoute("porta potty", "cassette");
+expectRoute("portapotty", "cassette");
+expectRoute("porta-potty", "cassette");
+
+assert.equal(routeAsk("toilet").href, "https://motorhomewater.co.uk/cassette.html");
+assert.equal(routeAsk("cassette").id, "cassette");
+assert.equal(routeAsk("water").id, "water");
 
 expectNone("");
 expectNone("   ");
