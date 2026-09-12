@@ -84,7 +84,7 @@
     if (match) {
       setStatus("Opening " + match.label + " — we don’t invent numbers; that page will ask for yours.", "ok");
       window.setTimeout(function () {
-        window.location.assign(match.href);
+        window.open(match.href, "_blank", "noopener,noreferrer");
       }, 280);
       return;
     }
