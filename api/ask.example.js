@@ -5,7 +5,7 @@
  *
  * The front door POSTs unanswered Ask-box questions to /api/ask.
  * On a static site that path 404s; the browser still stores the note
- * in localStorage and shows “We’ve noted this for research.”
+ * in localStorage and shows “We’ve noted your question.”
  *
  * If you later attach a Node web service (same pattern as
  * warobbo/motorhome-payload-calculator `POST /api/missing-size`),

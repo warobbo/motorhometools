@@ -11,7 +11,7 @@ This is a **signpost**, not a campsite planner, not a route engine, and not anot
 | Power | [motorhomepower.co.uk](https://motorhomepower.co.uk/) |
 | Water | [motorhomewater.co.uk](https://motorhomewater.co.uk/) — gas, tanks and cassette are tabs on that hub |
 
-The Ask box routes a few keywords (payload, tyres, power, water / gas / tanks / cassette). If nothing matches it says **We’ve noted this for research** and stores the question. It does **not** invent tyre pressures, weights or legal advice.
+The Ask box routes a few keywords (payload, tyres, power, water / gas / tanks / cassette). If nothing matches it says **We’ve noted your question** and stores it. It does **not** invent tyre pressures, weights or legal advice.
 
 ## Run locally
 
@@ -63,7 +63,7 @@ This is the same A / CNAME pattern as the other hubs.
 
 1. Keywords open the matching hub in the browser.
 2. Unmatched questions are saved on the visitor’s phone (`localStorage` key `motorhometools.unansweredAsks`).
-3. The page also `POST`s JSON to `/api/ask`. On this **static** site that path 404s — that is expected. The visitor still sees “We’ve noted this for research.”
+3. The page also `POST`s JSON to `/api/ask`. On this **static** site that path 404s — that is expected. The visitor still sees “We’ve noted your question.”
 4. Optional email is stored with the question. We will not email a pressure, a weight or legal advice.
 5. If you later want server logs (same idea as Payload’s `POST /api/missing-size`), copy `api/ask.example.js` onto a Node web service. Do not add a paid API.
 
@@ -75,4 +75,4 @@ Campsite planner, routing engine, Money tile, Mission Control, inventing pressur
 
 ## Disclaimer
 
-We point you to a tool or note the question. We don’t invent tyre pressures, weights or legal advice.
+We open the right page or note the question. We don’t invent tyre pressures, weights or legal advice.
