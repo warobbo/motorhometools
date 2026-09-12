@@ -360,11 +360,6 @@ input:focus-visible {
   margin: 0.65rem 0 0;
 }
 
-.tiny-note {
-  margin: 0.7rem 0 0;
-  font-size: 0.8rem;
-}
-
 @media (min-width: 640px) {
   .tiles {
     grid-template-columns: 1fr 1fr;
