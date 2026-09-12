@@ -1,6 +1,6 @@
 # Motorhome Tools
 
-Phone-first front door for the UK leisure hubs. Calm home page: **What do you need today?**
+Phone-first front door for the UK leisure hubs. Home hero: **Stop guessing your van’s limits.**
 
 This is a **signpost**, not a campsite planner, not a route engine, and not another calculator.
 
