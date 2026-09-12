@@ -96,6 +96,8 @@ svg {
 .tile:focus-visible,
 .plate-wedge a:focus-visible,
 .footer-links a:focus-visible,
+.legal-links a:focus-visible,
+.legal a:focus-visible,
 button:focus-visible,
 input:focus-visible {
   outline: 3px solid #f0b25a;
@@ -384,6 +386,48 @@ input:focus-visible {
 
 .footer-hubs p {
   margin: 0.65rem 0 0;
+}
+
+.legal-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.45rem;
+  margin: 0.85rem 0 0;
+}
+
+.legal-links a {
+  color: var(--pine);
+  font-weight: 650;
+}
+
+.legal-sep {
+  color: var(--muted);
+}
+
+.legal h2 {
+  margin: 1.15rem 0 0;
+  font-size: 1.1rem;
+}
+
+.legal p,
+.legal ul {
+  margin: 0.4rem 0 0;
+  color: var(--muted);
+}
+
+.legal ul {
+  padding-left: 1.15rem;
+}
+
+.legal a {
+  color: var(--pine);
+  font-weight: 650;
+}
+
+.legal code {
+  font-size: 0.88em;
+  word-break: break-all;
 }
 
 @media (min-width: 640px) {

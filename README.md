@@ -59,7 +59,7 @@ Then in Render → the static site → **Custom Domains** add `motorhometools.co
 
 This is the same A / CNAME pattern as the other hubs.
 
-`robots.txt` and `sitemap.xml` already point at `https://motorhometools.co.uk/`.
+`robots.txt` and `sitemap.xml` already point at `https://motorhometools.co.uk/`. Privacy, cookies and disclaimer pages live at `privacy.html`, `cookies.html` and `disclaimer.html`.
 
 ## Ask box notes (no invented advice)
 
