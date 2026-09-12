@@ -15,7 +15,7 @@ This is a **signpost**, not a campsite planner, not a route engine, and not anot
 
 The Ask box routes **topic synonym lists** per hub, seeded from the live hub default lists (Power `STARTER` appliances, mhwater gas/water/tanks/cassette defaults) — not a guessed short list. Toilet, loo and porta potty go to Cassette. Electrical starter words (fridge, kettle, diesel heater, MaxxFan, microwave…) open Power — daily power by default, or Battery / Solar / Inverter / Wire when the query names that tool. Bare fridge / freezer go to Power; gas fridge, absorption fridge, 3-way fridge, BBQ / barbecue, Calor and camping gaz go to Gas. Induction / hob stay Power. Tyre pressure / psi / bar stay on Tyres. Fresh / grey water and shower go to Water.
 
-**Process:** seen twice in Ask logs → add a synonym in `assets/router.js`. When a hub adds a starter appliance, Font updates the Ask list in the same change — Wayne should not discover misses by typing words himself.
+**Process:** hub defaults are the floor. Layer 2 is free UK search / People-also-ask phrasing (no paid Keyword Planner). Seen twice in Ask logs → add a synonym in `assets/router.js`. When a hub adds a starter appliance, Font updates the Ask list in the same change — Wayne should not discover misses by typing words himself. Ask opens a page; it never invents a pressure, weight or legal number.
 
 If nothing matches, the question (and optional email) is passed to the site owner via `POST /api/ask`. It does **not** invent tyre pressures, weights or legal advice. Replies are not automated.
 

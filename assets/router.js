@@ -9,12 +9,10 @@
  * list here in the same change. Seen twice in Ask logs → add a synonym.
  *
  * Sources (12 Sep 2026):
- * - Power STARTER: motorhomepower.co.uk/assets/defaults.js
- * - Power inverter loads: same file inverterStarterSet()
- * - Gas: mhwater assets/gas-defaults.js + gas-calc.js (cooking, heating,
- *   boiler, Calor bottles, fridgeGas)
- * - Water / tanks / cassette: mhwater defaults.js, tank-defaults.js,
- *   cassette-defaults.js
+ * - Floor: live hub default lists (Power STARTER, mhwater gas/water/tanks)
+ * - Layer 2: Google-style UK search / People-also-ask phrasing (free public
+ *   language only — no paid Keyword Planner). Route the page; never invent
+ *   a pressure, weight or legal number in copy.
  */
 (function (root, factory) {
   if (typeof module === "object" && module.exports) {
@@ -111,6 +109,23 @@
     { id: "inverter-idle", ask: "inverter idle" }
   ];
 
+  /**
+   * Layer 2: one UK search / PAA phrase per hub. Tests walk this list.
+   * Hub defaults remain the floor; these catch “how much / motorhome X” wording.
+   */
+  var SEARCH_PHRASE_ASKS = [
+    { id: "power", ask: "how much battery for a microwave" },
+    { id: "gas", ask: "Calor bottle how long" },
+    { id: "water", ask: "fresh water how much" },
+    { id: "cassette", ask: "empty cassette" },
+    { id: "tanks", ask: "holding tanks planner" },
+    { id: "payload", ask: "Mass in Service" },
+    { id: "tyres", ask: "tyre pressure motorhome" }
+  ];
+
+  // Daily-power appliances that turn “battery for X” into Daily Power, not Battery.
+  var POWER_LOAD = "microwaves?|fridges?|freezers?|kettles?|induction(?:\\s+hobs?)?|hobs?|toasters?|hair[\\s-]?dryers?|lights|laptops?|tvs?|coffee(?:\\s+(?:machines?|makers?))?";
+
   function words(list) {
     return "\\b(?:" + list.join("|") + ")\\b";
   }
@@ -123,11 +138,12 @@
   // Tyres keeps pressure / psi / bar. Heater (Power starter) is not tyre pressure.
   // Bare fridge/freezer → Power. Gas/absorption/3-way fridge → Gas.
   // Induction/hob stay Power — do not steal electrical cooking to Gas.
+  // Layer 2 search phrases sit with the hub they belong to.
   var RULES = [
     {
       id: "tyres",
       re: compile([
-        words(["tyres?", "tires?", "pressure", "psi"]),
+        words(["tyres?", "tires?", "pressure", "psi", "cp\\s+tyres?", "cp\\s+tires?"]),
         "\\bbar\\b"
       ])
     },
@@ -172,7 +188,8 @@
     },
     {
       id: "power",
-      // Electrical phrases that must beat Gas (induction) or Water (pump / heater)
+      // Electrical phrases that must beat Gas (induction) or Water (pump / heater).
+      // Layer 2: “battery for a microwave” is daily load, not the Battery tool.
       re: compile([
         words([
           "induction(?:\\s+hobs?)?",
@@ -182,8 +199,12 @@
           "inverter\\s+idles?",
           "phantom(?:\\s+loads?)?",
           "electric\\s+(?:bbqs?|barbecues?|barbeques?)",
-          "compressor\\s+fridges?"
-        ])
+          "compressor\\s+fridges?",
+          "(?:motorhomes?|campervans?|campers?)\\s+(?:" + POWER_LOAD + ")"
+        ]),
+        "\\bbatter(?:y|ies)\\b[\\s\\S]{0,80}\\b(?:" + POWER_LOAD + ")\\b",
+        "\\b(?:" + POWER_LOAD + ")\\b[\\s\\S]{0,80}\\bbatter(?:y|ies)\\b",
+        "\\b(?:how\\s+much|how\\s+many)\\s+(?:daily\\s+)?(?:power|amp-?hours?|watts?)\\b"
       ])
     },
     {
@@ -209,7 +230,12 @@
           "bottles?",
           "cylinders?",
           "gaslow",
-          "alugas"
+          "alugas",
+          "external\\s+(?:bbqs?|barbecues?|barbeques?)(?:\\s+points?)?",
+          "(?:bbqs?|barbecues?|barbeques?)\\s+(?:gas|points?)",
+          "calor\\s+bottles?",
+          "gas\\s+bottle\\s+days",
+          "how\\s+long[\\s\\S]{0,40}(?:calor|gas)\\s+bottles?"
         ])
       ])
     },
@@ -283,7 +309,20 @@
     {
       id: "payload",
       re: compile([
-        words(["payload", "mam", "gvw", "mtplm", "weighbridge", "weigh(?:ed|ing)?", "axle\\s+weights?"])
+        words([
+          "payload",
+          "mam",
+          "gvw",
+          "mtplm",
+          "miros?",
+          "mass\\s+in\\s+service",
+          "mass\\s+in\\s+running\\s+order",
+          "weighbridge",
+          "weigh(?:ed|ing)?",
+          "axle\\s+weights?",
+          "payload\\s+left",
+          "remaining\\s+payload"
+        ])
       ])
     },
     {
@@ -298,7 +337,11 @@
           "gray\\s+waters?",
           "wash-?ups?",
           "laundr(?:y|ies)",
-          "drink\\s+waters?"
+          "drink\\s+waters?",
+          "shower\\s+litres?",
+          "litres?\\s+(?:per\\s+)?showers?",
+          "fresh\\s+water\\s+how\\s+much",
+          "how\\s+much\\s+fresh\\s+water"
         ])
       ])
     },
@@ -331,6 +374,7 @@
   return {
     LINKS: LINKS,
     POWER_STARTER_ASKS: POWER_STARTER_ASKS,
+    SEARCH_PHRASE_ASKS: SEARCH_PHRASE_ASKS,
     routeAsk: routeAsk,
     normalise: normalise
   };
