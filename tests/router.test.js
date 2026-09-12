@@ -55,7 +55,11 @@ expectRoute("alternator", "power");
 expectRoute("how many amp hours", "power");
 
 assert.equal(routeAsk("microwave").id, "power");
+assert.equal(routeAsk("fridge").id, "power");
+assert.equal(routeAsk("freezer").id, "power");
 assert.equal(routeAsk("microwave").href, "https://motorhomepower.co.uk/");
+assert.equal(routeAsk("fridge").href, "https://motorhomepower.co.uk/");
+assert.equal(routeAsk("freezer").href, "https://motorhomepower.co.uk/");
 
 expectRoute("leisure battery size", "battery");
 expectRoute("leisure battery", "battery");
@@ -77,6 +81,14 @@ expectNone("cable");
 expectRoute("fresh water for two people", "water");
 expectRoute("gas bottle for a winter week", "gas");
 expectRoute("LPG days left", "gas");
+expectRoute("bbq", "gas");
+expectRoute("BBQ", "gas");
+expectRoute("gas fridge", "gas");
+expectRoute("absorption fridge", "gas");
+expectRoute("3-way fridge", "gas");
+expectRoute("three way fridge", "gas");
+assert.equal(routeAsk("bbq").href, "https://motorhomewater.co.uk/gas.html");
+assert.equal(routeAsk("gas fridge").id, "gas");
 expectRoute("holding tanks planner", "tanks");
 expectRoute("when to empty the cassette", "cassette");
 expectRoute("cassette", "cassette");

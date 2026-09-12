@@ -82,12 +82,13 @@
 
   // More specific phrases first. Word boundaries so “camping” does not match amp.
   // Tyres keeps pressure / psi / bar. Heater is leisure-electrical, not tyre pressure.
+  // Bare fridge/freezer → Power (daily electrical). Gas/absorption/3-way fridge → Gas.
   // Named Power tools (battery, solar, inverter, wire) beat generic appliance words.
   var RULES = [
     { id: "tyres", re: /\b(tyres?|tires?|pressure|psi)\b|\bbar\b/i },
     { id: "cassette", re: /\b(cassettes?|toilets?|loos?|chemical\s+toilets?|porta[\s-]?pott(?:y|ies)|portapott(?:y|ies))\b/i },
     { id: "tanks", re: /\btanks?\b/i },
-    { id: "gas", re: /\b(gas|lpg|butane|propane)\b/i },
+    { id: "gas", re: /\b(gas|lpg|butane|propane|bbqs?|barbecues?|barbeques?)\b|\babsorption\s+(?:fridges?|freezers?)\b|\b(?:3|three)[\s-]?way\s+(?:fridges?|freezers?)\b/i },
     { id: "wire", re: /\b(wiring|wires?|fuses?|mm2)\b|\b(?:electrical|power|dc|battery|leisure|inverter|solar|hook-?up)\s+cables?\b|\bcables?\s+(?:size|gauge|mm|amp|run|length|rating)\b|\b(?:12|24)\s*-?v\s+cables?\b/i },
     { id: "battery", re: /\b(batter(?:y|ies)|lifepo4|agms?)\b/i },
     { id: "solar", re: /\bsolar\b/i },
