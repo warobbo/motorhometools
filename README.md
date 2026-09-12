@@ -13,7 +13,7 @@ This is a **signpost**, not a campsite planner, not a route engine, and not anot
 
 The Ask box routes a few keywords (payload, tyres, power, water / gas / tanks / cassette). If nothing matches it says **We’ve noted your question** and stores it. It does **not** invent tyre pressures, weights or legal advice.
 
-**Route** on the home page is a coming-soon placeholder. It is not a route engine and does not link out to the Caravan and Motorhome Club.
+**Guides** and **Route** on the home page are coming-soon placeholders. They are not live how-tos or a route engine, and they do not link out.
 
 ## Run locally
 
