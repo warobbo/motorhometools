@@ -84,7 +84,44 @@ test("GET /guides/ and Wave 2 pages return Payload, Power and Water", async func
       assert.match(html, /We don.t invent|we don.t invent|do not invent/);
       assert.doesNotMatch(html, /best campsite|campsites near|directory of sites/i);
     }
+
+    const home = await fetch("http://127.0.0.1:" + port + "/");
+    const homeHtml = await home.text();
+    assert.equal(home.status, 200);
+    assert.match(homeHtml, /<link rel="canonical" href="https:\/\/motorhometools\.co\.uk\/">/);
+    assert.match(homeHtml, /<meta property="og:url" content="https:\/\/motorhometools\.co\.uk\/">/);
+    assert.match(homeHtml, /<meta property="og:image" content="https:\/\/motorhometools\.co\.uk\/assets\/icon-512\.png">/);
   } finally {
     await new Promise(function (resolve) { server.close(resolve); });
+  }
+});
+
+function walkHtmlFiles(dir, files) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      if (entry.name === "node_modules" || entry.name === ".git") continue;
+      walkHtmlFiles(full, files);
+    } else if (entry.name.endsWith(".html")) {
+      files.push(full);
+    }
+  }
+  return files;
+}
+
+test("public HTML home links use / and guide descriptions stay under 160 chars", function () {
+  const root = path.join(__dirname, "..");
+  const htmlFiles = walkHtmlFiles(root, []);
+  assert.ok(htmlFiles.length >= 14);
+  for (const filePath of htmlFiles) {
+    const html = fs.readFileSync(filePath, "utf8");
+    assert.doesNotMatch(html, /href="[^"]*index\.html"/, filePath);
+    const desc = html.match(/<meta name="description" content="([^"]*)"/);
+    if (desc && filePath.includes(`${path.sep}guides${path.sep}`)) {
+      assert.ok(
+        desc[1].length <= 160,
+        `${path.relative(root, filePath)} description is ${desc[1].length} chars`
+      );
+    }
   }
 });
