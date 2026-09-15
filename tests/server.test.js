@@ -52,7 +52,7 @@ test("GET /guides/ and Wave 2 pages return Payload, Power and Water", async func
       const html = await response.text();
       assert.equal(response.status, 200, pathName);
       assert.match(html, /We don.t invent|we don.t invent|do not invent/);
-      assert.doesNotMatch(html, /campsite finder|venue directory of/i);
+      assert.doesNotMatch(html, /best campsite|campsites near|directory of sites/i);
     }
   } finally {
     await new Promise(function (resolve) { server.close(resolve); });
