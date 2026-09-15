@@ -10,7 +10,7 @@ This is a **signpost**, not a campsite planner, not a route engine, and not anot
 | Tyres | [motorhomepayload.co.uk/tyres.html](https://motorhomepayload.co.uk/tyres.html) |
 | Power | [motorhomepower.co.uk](https://motorhomepower.co.uk/) |
 | Water | [motorhomewater.co.uk](https://motorhomewater.co.uk/) — gas, tanks and cassette are tabs on that hub |
-| Guides | [motorhometools.co.uk/guides/](https://motorhometools.co.uk/guides/) — Wave 1 payload articles |
+| Guides | [motorhometools.co.uk/guides/](https://motorhometools.co.uk/guides/) — Payload, Power and Water articles |
 | Route | Coming soon (no fake maps) |
 
 The Ask box routes **topic synonym lists** per hub, seeded from the live hub default lists (Power `STARTER` appliances, mhwater gas/water/tanks/cassette defaults) — not a guessed short list. Toilet, loo and porta potty go to Cassette. Electrical starter words (fridge, kettle, diesel heater, MaxxFan, microwave…) open Power — daily power by default, or Battery / Solar / Inverter / Wire when the query names that tool. Bare fridge / freezer / coolbox (cool box, 12V / camping / portable coolbox) go to Power; gas fridge, absorption fridge, 3-way fridge, BBQ / barbecue, Calor and camping gaz go to Gas. Induction / hob stay Power. Tyre pressure / psi / bar stay on Tyres. Fresh / grey water and shower go to Water.
@@ -19,7 +19,7 @@ The Ask box routes **topic synonym lists** per hub, seeded from the live hub def
 
 If nothing matches, the question (and optional email) is passed to the site owner via `POST /api/ask`. It does **not** invent tyre pressures, weights or legal advice. Replies are not automated.
 
-**Guides** on the home page links to Wave 1 payload articles. **Route** stays a coming-soon placeholder — not a route engine, and it does not link out.
+**Guides** on the home page links to Payload, Power and Water articles. **Route** stays a coming-soon placeholder — not a route engine, and it does not link out. Tyres guides stay parked (TRA).
 
 ## Run locally
 
@@ -124,9 +124,9 @@ Then in Render → the **Node** web service → **Custom Domains** add `motorhom
 5. Honeypot field `website` is ignored (no log line).
 6. Rate limit: 10 posts / 10 minutes per client.
 
-## Guides (Wave 1 — Payload)
+## Guides (Wave 1 Payload + Wave 2 Power / Water)
 
-Static HTML under `guides/`. Copy locked from Wayne’s Notion drafts; polished for UK search, not invented safety numbers.
+Static HTML under `guides/`. Copy locked from Wayne’s drafts; polished for UK search, not invented safety numbers. No campsite finder or venue directory.
 
 | Page | Slug |
 | --- | --- |
@@ -134,8 +134,14 @@ Static HTML under `guides/`. Copy locked from Wayne’s Notion drafts; polished 
 | Weighbridge how-to | `/guides/weighbridge-how-to.html` |
 | Axle weights | `/guides/axle-weights-explained.html` |
 | MAM / Mass in Service / payload | `/guides/mam-mass-in-service-payload.html` |
+| Daily power budget | `/guides/daily-power-budget.html` |
+| Leisure battery size | `/guides/battery-size-plain-english.html` |
+| Solar reality check | `/guides/solar-reality-check.html` |
+| Fresh and waste tanks | `/guides/fresh-waste-tanks.html` |
+| Gas / LPG basics | `/guides/gas-lpg-basics.html` |
+| Cassette toilet empty | `/guides/cassette-toilet-empty.html` |
 
-Each page has a unique title, meta description, one H1, canonical, and Open Graph basics. Payload links open in a new tab with `rel="noopener"`. Tyres, Power and Water guides are out of scope.
+Each page has a unique title, meta description, one H1, canonical, and Open Graph basics. Calculator links open in a new tab with `rel="noopener"`. Power CTAs use [motorhomepower.co.uk](https://motorhomepower.co.uk/) (Daily Power, Battery, Solar). Water / gas / cassette CTAs use [motorhomewater.co.uk](https://motorhomewater.co.uk/) (`tanks.html`, `gas.html`, `cassette.html`). Tyres guides stay parked (TRA). Hook-up vs off-grid is a later Power wave.
 
 Cache-bust assets by bumping the `?v=` query in `index.html` and `guides/*.html` (see the `ASSET_VERSION` comment).
 
