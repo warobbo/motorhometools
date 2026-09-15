@@ -326,9 +326,17 @@ input:focus-visible {
 }
 
 .ask-status {
-  min-height: 1.35em;
-  margin: 0.45rem 0 0;
+  min-height: 0;
+  margin: 0.75rem 0 0;
   font-weight: 650;
+}
+
+.ask-status:not(:empty) {
+  padding: 0.75rem 0.9rem;
+  border-radius: 12px;
+  font-size: 1.08rem;
+  font-weight: 750;
+  line-height: 1.4;
 }
 
 .ask-status a {
@@ -336,12 +344,22 @@ input:focus-visible {
   font-weight: 700;
 }
 
-.ask-status[data-kind="ok"] {
-  color: var(--pine);
+.ask-status[data-kind="ok"]:not(:empty) {
+  color: var(--pine-deep);
+  background: var(--pine-soft);
+  border: 1px solid #b7cfc7;
 }
 
-.ask-status[data-kind="warn"] {
+.ask-status[data-kind="warn"]:not(:empty) {
   color: #8a3b2d;
+  background: #f6ebe6;
+  border: 1px solid #e0c4ba;
+}
+
+.ask-status[data-kind="note"]:not(:empty) {
+  color: var(--ink);
+  background: var(--card);
+  border: 1px solid var(--card-edge);
 }
 
 .hp {

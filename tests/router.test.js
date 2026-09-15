@@ -1,7 +1,7 @@
 "use strict";
 
 const assert = require("node:assert/strict");
-const { routeAsk, POWER_STARTER_ASKS, SEARCH_PHRASE_ASKS } = require("../assets/router.js");
+const { routeAsk, POWER_STARTER_ASKS, POWER_COOLBOX_ASKS, SEARCH_PHRASE_ASKS } = require("../assets/router.js");
 
 function expectRoute(query, id) {
   const hit = routeAsk(query);
@@ -63,9 +63,20 @@ expectRoute("how many amp hours", "power");
 assert.equal(routeAsk("microwave").id, "power");
 assert.equal(routeAsk("fridge").id, "power");
 assert.equal(routeAsk("freezer").id, "power");
+assert.equal(routeAsk("coolbox").id, "power");
 assert.equal(routeAsk("microwave").href, "https://motorhomepower.co.uk/");
 assert.equal(routeAsk("fridge").href, "https://motorhomepower.co.uk/");
 assert.equal(routeAsk("freezer").href, "https://motorhomepower.co.uk/");
+assert.equal(routeAsk("coolbox").href, "https://motorhomepower.co.uk/");
+
+assert.ok(POWER_COOLBOX_ASKS.length >= 7, "expected coolbox UK variants");
+POWER_COOLBOX_ASKS.forEach(function (row) {
+  expectRoute(row.ask, "power");
+});
+expectRoute("coolboxes", "power");
+expectRoute("how much battery for a coolbox", "power");
+assert.equal(routeAsk("camping coolbox").id, "power");
+assert.equal(routeAsk("camping coolbox").href, "https://motorhomepower.co.uk/");
 
 assert.ok(POWER_STARTER_ASKS.length >= 12, "expected live Power STARTER rows");
 POWER_STARTER_ASKS.forEach(function (row) {

@@ -123,8 +123,22 @@
     { id: "tyres", ask: "tyre pressure motorhome" }
   ];
 
+  /**
+   * Ask-log / UK phrasing for a 12V camping cooler (not a Power STARTER id).
+   * Treated like fridge: Daily Power, never Gas. Tests walk this list.
+   */
+  var POWER_COOLBOX_ASKS = [
+    { id: "power", ask: "coolbox" },
+    { id: "power", ask: "cool box" },
+    { id: "power", ask: "cool-box" },
+    { id: "power", ask: "12v coolbox" },
+    { id: "power", ask: "camping coolbox" },
+    { id: "power", ask: "portable coolbox" },
+    { id: "power", ask: "fridge coolbox" }
+  ];
+
   // Daily-power appliances that turn “battery for X” into Daily Power, not Battery.
-  var POWER_LOAD = "microwaves?|fridges?|freezers?|kettles?|induction(?:\\s+hobs?)?|hobs?|toasters?|hair[\\s-]?dryers?|lights|laptops?|tvs?|coffee(?:\\s+(?:machines?|makers?))?";
+  var POWER_LOAD = "microwaves?|fridges?|freezers?|cool[\\s-]?box(?:es)?|kettles?|induction(?:\\s+hobs?)?|hobs?|toasters?|hair[\\s-]?dryers?|lights|laptops?|tvs?|coffee(?:\\s+(?:machines?|makers?))?";
 
   function words(list) {
     return "\\b(?:" + list.join("|") + ")\\b";
@@ -272,6 +286,7 @@
           "alternators?",
           "fridges?",
           "freezers?",
+          "cool[\\s-]?box(?:es)?",
           "lights",
           "lighting",
           "leds?",
@@ -374,6 +389,7 @@
   return {
     LINKS: LINKS,
     POWER_STARTER_ASKS: POWER_STARTER_ASKS,
+    POWER_COOLBOX_ASKS: POWER_COOLBOX_ASKS,
     SEARCH_PHRASE_ASKS: SEARCH_PHRASE_ASKS,
     routeAsk: routeAsk,
     normalise: normalise

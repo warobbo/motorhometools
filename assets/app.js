@@ -20,12 +20,16 @@
   function setStatus(message, kind, extraLink) {
     statusEl.textContent = message;
     statusEl.dataset.kind = kind || "note";
+    statusEl.setAttribute("aria-live", kind === "ok" ? "assertive" : "polite");
     if (extraLink && extraLink.href && extraLink.label) {
       statusEl.appendChild(document.createTextNode(" "));
       var link = document.createElement("a");
       link.href = extraLink.href;
       link.textContent = extraLink.label;
       statusEl.appendChild(link);
+    }
+    if (message && statusEl.scrollIntoView) {
+      statusEl.scrollIntoView({ block: "nearest", behavior: "smooth" });
     }
   }
 
@@ -98,12 +102,21 @@
     };
   }
 
+  function flashSubmitLabel(label) {
+    if (!submitBtn) return;
+    submitBtn.textContent = label;
+    window.setTimeout(function () {
+      if (submitBtn.textContent === label) submitBtn.textContent = "Find it";
+    }, 2800);
+  }
+
   function showSaved(email) {
+    flashSubmitLabel("Sent");
     if (email) {
-      setStatus("We’ve passed your question to the site owner, with the email you left. Replies are not automated.", "ok");
+      setStatus("Noted — we’ve passed this to the site owner, with the email you left. Replies are not automated.", "ok");
       return;
     }
-    setStatus("We’ve passed your question to the site owner. Replies are not automated.", "ok");
+    setStatus("Noted — we’ve passed this to the site owner. Replies are not automated.", "ok");
   }
 
   function showFallback(record) {
@@ -118,6 +131,7 @@
 
   form.addEventListener("submit", function (event) {
     event.preventDefault();
+    if (submitBtn) submitBtn.textContent = "Find it";
 
     if (honeypot && honeypot.value) {
       setStatus("We’ve noted your question.", "ok");
