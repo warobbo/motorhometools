@@ -100,6 +100,7 @@ svg {
 .legal a:focus-visible,
 .crumb a:focus-visible,
 .guide-card:focus-visible,
+.guide-group a:focus-visible,
 .guide-next a:focus-visible,
 .related a:focus-visible,
 .prose a:focus-visible,
@@ -495,6 +496,30 @@ input:focus-visible {
 
 .soon-block .guide-list {
   margin-top: 0;
+}
+
+.guide-group {
+  margin: 1.4rem 0 0;
+}
+
+.guide-group h2 {
+  margin: 0;
+  font-size: 1.18rem;
+  letter-spacing: -0.02em;
+}
+
+.guide-group > p {
+  margin: 0.4rem 0 0;
+  color: var(--muted);
+}
+
+.guide-group a {
+  color: var(--pine);
+  font-weight: 650;
+}
+
+.guide-group .guide-list {
+  margin-top: 0.65rem;
 }
 
 .guide-list {
