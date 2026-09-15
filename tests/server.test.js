@@ -160,6 +160,46 @@ function walkHtmlFiles(dir, files) {
   return files;
 }
 
+function pngSize(filePath) {
+  const buf = fs.readFileSync(filePath);
+  assert.equal(buf.toString("ascii", 1, 4), "PNG");
+  return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) };
+}
+
+test("family logos and favicons ship pine marks with a sitewide cache-bust", function () {
+  const root = path.join(__dirname, "..");
+  const assets = path.join(root, "assets");
+  const icon32 = pngSize(path.join(assets, "favicon-32.png"));
+  const apple = pngSize(path.join(assets, "apple-touch-icon.png"));
+  const icon512 = pngSize(path.join(assets, "icon-512.png"));
+  assert.deepEqual(icon32, { width: 32, height: 32 });
+  assert.deepEqual(apple, { width: 180, height: 180 });
+  assert.deepEqual(icon512, { width: 512, height: 512 });
+
+  for (const name of ["logo.svg", "favicon.svg", "payload.svg", "tyres.svg", "power.svg", "water.svg"]) {
+    const svg = fs.readFileSync(path.join(assets, name), "utf8");
+    assert.match(svg, /#1e4f43/, name);
+  }
+
+  const htmlFiles = walkHtmlFiles(root, []);
+  for (const filePath of htmlFiles) {
+    const html = fs.readFileSync(filePath, "utf8");
+    const iconRefs = html.match(
+      /(?:favicon\.svg|favicon-32\.png|apple-touch-icon\.png|icon-512\.png|logo\.svg)\?v=[^"']+/g
+    ) || [];
+    assert.ok(iconRefs.length > 0, path.relative(root, filePath) + " missing icon/logo refs");
+    for (const ref of iconRefs) {
+      assert.match(ref, /\?v=20260915logo$/, path.relative(root, filePath) + " " + ref);
+    }
+  }
+
+  const home = fs.readFileSync(path.join(root, "index.html"), "utf8");
+  assert.match(home, /assets\/payload\.svg\?v=20260915logo/);
+  assert.match(home, /assets\/tyres\.svg\?v=20260915logo/);
+  assert.match(home, /assets\/power\.svg\?v=20260915logo/);
+  assert.match(home, /assets\/water\.svg\?v=20260915logo/);
+});
+
 test("public HTML home links use / and guide descriptions stay under 160 chars", function () {
   const root = path.join(__dirname, "..");
   const htmlFiles = walkHtmlFiles(root, []);
