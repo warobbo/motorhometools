@@ -15,20 +15,20 @@
     <meta property="og:url" content="https://motorhometools.co.uk/guides/where-you-put-it.html">
     <meta property="og:locale" content="en_GB">
     <meta property="og:site_name" content="Motorhome Tools">
-    <meta property="og:image" content="https://motorhometools.co.uk/guides/assets/where-you-put-it-diagram.png">
-    <link rel="icon" href="../assets/favicon.svg?v=20260915x" type="image/svg+xml">
-    <link rel="icon" href="../assets/favicon-32.png?v=20260915x" type="image/png" sizes="32x32">
-    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png?v=20260915x" sizes="180x180">
-    <link rel="icon" href="../assets/icon-512.png?v=20260915x" type="image/png" sizes="512x512">
-    <!-- ASSET_VERSION=20260915x — bump this query on CSS/JS to force-refresh cached assets. -->
-    <link rel="stylesheet" href="../assets/styles.css?v=20260915x">
+    <meta property="og:image" content="https://motorhometools.co.uk/assets/icon-512.png">
+    <link rel="icon" href="../assets/favicon.svg?v=20260915z" type="image/svg+xml">
+    <link rel="icon" href="../assets/favicon-32.png?v=20260915z" type="image/png" sizes="32x32">
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png?v=20260915z" sizes="180x180">
+    <link rel="icon" href="../assets/icon-512.png?v=20260915z" type="image/png" sizes="512x512">
+    <!-- ASSET_VERSION=20260915z — bump this query on CSS/JS to force-refresh cached assets. -->
+    <link rel="stylesheet" href="../assets/styles.css?v=20260915z">
   </head>
   <body>
     <a class="skip-link" href="#article">Skip to guide</a>
 
     <header class="site-header wrap article-header">
       <a class="site-brand" href="../index.html">
-        <img class="site-logo" src="../assets/logo.svg?v=20260915x" width="44" height="44" alt="Motorhome Tools">
+        <img class="site-logo" src="../assets/logo.svg?v=20260915z" width="44" height="44" alt="Motorhome Tools">
         <span class="eyebrow">Motorhome Tools</span>
       </a>
       <nav aria-label="Breadcrumb">
@@ -45,21 +45,83 @@
       <article class="prose">
         <p>Your motorhome can sit under its maximum total weight and still overload the <strong>rear axle</strong>. Where you put kit — especially behind the rear axle — changes front and rear loads even when the total barely moves. That is why a roadside check can fail on one axle while the van “looks fine” on overall weight.</p>
 
-        <h2>The diagram (example only)</h2>
-        <figure class="guide-figure">
-          <img
-            src="./assets/where-you-put-it-diagram.png?v=20260915x"
-            width="1312"
-            height="1199"
-            alt="Example motorhome diagram showing empty, typical load, and extras cases — rear axle can go over its limit while total weight stays legal.">
+        <h2>Three example loads</h2>
+        <figure class="guide-figure guide-figure--scenes">
+          <div class="load-scenes">
+            <article class="load-scene" aria-labelledby="load-empty-title">
+              <header class="load-scene-head">
+                <span class="load-scene-num" aria-hidden="true">1</span>
+                <h3 id="load-empty-title" class="load-scene-title">Empty motorhome</h3>
+              </header>
+              <p class="load-scene-lead">Base weight shared between the front and rear axles.</p>
+              <dl class="load-scene-weights">
+                <div class="load-scene-stat">
+                  <dt>Front</dt>
+                  <dd>1,550&nbsp;kg</dd>
+                </div>
+                <div class="load-scene-stat">
+                  <dt>Rear</dt>
+                  <dd>1,850&nbsp;kg</dd>
+                </div>
+                <div class="load-scene-stat load-scene-stat--total">
+                  <dt>Total</dt>
+                  <dd>3,400&nbsp;kg</dd>
+                </div>
+              </dl>
+              <p class="load-scene-status load-scene-status--ok">Within limits</p>
+              <p class="load-scene-note">Both axles, and under 3,500&nbsp;kg MTPLM, in the example.</p>
+            </article>
+
+            <article class="load-scene" aria-labelledby="load-typical-title">
+              <header class="load-scene-head">
+                <span class="load-scene-num" aria-hidden="true">2</span>
+                <h3 id="load-typical-title" class="load-scene-title">Typical load</h3>
+              </header>
+              <p class="load-scene-lead">People, water, gas, food, clothing. Total stays similar; weight shifts toward the rear.</p>
+              <dl class="load-scene-weights">
+                <div class="load-scene-stat">
+                  <dt>Front</dt>
+                  <dd>1,450&nbsp;kg <span class="load-scene-delta">−100</span></dd>
+                </div>
+                <div class="load-scene-stat">
+                  <dt>Rear</dt>
+                  <dd>1,950&nbsp;kg <span class="load-scene-delta">+100</span></dd>
+                </div>
+                <div class="load-scene-stat load-scene-stat--total">
+                  <dt>Total</dt>
+                  <dd>3,400&nbsp;kg</dd>
+                </div>
+              </dl>
+              <p class="load-scene-status load-scene-status--ok">Still OK</p>
+              <p class="load-scene-note">Both axles still inside the example limits.</p>
+            </article>
+
+            <article class="load-scene load-scene--over" aria-labelledby="load-extras-title">
+              <header class="load-scene-head">
+                <span class="load-scene-num" aria-hidden="true">3</span>
+                <h3 id="load-extras-title" class="load-scene-title">After a few extras</h3>
+              </header>
+              <p class="load-scene-lead">Bikes, awning, camping gear, rear garage. Most of that sits <strong>behind</strong> the rear axle.</p>
+              <dl class="load-scene-weights">
+                <div class="load-scene-stat">
+                  <dt>Front</dt>
+                  <dd>1,400&nbsp;kg <span class="load-scene-delta">−150</span></dd>
+                </div>
+                <div class="load-scene-stat">
+                  <dt>Rear</dt>
+                  <dd><span class="is-over">2,100&nbsp;kg</span> <span class="load-scene-delta">+250</span></dd>
+                </div>
+                <div class="load-scene-stat load-scene-stat--total">
+                  <dt>Total</dt>
+                  <dd>3,500&nbsp;kg</dd>
+                </div>
+              </dl>
+              <p class="load-scene-status load-scene-status--over">Rear axle overloaded</p>
+              <p class="load-scene-note">Example rear limit 2,000&nbsp;kg. Would fail a roadside check even though total is at MTPLM.</p>
+            </article>
+          </div>
           <figcaption>Example figures only. They are not your van. Read your VIN plate and a Loaded weighbridge ticket for real numbers.</figcaption>
         </figure>
-        <p>The graphic walks three snapshots:</p>
-        <ol>
-          <li><strong>Empty motorhome</strong> — base weight shared between front and rear; both axles and total inside the example limits.</li>
-          <li><strong>Typical load</strong> — people, water, gas, food, clothing. Total may stay similar while weight shifts toward the rear.</li>
-          <li><strong>After a few extras</strong> — bikes, awning, camping gear, rear garage contents. Most of that sits <strong>behind</strong> the rear axle, so the rear load rises more than the kilogramme count suggests. In the example, total weight is still at the van maximum, but the <strong>rear axle is over its own limit</strong> — and that would fail a roadside check.</li>
-        </ol>
 
         <h3>Example numbers table (from the diagram — not your van)</h3>
         <div class="guide-table-wrap">
