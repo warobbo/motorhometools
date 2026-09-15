@@ -2,6 +2,7 @@
 
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
 const path = require("node:path");
 const server = require("../server");
 const { resolvePublicFile } = server;
@@ -31,11 +32,10 @@ const WAVE2_GUIDES = [
   "/guides/cassette-toilet-empty.html"
 ];
 
-test("serves the where-you-put-it diagram asset", function () {
-  const filePath = resolvePublicFile("/guides/assets/where-you-put-it-diagram.png");
+test("retired where-you-put-it diagram PNG is not in the tree", function () {
   assert.equal(
-    filePath,
-    path.join(__dirname, "..", "guides", "assets", "where-you-put-it-diagram.png")
+    fs.existsSync(path.join(__dirname, "..", "guides", "assets", "where-you-put-it-diagram.png")),
+    false
   );
 });
 
@@ -63,9 +63,15 @@ test("GET /guides/ and Wave 2 pages return Payload, Power and Water", async func
     assert.match(placementHtml, /<title>Motorhome rear axle overload: under MAM, over on one axle<\/title>/);
     assert.match(placementHtml, /It’s not just the total weight — it’s where you put it/);
     assert.match(indexHtml, /Rear axle overload: under MAM but over on one axle/);
-    assert.match(placementHtml, /example only/i);
-    assert.match(placementHtml, /where-you-put-it-diagram\.png/);
-    assert.match(placementHtml, /2,100 kg/);
+    assert.match(placementHtml, /Example figures only/);
+    assert.match(placementHtml, /Three example loads/);
+    assert.match(placementHtml, /class="load-scenes"/);
+    assert.doesNotMatch(placementHtml, /where-you-put-it-diagram\.png/);
+    assert.match(placementHtml, /1,550/);
+    assert.match(placementHtml, /2,100/);
+    assert.match(placementHtml, /Within limits/);
+    assert.match(placementHtml, /Still OK/);
+    assert.match(placementHtml, /Rear axle overloaded/);
     assert.match(placementHtml, /OVERLOAD/);
     assert.match(placementHtml, /motorhomepayload\.co\.uk/);
     assert.match(placementHtml, /We do not invent axle splits/);
