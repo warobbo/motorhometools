@@ -145,7 +145,8 @@ if (require.main === module) {
   server.listen(PORT, "0.0.0.0", function () {
     console.log("Motorhome Tools ready");
     console.log("  Local:  http://localhost:" + PORT + "/");
-    console.log("  Ask:    POST /api/ask");
+    console.log("  Ask:    http://localhost:" + PORT + "/ask/");
+    console.log("  Ask API: POST /api/ask");
     console.log("  Notify: " + (process.env.ASK_NOTIFY_EMAIL ? "mailto fallback set" : "logs only"));
   });
 }

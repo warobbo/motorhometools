@@ -11,6 +11,7 @@ This is a **signpost**, not a campsite planner, not a route engine, and not anot
 | Power | [motorhomepower.co.uk](https://motorhomepower.co.uk/) |
 | Water | [motorhomewater.co.uk](https://motorhomewater.co.uk/) — gas, tanks and cassette are tabs on that hub |
 | Guides | [motorhometools.co.uk/guides/](https://motorhometools.co.uk/guides/) — Payload, Power and Water articles |
+| Ask | [motorhometools.co.uk/ask/](https://motorhometools.co.uk/ask/) — same Ask box, bookmarkable |
 | Route | Coming soon (no fake maps) |
 
 The Ask box routes **topic synonym lists** per hub, seeded from the live hub default lists (Power `STARTER` + inverter-load appliances, mhwater gas/water/tanks/cassette defaults, Payload weight terms) — not a guessed short list. See **[ASK-SYNONYMS.md](ASK-SYNONYMS.md)**: Font owns coverage permanently; when a hub adds a starter item, update Ask in the same change. Toilet, loo and porta potty go to Cassette. Electrical starter words (fridge, kettle, oven, microwave, radio, stereo, bluetooth, speaker, charger, diesel heater, MaxxFan…) open Power — daily power by default, or Battery / Solar / Inverter / Wire when the query names that tool. Bare fridge / freezer / coolbox / oven go to Power; gas fridge, absorption fridge, 3-way fridge, BBQ / barbecue / grill, Calor and camping gaz go to Gas. Induction / hob stay Power. Axle / axles / weighbridge / MAM / MIRO stay on Payload. Tyre pressure / psi / bar stay on Tyres. Fresh / grey / waste water and shower go to Water.
@@ -29,7 +30,7 @@ Tiny Node static server (same shape as [motorhome-payload-calculator](https://gi
 npm start
 ```
 
-Open [http://127.0.0.1:4173/](http://127.0.0.1:4173/). Folders such as `/guides/` serve `index.html` (same as the old static site).
+Open [http://127.0.0.1:4173/](http://127.0.0.1:4173/). Folders such as `/guides/` and `/ask/` serve `index.html` (same as the old static site).
 
 Keyword checks and Ask capture:
 
@@ -137,10 +138,10 @@ Static HTML under `guides/`. Copy locked from Wayne’s drafts; polished for UK 
 | MAM / Mass in Service / payload | `/guides/mam-mass-in-service-payload.html` |
 | Daily power budget | `/guides/daily-power-budget.html` |
 | Leisure battery size | `/guides/battery-size-plain-english.html` |
-| Solar reality check | `/guides/solar-reality-check.html` |
+| Solar panel sizing | `/guides/solar-reality-check.html` |
 | Fresh and waste tanks | `/guides/fresh-waste-tanks.html` |
-| Gas / LPG basics | `/guides/gas-lpg-basics.html` |
-| Cassette toilet empty | `/guides/cassette-toilet-empty.html` |
+| Gas / LPG bottles and safety | `/guides/gas-lpg-basics.html` |
+| When and where to empty a cassette toilet | `/guides/cassette-toilet-empty.html` |
 
 Each page has a unique title, meta description, one H1, canonical, and Open Graph basics. Calculator links open in a new tab with `rel="noopener"`. Power CTAs use [motorhomepower.co.uk](https://motorhomepower.co.uk/) (Daily Power, Battery, Solar). Water / gas / cassette CTAs use [motorhomewater.co.uk](https://motorhomewater.co.uk/) (`tanks.html`, `gas.html`, `cassette.html`). Tyres guides stay parked (TRA). Hook-up vs off-grid is a later Power wave.
 

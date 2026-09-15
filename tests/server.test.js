@@ -17,6 +17,16 @@ test("serves /guides as guides/index.html", function () {
   assert.equal(filePath, path.join(__dirname, "..", "guides", "index.html"));
 });
 
+test("serves /ask/ as ask/index.html", function () {
+  const filePath = resolvePublicFile("/ask/");
+  assert.equal(filePath, path.join(__dirname, "..", "ask", "index.html"));
+});
+
+test("serves /ask as ask/index.html", function () {
+  const filePath = resolvePublicFile("/ask");
+  assert.equal(filePath, path.join(__dirname, "..", "ask", "index.html"));
+});
+
 test("does not expose server internals", function () {
   assert.equal(resolvePublicFile("/server.js"), null);
   assert.equal(resolvePublicFile("/lib/ask.js"), null);
@@ -54,7 +64,9 @@ test("GET /guides/ and Wave 2 pages return Payload, Power and Water", async func
     assert.match(indexHtml, /where-you-put-it.html/);
     assert.match(indexHtml, /It’s not just total weight — where you put it/);
     assert.match(indexHtml, /Daily power budget/);
-    assert.match(indexHtml, /Cassette toilet empty/);
+    assert.match(indexHtml, /When and where to empty a cassette toilet/);
+    assert.match(indexHtml, /Solar panel sizing/);
+    assert.match(indexHtml, /Gas \/ LPG bottles and safety/);
     assert.match(indexHtml, /id="power-guides-title"/);
     assert.match(indexHtml, /id="water-guides-title"/);
     assert.doesNotMatch(indexHtml, /Motorhome payload guides/);
@@ -91,12 +103,45 @@ test("GET /guides/ and Wave 2 pages return Payload, Power and Water", async func
       assert.doesNotMatch(html, /best campsite|campsites near|directory of sites/i);
     }
 
+    const solar = await fetch("http://127.0.0.1:" + port + "/guides/solar-reality-check.html");
+    const solarHtml = await solar.text();
+    assert.match(solarHtml, /<title>Motorhome solar panel sizing: daily Wh reality<\/title>/);
+    assert.match(solarHtml, /<h1>Motorhome solar panel sizing \(daily Wh reality\)<\/h1>/);
+
+    const gas = await fetch("http://127.0.0.1:" + port + "/guides/gas-lpg-basics.html");
+    const gasHtml = await gas.text();
+    assert.match(gasHtml, /<title>Motorhome gas \/ LPG: bottles and safety in plain English<\/title>/);
+    assert.match(gasHtml, /<h1>Motorhome gas \/ LPG bottles and safety<\/h1>/);
+
+    const cassette = await fetch("http://127.0.0.1:" + port + "/guides/cassette-toilet-empty.html");
+    const cassetteHtml = await cassette.text();
+    assert.match(cassetteHtml, /<title>When and where to empty a motorhome cassette toilet<\/title>/);
+    assert.match(cassetteHtml, /<h1>When and where to empty a motorhome cassette toilet<\/h1>/);
+
     const home = await fetch("http://127.0.0.1:" + port + "/");
     const homeHtml = await home.text();
     assert.equal(home.status, 200);
     assert.match(homeHtml, /<link rel="canonical" href="https:\/\/motorhometools\.co\.uk\/">/);
     assert.match(homeHtml, /<meta property="og:url" content="https:\/\/motorhometools\.co\.uk\/">/);
     assert.match(homeHtml, /<meta property="og:image" content="https:\/\/motorhometools\.co\.uk\/assets\/icon-512\.png">/);
+    assert.match(homeHtml, /href="\/ask\/">shareable Ask page</);
+
+    const askPage = await fetch("http://127.0.0.1:" + port + "/ask/");
+    const askHtml = await askPage.text();
+    assert.equal(askPage.status, 200);
+    assert.match(askHtml, /<title>Ask in plain English \| Motorhome Tools<\/title>/);
+    assert.match(askHtml, /<link rel="canonical" href="https:\/\/motorhometools\.co\.uk\/ask\/">/);
+    assert.match(askHtml, /<meta property="og:url" content="https:\/\/motorhometools\.co\.uk\/ask\/">/);
+    assert.match(askHtml, /id="ask-form"/);
+    assert.match(askHtml, /id="ask-question"/);
+    assert.match(askHtml, /assets\/router\.js/);
+    assert.match(askHtml, /assets\/app\.js/);
+    assert.doesNotMatch(askHtml, /best campsite|campsites near|directory of sites/i);
+
+    const sitemap = await fetch("http://127.0.0.1:" + port + "/sitemap.xml");
+    const sitemapXml = await sitemap.text();
+    assert.equal(sitemap.status, 200);
+    assert.match(sitemapXml, /<loc>https:\/\/motorhometools\.co\.uk\/ask\/<\/loc>/);
   } finally {
     await new Promise(function (resolve) { server.close(resolve); });
   }
@@ -127,6 +172,13 @@ test("public HTML home links use / and guide descriptions stay under 160 chars",
       assert.ok(
         desc[1].length <= 160,
         `${path.relative(root, filePath)} description is ${desc[1].length} chars`
+      );
+    }
+    const title = html.match(/<title>([^<]*)<\/title>/);
+    if (title && /solar-reality-check|gas-lpg-basics|cassette-toilet-empty/.test(filePath)) {
+      assert.ok(
+        title[1].length <= 60,
+        `${path.relative(root, filePath)} title is ${title[1].length} chars`
       );
     }
   }
