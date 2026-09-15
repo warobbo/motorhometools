@@ -67,13 +67,15 @@ test("GET /guides/ and Wave 2 pages return Payload, Power and Water", async func
     assert.match(indexHtml, /Rear axle overload: under MAM but over on one axle/);
     assert.match(placementHtml, /Example figures only/);
     assert.match(placementHtml, /Three example loads/);
-    assert.match(placementHtml, /where-you-put-it-diagram\.png\?v=20260915af/);
+    assert.match(placementHtml, /where-you-put-it-diagram\.png\?v=20260915ag/);
     assert.match(placementHtml, /guide-figure--diagram/);
     assert.match(placementHtml, /front axle 1,550 kg/);
     assert.match(placementHtml, /1,550/);
     assert.match(placementHtml, /2,100/);
     assert.match(placementHtml, /OVERLOAD/);
+    assert.match(placementHtml, /Example numbers table \(from the diagram — not your van\)/);
     assert.match(placementHtml, /guide-table--example/);
+    assert.doesNotMatch(placementHtml, /<caption>Example numbers from the diagram/);
     assert.doesNotMatch(placementHtml, /class="load-scenes"/);
     assert.doesNotMatch(placementHtml, /class="load-scene"/);
     assert.doesNotMatch(placementHtml, /id="load-empty-title"/);
