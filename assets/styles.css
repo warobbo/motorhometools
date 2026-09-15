@@ -678,7 +678,7 @@ input:focus-visible {
 
 .load-scene-head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 0.55rem;
 }
 
@@ -753,13 +753,12 @@ input:focus-visible {
 }
 
 .load-scene-delta {
-  display: inline-block;
-  margin-left: 0.2rem;
+  display: block;
+  margin-top: 0.15rem;
   color: var(--muted);
   font-size: 1rem;
   font-weight: 650;
   letter-spacing: 0;
-  vertical-align: middle;
 }
 
 .load-scene-status,
