@@ -114,11 +114,15 @@
   /**
    * Power inverterStarterSet() labels (defaults.js INVERTER_LOAD_IDS).
    * Bare oven → Daily Power. Electric grill stays Power; standalone grill is Gas.
+   * Air fryer short forms (air fry / air-fry / airfry) stay Power with air fryer.
    */
   var POWER_INVERTER_ASKS = [
     { id: "power", ask: "microwave" },
     { id: "power", ask: "air fryer" },
     { id: "power", ask: "airfryer" },
+    { id: "power", ask: "air fry" },
+    { id: "power", ask: "air-fry" },
+    { id: "power", ask: "airfry" },
     { id: "power", ask: "coffee machine" },
     { id: "power", ask: "nespresso" },
     { id: "power", ask: "wonder oven" },
@@ -258,7 +262,7 @@
     "chargers?",
     "coffee(?:\\s+(?:machines?|makers?))?",
     "nespressos?",
-    "air[\\s-]?fryers?",
+    "air[\\s-]?fry(?:ers?)?",
     "wonder\\s+ovens?",
     "slow\\s+cookers?",
     "radios?",
