@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Rasterise assets/logo.svg to 32 / 180 / 512 PNG favicons."""
+"""Fallback rasteriser for 32 / 180 / 512 PNG favicons from assets/logo.svg.
+
+Wayne's unlocked pine rasters (tools-32 / tools-180 / tools-512) are the
+shipped files. Only re-run this if those exports are missing."""
 
 from pathlib import Path
 

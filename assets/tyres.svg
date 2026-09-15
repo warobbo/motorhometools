@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Tyres">
+  <!-- Shared family: pine tile + white wheel. Green is #1e4f43. -->
+  <rect width="64" height="64" rx="14" fill="#1e4f43"/>
+  <circle cx="32" cy="32" r="16.6" fill="none" stroke="#fff" stroke-width="5.4"/>
+  <circle cx="32" cy="32" r="5.6" fill="#fff"/>
+  <path stroke="#fff" stroke-width="3.4" stroke-linecap="round" d="M32 17.8v6.4M32 39.8v6.4M17.8 32h6.4M39.8 32h6.4"/>
+</svg>
