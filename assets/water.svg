@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Water">
+  <!-- Shared family: pine tile + white drop. Green is #1e4f43. -->
+  <rect width="64" height="64" rx="14" fill="#1e4f43"/>
+  <path fill="#fff" d="M32 12.2c10.2 13.8 14.2 20.2 14.2 26.2a14.2 14.2 0 1 1-28.4 0c0-6 4-12.4 14.2-26.2z"/>
+</svg>
