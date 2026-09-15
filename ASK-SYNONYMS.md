@@ -19,7 +19,7 @@ When a hub adds a starter appliance or default label, update `assets/router.js` 
 ## Routing locks (do not reverse)
 
 - Bare fridge / freezer / coolbox / oven → **Power**. Gas / absorption / 3-way fridge → **Gas**.
-- Standalone grill → **Gas** (with BBQ). Electric grill / air fryer / Wonder Oven → **Power**.
+- Standalone grill → **Gas** (with BBQ). Electric grill / air fryer / air fry / Wonder Oven → **Power**.
 - Bare axle / axles / front axle / rear axle → **Payload**.
 - Radio / stereo / bluetooth / speaker / charger / USB → **Power** (12 V leisure kit, same bucket as lights, TV, phone charge).
 - Diesel heater / heater fan / 12 V pump → **Power** (electrical draw). Gas heater / heating / BBQ / grill stay **Gas**.
