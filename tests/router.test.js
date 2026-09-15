@@ -202,7 +202,7 @@ assert.ok(POWER_INVERTER_ASKS.length >= 10, "expected inverter-load Ask rows");
 POWER_INVERTER_ASKS.forEach(function (row) {
   expectRoute(row.ask, row.id);
 });
-assert.ok(POWER_UK_ASKS.length >= 6, "expected UK Power extras");
+assert.ok(POWER_UK_ASKS.length >= 16, "expected 12V leisure-electric Ask rows");
 POWER_UK_ASKS.forEach(function (row) {
   expectRoute(row.ask, row.id);
 });
@@ -240,9 +240,21 @@ const ASK_REGRESSION = [
   ["induction", "power"],
   ["radio", "power"],
   ["stereo", "power"],
+  ["bluetooth", "power"],
+  ["speaker", "power"],
+  ["charger", "power"],
+  ["phone charger", "power"],
+  ["usb charger", "power"],
+  ["usb", "power"],
   ["tv", "power"],
+  ["television", "power"],
   ["lights", "power"],
+  ["led", "power"],
+  ["fan", "power"],
+  ["heater fan", "power"],
+  ["diesel heater", "power"],
   ["pump", "power"],
+  ["12v socket", "power"],
   ["slow cooker", "power"],
   ["electric grill", "power"],
   ["electric bbq", "power"],
@@ -304,6 +316,12 @@ assert.equal(routeAsk("oven").href, "https://motorhomepower.co.uk/");
 assert.equal(routeAsk("grill").id, "gas");
 assert.equal(routeAsk("grill").href, "https://motorhomewater.co.uk/gas.html");
 assert.equal(routeAsk("radio").id, "power");
+assert.equal(routeAsk("radio").href, "https://motorhomepower.co.uk/");
+assert.equal(routeAsk("Radio").id, "power");
+assert.equal(routeAsk("bluetooth").id, "power");
+assert.equal(routeAsk("speaker").id, "power");
+assert.equal(routeAsk("charger").id, "power");
+assert.equal(routeAsk("diesel heater").id, "power");
 assert.equal(routeAsk("axle").id, "payload");
 assert.equal(routeAsk("axle").href, "https://motorhomepayload.co.uk/");
 assert.equal(routeAsk("coolbox").id, "power");
