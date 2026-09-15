@@ -60,6 +60,9 @@ test("GET /guides/ and Wave 2 pages return Payload, Power and Water", async func
     const placement = await fetch("http://127.0.0.1:" + port + "/guides/where-you-put-it.html");
     const placementHtml = await placement.text();
     assert.equal(placement.status, 200);
+    assert.match(placementHtml, /<title>Motorhome rear axle overload: under MAM, over on one axle<\/title>/);
+    assert.match(placementHtml, /It’s not just the total weight — it’s where you put it/);
+    assert.match(indexHtml, /Rear axle overload: under MAM but over on one axle/);
     assert.match(placementHtml, /example only/i);
     assert.match(placementHtml, /where-you-put-it-diagram\.png/);
     assert.match(placementHtml, /2,100 kg/);
