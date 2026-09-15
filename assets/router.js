@@ -159,17 +159,30 @@
   ];
 
   /**
-   * UK PAA extras people type for 12 V / 230 V leisure kit.
-   * Grounded in Power hub loads, not random SEO. Tests walk this list.
+   * 12 V / leisure-electric family people type (same bucket as lights, TV,
+   * phone charge). Includes Power starter labels plus UK van electrics.
+   * Diesel heater is a 12 V draw → Power, not Gas. Tests walk this list.
    */
   var POWER_UK_ASKS = [
     { id: "power", ask: "radio" },
     { id: "power", ask: "stereo" },
+    { id: "power", ask: "bluetooth" },
+    { id: "power", ask: "speaker" },
+    { id: "power", ask: "charger" },
+    { id: "power", ask: "phone charger" },
+    { id: "power", ask: "usb charger" },
+    { id: "power", ask: "usb" },
+    { id: "power", ask: "tv" },
+    { id: "power", ask: "television" },
+    { id: "power", ask: "lights" },
+    { id: "power", ask: "led" },
+    { id: "power", ask: "fan" },
+    { id: "power", ask: "heater fan" },
+    { id: "power", ask: "diesel heater" },
+    { id: "power", ask: "pump" },
     { id: "power", ask: "freezer" },
     { id: "power", ask: "hob" },
-    { id: "power", ask: "toaster" },
-    { id: "power", ask: "usb" },
-    { id: "power", ask: "led" }
+    { id: "power", ask: "toaster" }
   ];
 
   /**
@@ -208,8 +221,8 @@
   /**
    * Daily-power + inverter-load name tokens (regex fragments).
    * Seeded from power-tool defaults.js starterSet() + inverterStarterSet(),
-   * plus UK PAA extras (oven, radio, stereo, coolbox, nespresso).
-   * Used for Daily Power and for “battery for X” / “motorhome X”.
+   * plus UK PAA extras (oven, radio, stereo, bluetooth, speaker, charger,
+   * coolbox, nespresso). Used for Daily Power and for “battery for X”.
    */
   var POWER_APPLIANCE_TOKENS = [
     "fridges?",
@@ -220,8 +233,12 @@
     "leds?",
     "pumps?",
     "heaters?",
+    "heater\\s+fans?",
+    "diesel\\s+heaters?",
     "phones?",
+    "phone\\s+charg(?:e|ers?)",
     "tablets?",
+    "tablet\\s+charg(?:e|ers?)",
     "laptops?",
     "fans?",
     "maxxfans?",
@@ -237,6 +254,8 @@
     "toasters?",
     "hair[\\s-]?dryers?",
     "usbs?",
+    "usb\\s+chargers?",
+    "chargers?",
     "coffee(?:\\s+(?:machines?|makers?))?",
     "nespressos?",
     "air[\\s-]?fryers?",
@@ -244,6 +263,10 @@
     "slow\\s+cookers?",
     "radios?",
     "stereos?",
+    "bluetooth",
+    "speakers?",
+    "12\\s*-?v\\s+sockets?",
+    "leisure\\s+sockets?",
     "blowers?"
   ];
 
