@@ -133,6 +133,7 @@ Static HTML under `guides/`. Copy locked from Wayne’s drafts; polished for UK 
 | Index | `/guides/` |
 | Weighbridge how-to | `/guides/weighbridge-how-to.html` |
 | Axle weights | `/guides/axle-weights-explained.html` |
+| Where you put it (rear axle) | `/guides/where-you-put-it.html` |
 | MAM / Mass in Service / payload | `/guides/mam-mass-in-service-payload.html` |
 | Daily power budget | `/guides/daily-power-budget.html` |
 | Leisure battery size | `/guides/battery-size-plain-english.html` |

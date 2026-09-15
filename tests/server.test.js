@@ -31,6 +31,14 @@ const WAVE2_GUIDES = [
   "/guides/cassette-toilet-empty.html"
 ];
 
+test("serves the where-you-put-it diagram asset", function () {
+  const filePath = resolvePublicFile("/guides/assets/where-you-put-it-diagram.png");
+  assert.equal(
+    filePath,
+    path.join(__dirname, "..", "guides", "assets", "where-you-put-it-diagram.png")
+  );
+});
+
 test("GET /guides/ and Wave 2 pages return Payload, Power and Water", async function () {
   await new Promise(function (resolve) {
     server.listen(0, "127.0.0.1", resolve);
@@ -41,11 +49,24 @@ test("GET /guides/ and Wave 2 pages return Payload, Power and Water", async func
     const indexHtml = await index.text();
     assert.equal(index.status, 200);
     assert.match(indexHtml, /How to weigh a motorhome/);
+    assert.match(indexHtml, /where-you-put-it.html/);
+    assert.match(indexHtml, /It’s not just total weight — where you put it/);
     assert.match(indexHtml, /Daily power budget/);
     assert.match(indexHtml, /Cassette toilet empty/);
     assert.match(indexHtml, /id="power-guides-title"/);
     assert.match(indexHtml, /id="water-guides-title"/);
     assert.doesNotMatch(indexHtml, /Motorhome payload guides/);
+
+    const placement = await fetch("http://127.0.0.1:" + port + "/guides/where-you-put-it.html");
+    const placementHtml = await placement.text();
+    assert.equal(placement.status, 200);
+    assert.match(placementHtml, /example only/i);
+    assert.match(placementHtml, /where-you-put-it-diagram\.png/);
+    assert.match(placementHtml, /2,100 kg/);
+    assert.match(placementHtml, /OVERLOAD/);
+    assert.match(placementHtml, /motorhomepayload\.co\.uk/);
+    assert.match(placementHtml, /We do not invent axle splits/);
+    assert.doesNotMatch(placementHtml, /best campsite|campsites near|directory of sites/i);
 
     for (const pathName of WAVE2_GUIDES) {
       const response = await fetch("http://127.0.0.1:" + port + pathName);

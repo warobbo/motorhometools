@@ -621,6 +621,35 @@ input:focus-visible {
   letter-spacing: -0.02em;
 }
 
+.prose h3 {
+  margin: 1.15rem 0 0;
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
+}
+
+.guide-figure {
+  margin: 0.85rem 0 0;
+  padding: 0.7rem;
+  background: var(--card);
+  border: 1px solid var(--card-edge);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.guide-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.guide-figure figcaption {
+  margin: 0.65rem 0.1rem 0.1rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 .prose p,
 .prose li {
   color: var(--ink);
@@ -684,6 +713,36 @@ input:focus-visible {
 .guide-table td:first-child {
   font-weight: 700;
   width: 42%;
+}
+
+.guide-table caption {
+  caption-side: top;
+  padding: 0 0.15rem 0.55rem;
+  color: var(--muted);
+  font-size: 0.88rem;
+  text-align: left;
+}
+
+.guide-table--example {
+  min-width: 22rem;
+  overflow: visible;
+}
+
+.guide-table--example th[scope="row"] {
+  background: transparent;
+  color: inherit;
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.guide-table--example tr + tr th[scope="row"] {
+  border-top: 1px solid var(--card-edge);
+}
+
+.guide-table .is-over {
+  color: #8a3b2d;
 }
 
 .guide-next,
