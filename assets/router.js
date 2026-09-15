@@ -4,12 +4,14 @@
  * Keyword router for the Motorhome Tools front door.
  * Points at an existing hub. Never invents pressures, weights or legal advice.
  *
- * Topic synonyms are seeded from the live hub default lists — not a guessed
- * short list. When a hub adds a starter appliance, Font updates the matching
- * list here in the same change. Seen twice in Ask logs → add a synonym.
+ * FONT OWNS ASK COVERAGE (Wayne lock, 15 Sep 2026).
+ * Wayne must never discover missing synonyms by typing. When a hub adds a
+ * starter item, update the matching seed list here in the same change.
+ * See ASK-SYNONYMS.md.
  *
- * Sources (12 Sep 2026):
- * - Floor: live hub default lists (Power STARTER, mhwater gas/water/tanks)
+ * Sources (15 Sep 2026):
+ * - Floor: live hub default lists (Power STARTER + inverter loads,
+ *   mhwater gas/water/tanks/cassette, Payload weight terms)
  * - Layer 2: Google-style UK search / People-also-ask phrasing (free public
  *   language only — no paid Keyword Planner). Route the page; never invent
  *   a pressure, weight or legal number in copy.
@@ -110,6 +112,25 @@
   ];
 
   /**
+   * Power inverterStarterSet() labels (defaults.js INVERTER_LOAD_IDS).
+   * Bare oven → Daily Power. Electric grill stays Power; standalone grill is Gas.
+   */
+  var POWER_INVERTER_ASKS = [
+    { id: "power", ask: "microwave" },
+    { id: "power", ask: "air fryer" },
+    { id: "power", ask: "airfryer" },
+    { id: "power", ask: "coffee machine" },
+    { id: "power", ask: "nespresso" },
+    { id: "power", ask: "wonder oven" },
+    { id: "power", ask: "oven" },
+    { id: "power", ask: "electric oven" },
+    { id: "power", ask: "electric bbq" },
+    { id: "power", ask: "electric grill" },
+    { id: "power", ask: "hairdryer" },
+    { id: "power", ask: "slow cooker" }
+  ];
+
+  /**
    * Layer 2: one UK search / PAA phrase per hub. Tests walk this list.
    * Hub defaults remain the floor; these catch “how much / motorhome X” wording.
    */
@@ -137,8 +158,96 @@
     { id: "power", ask: "fridge coolbox" }
   ];
 
-  // Daily-power appliances that turn “battery for X” into Daily Power, not Battery.
-  var POWER_LOAD = "microwaves?|fridges?|freezers?|cool[\\s-]?box(?:es)?|kettles?|induction(?:\\s+hobs?)?|hobs?|toasters?|hair[\\s-]?dryers?|lights|laptops?|tvs?|coffee(?:\\s+(?:machines?|makers?))?";
+  /**
+   * UK PAA extras people type for 12 V / 230 V leisure kit.
+   * Grounded in Power hub loads, not random SEO. Tests walk this list.
+   */
+  var POWER_UK_ASKS = [
+    { id: "power", ask: "radio" },
+    { id: "power", ask: "stereo" },
+    { id: "power", ask: "freezer" },
+    { id: "power", ask: "hob" },
+    { id: "power", ask: "toaster" },
+    { id: "power", ask: "usb" },
+    { id: "power", ask: "led" }
+  ];
+
+  /**
+   * Payload weight terms from the Payload calculator + Wave 1 guides.
+   * Clear weight words only — not bare V5 or number plate.
+   */
+  var PAYLOAD_WEIGHT_ASKS = [
+    { id: "payload", ask: "axle" },
+    { id: "payload", ask: "axles" },
+    { id: "payload", ask: "front axle" },
+    { id: "payload", ask: "rear axle" },
+    { id: "payload", ask: "weighbridge" },
+    { id: "payload", ask: "MAM" },
+    { id: "payload", ask: "MIRO" },
+    { id: "payload", ask: "Mass in Service" },
+    { id: "payload", ask: "payload" },
+    { id: "payload", ask: "overweight" },
+    { id: "payload", ask: "overload" }
+  ];
+
+  /**
+   * Gas / BBQ / LPG / bottle terms from mhwater gas-defaults + gas-calc.
+   * Standalone grill → Gas with BBQ. Electric grill is Power (above).
+   */
+  var GAS_HUB_ASKS = [
+    { id: "gas", ask: "BBQ" },
+    { id: "gas", ask: "barbecue" },
+    { id: "gas", ask: "grill" },
+    { id: "gas", ask: "Calor" },
+    { id: "gas", ask: "LPG" },
+    { id: "gas", ask: "gas bottle" },
+    { id: "gas", ask: "propane" },
+    { id: "gas", ask: "butane" }
+  ];
+
+  /**
+   * Daily-power + inverter-load name tokens (regex fragments).
+   * Seeded from power-tool defaults.js starterSet() + inverterStarterSet(),
+   * plus UK PAA extras (oven, radio, stereo, coolbox, nespresso).
+   * Used for Daily Power and for “battery for X” / “motorhome X”.
+   */
+  var POWER_APPLIANCE_TOKENS = [
+    "fridges?",
+    "freezers?",
+    "cool[\\s-]?box(?:es)?",
+    "lights",
+    "lighting",
+    "leds?",
+    "pumps?",
+    "heaters?",
+    "phones?",
+    "tablets?",
+    "laptops?",
+    "fans?",
+    "maxxfans?",
+    "maxx\\s+fans?",
+    "roof\\s+fans?",
+    "kettles?",
+    "tvs?",
+    "televisions?",
+    "monitors?",
+    "hobs?",
+    "ovens?",
+    "microwaves?",
+    "toasters?",
+    "hair[\\s-]?dryers?",
+    "usbs?",
+    "coffee(?:\\s+(?:machines?|makers?))?",
+    "nespressos?",
+    "air[\\s-]?fryers?",
+    "wonder\\s+ovens?",
+    "slow\\s+cookers?",
+    "radios?",
+    "stereos?",
+    "blowers?"
+  ];
+
+  var POWER_LOAD = POWER_APPLIANCE_TOKENS.join("|");
 
   function words(list) {
     return "\\b(?:" + list.join("|") + ")\\b";
@@ -150,8 +259,9 @@
 
   // More specific phrases first. Word boundaries so “camping” does not match amp.
   // Tyres keeps pressure / psi / bar. Heater (Power starter) is not tyre pressure.
-  // Bare fridge/freezer → Power. Gas/absorption/3-way fridge → Gas.
+  // Bare fridge/freezer/oven → Power. Gas/absorption/3-way fridge → Gas.
   // Induction/hob stay Power — do not steal electrical cooking to Gas.
+  // Standalone grill → Gas. Electric grill / Wonder Oven stay Power.
   // Layer 2 search phrases sit with the hub they belong to.
   var RULES = [
     {
@@ -185,7 +295,9 @@
           "fresh\\s+tanks?",
           "grey\\s+tanks?",
           "gray\\s+tanks?",
-          "black\\s+tanks?"
+          "black\\s+tanks?",
+          "waste\\s+tanks?",
+          "black\\s+waters?"
         ])
       ])
     },
@@ -194,7 +306,7 @@
       // fridgeGas only when the query names a gas / absorption / 3-way fridge
       re: compile([
         words([
-          "gas\\s+(?:fridges?|freezers?|hobs?|cookers?|ovens?|heaters?)",
+          "gas\\s+(?:fridges?|freezers?|hobs?|cookers?|ovens?|heaters?|grills?|bbqs?)",
           "absorption\\s+(?:fridges?|freezers?)",
           "(?:3|three)[\\s-]?way\\s+(?:fridges?|freezers?)"
         ])
@@ -212,7 +324,7 @@
           "diesel\\s+heaters?",
           "inverter\\s+idles?",
           "phantom(?:\\s+loads?)?",
-          "electric\\s+(?:bbqs?|barbecues?|barbeques?)",
+          "electric\\s+(?:bbqs?|barbecues?|barbeques?|grills?|ovens?)",
           "compressor\\s+fridges?",
           "(?:motorhomes?|campervans?|campers?)\\s+(?:" + POWER_LOAD + ")"
         ]),
@@ -224,7 +336,7 @@
     {
       id: "gas",
       // gas-defaults.js / gas-calc.js: cooking, heating, boiler, Calor, LPG, bottles
-      // BBQ → Gas. Do not list induction/hob here.
+      // BBQ / standalone grill → Gas. Do not list induction/hob here.
       re: compile([
         words([
           "gas",
@@ -238,6 +350,7 @@
           "bbqs?",
           "barbecues?",
           "barbeques?",
+          "grills?",
           "cooking",
           "heating",
           "boilers?",
@@ -245,8 +358,9 @@
           "cylinders?",
           "gaslow",
           "alugas",
-          "external\\s+(?:bbqs?|barbecues?|barbeques?)(?:\\s+points?)?",
-          "(?:bbqs?|barbecues?|barbeques?)\\s+(?:gas|points?)",
+          "trumas?",
+          "external\\s+(?:bbqs?|barbecues?|barbeques?|grills?)(?:\\s+points?)?",
+          "(?:bbqs?|barbecues?|barbeques?|grills?)\\s+(?:gas|points?)",
           "calor\\s+bottles?",
           "gas\\s+bottle\\s+days",
           "how\\s+long[\\s\\S]{0,40}(?:calor|gas)\\s+bottles?"
@@ -264,7 +378,7 @@
     },
     {
       id: "battery",
-      re: compile([words(["batter(?:y|ies)", "lifepo4", "agms?"])])
+      re: compile([words(["batter(?:y|ies)", "lifepo4", "agms?", "leisure\\s+batter(?:y|ies)"])])
     },
     {
       id: "solar",
@@ -276,48 +390,23 @@
     },
     {
       id: "power",
-      // Daily Power default: STARTER name tokens + inverter-load extras + units
+      // Daily Power default: STARTER + inverter-load extras + UK PAA + units
       re: compile([
-        words([
-          "power",
-          "amps?",
-          "amp-?hours?",
-          "amp\\s+draws?",
-          "alternators?",
-          "fridges?",
-          "freezers?",
-          "cool[\\s-]?box(?:es)?",
-          "lights",
-          "lighting",
-          "leds?",
-          "pumps?",
-          "heaters?",
-          "phones?",
-          "tablets?",
-          "laptops?",
-          "fans?",
-          "maxxfans?",
-          "maxx\\s+fans?",
-          "roof\\s+fans?",
-          "kettles?",
-          "tvs?",
-          "televisions?",
-          "monitors?",
-          "hobs?",
-          "microwaves?",
-          "toasters?",
-          "hair[\\s-]?dryers?",
-          "usbs?",
-          "coffee(?:\\s+(?:machines?|makers?))?",
-          "air[\\s-]?fryers?",
-          "wonder\\s+ovens?",
-          "blowers?",
-          "watt-?hours?",
-          "watts?",
-          "k?wh",
-          "12\\s*-?v(?:olts?)?",
-          "24\\s*-?v(?:olts?)?"
-        ]),
+        words(
+          [
+            "power",
+            "amps?",
+            "amp-?hours?",
+            "amp\\s+draws?",
+            "alternators?"
+          ].concat(POWER_APPLIANCE_TOKENS).concat([
+            "watt-?hours?",
+            "watts?",
+            "k?wh",
+            "12\\s*-?v(?:olts?)?",
+            "24\\s*-?v(?:olts?)?"
+          ])
+        ),
         "\\d\\s*k?wh\\b"
       ])
     },
@@ -334,9 +423,17 @@
           "mass\\s+in\\s+running\\s+order",
           "weighbridge",
           "weigh(?:ed|ing)?",
+          "axles?",
+          "front\\s+axles?",
+          "rear\\s+axles?",
           "axle\\s+weights?",
           "payload\\s+left",
-          "remaining\\s+payload"
+          "remaining\\s+payload",
+          "overweights?",
+          "overload(?:ed|s)?",
+          "vin\\s+plates?",
+          "plated\\s+(?:mam|weights?)",
+          "weight\\s+plates?"
         ])
       ])
     },
@@ -350,6 +447,10 @@
           "fresh\\s+waters?",
           "grey\\s+waters?",
           "gray\\s+waters?",
+          "waste\\s+waters?",
+          "grey\\s+waste",
+          "water\\s+fills?",
+          "fill\\s+(?:up\\s+)?(?:the\\s+)?waters?",
           "wash-?ups?",
           "laundr(?:y|ies)",
           "drink\\s+waters?",
@@ -389,7 +490,12 @@
   return {
     LINKS: LINKS,
     POWER_STARTER_ASKS: POWER_STARTER_ASKS,
+    POWER_INVERTER_ASKS: POWER_INVERTER_ASKS,
     POWER_COOLBOX_ASKS: POWER_COOLBOX_ASKS,
+    POWER_UK_ASKS: POWER_UK_ASKS,
+    POWER_APPLIANCE_TOKENS: POWER_APPLIANCE_TOKENS,
+    PAYLOAD_WEIGHT_ASKS: PAYLOAD_WEIGHT_ASKS,
+    GAS_HUB_ASKS: GAS_HUB_ASKS,
     SEARCH_PHRASE_ASKS: SEARCH_PHRASE_ASKS,
     routeAsk: routeAsk,
     normalise: normalise
