@@ -32,11 +32,13 @@ const WAVE2_GUIDES = [
   "/guides/cassette-toilet-empty.html"
 ];
 
-test("retired where-you-put-it diagram PNG is not in the tree", function () {
+test("serves the where-you-put-it diagram asset", function () {
+  const filePath = resolvePublicFile("/guides/assets/where-you-put-it-diagram.png");
   assert.equal(
-    fs.existsSync(path.join(__dirname, "..", "guides", "assets", "where-you-put-it-diagram.png")),
-    false
+    filePath,
+    path.join(__dirname, "..", "guides", "assets", "where-you-put-it-diagram.png")
   );
+  assert.equal(fs.existsSync(filePath), true);
 });
 
 test("GET /guides/ and Wave 2 pages return Payload, Power and Water", async function () {
@@ -66,7 +68,9 @@ test("GET /guides/ and Wave 2 pages return Payload, Power and Water", async func
     assert.match(placementHtml, /Example figures only/);
     assert.match(placementHtml, /Three example loads/);
     assert.match(placementHtml, /class="load-scenes"/);
-    assert.doesNotMatch(placementHtml, /where-you-put-it-diagram\.png/);
+    assert.match(placementHtml, /where-you-put-it-diagram\.png/);
+    assert.match(placementHtml, /guide-figure--diagram/);
+    assert.match(placementHtml, /front axle 1,550 kg/);
     assert.match(placementHtml, /1,550/);
     assert.match(placementHtml, /2,100/);
     assert.match(placementHtml, /Within limits/);

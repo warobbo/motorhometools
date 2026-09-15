@@ -650,6 +650,45 @@ input:focus-visible {
   font-size: 0.9rem;
 }
 
+.guide-figure--diagram {
+  margin: 0.85rem 0 1.05rem;
+  padding: 0;
+  overflow: visible;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.guide-figure--diagram img {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  max-height: none;
+  object-fit: contain;
+  object-position: top center;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+
+.guide-figure--diagram figcaption {
+  margin: 0.7rem 0.15rem 0;
+}
+
+@media (max-width: 40rem) {
+  .guide-figure--diagram {
+    width: calc(100% + 1.5rem);
+    max-width: none;
+    margin-left: -0.75rem;
+    margin-right: -0.75rem;
+  }
+
+  .guide-figure--diagram img {
+    border-radius: 0;
+  }
+}
+
 .guide-figure--scenes {
   padding: 0;
   background: transparent;
