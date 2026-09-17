@@ -1,0 +1,878 @@
+/**
+ * Payload-first co-pilot Ask.
+ *
+ * Parse is deterministic (optional LLM hook is off by default and may
+ * only refine slots). Maths is the Payload calculator — never invented.
+ *
+ * Source of truth: warobbo/motorhome-payload-calculator
+ * commit 611d2207d6e91d4a48fb3dc2c66d957092c59a59
+ *   app.js compute(), lib/custom-kit.js, lib/driver-payload.js,
+ *   lib/fuel-payload.js
+ *
+ * Phase A: Payload only. Power / Water handlers are stubs (Phase B / C).
+ * Tyres is HOLD — caution message only, no pressures.
+ */
+"use strict";
+
+(function (root, factory) {
+  if (typeof module === "object" && module.exports) {
+    module.exports = factory();
+  } else {
+    root.MotorhomeToolsCopilot = factory();
+  }
+})(typeof globalThis !== "undefined" ? globalThis : this, function () {
+  var PAYLOAD_HREF = "https://motorhomepayload.co.uk/";
+  var TYRES_HREF = "https://motorhomepayload.co.uk/tyres.html";
+
+  /**
+   * Full-bottle defaults from Payload DEFAULTS (gas only + steel cylinder).
+   * Stamped 6 / 9 / 13 kg is the gas; full weights are 13 / 18.5 / 28 kg.
+   */
+  var GAS_FULL_KG = { 6: 13, 9: 18.5, 13: 28 };
+  var WATER_KG_PER_L = 1;
+  var ASSUMED_DRIVER_KG = 75;
+  var FUEL_DENSITY = 0.84;
+
+  var PAYLOAD_SOURCE = {
+    repo: "warobbo/motorhome-payload-calculator",
+    commit: "611d2207d6e91d4a48fb3dc2c66d957092c59a59",
+    waterKgPerLitre: WATER_KG_PER_L,
+    gasFullKg: GAS_FULL_KG,
+    bikeDefaultKg: 14,
+    rackDefaultKg: 12,
+    note: "Ask never applies first-paint kit defaults (passengers, spare gas, toolbox). Only slots the visitor named, plus labelled gas-size defaults."
+  };
+
+  var TYRES_HOLD_MESSAGE =
+    "Tyres is on hold. We will not invent a tyre pressure, PSI, bar, or load figure. The Tyres page is a caution only — it still refuses a number if the size is not in a published table.";
+
+  var NUMBER_WORDS = {
+    a: 1,
+    an: 1,
+    one: 1,
+    two: 2,
+    three: 3,
+    four: 4,
+    five: 5,
+    six: 6
+  };
+
+  function num(value) {
+    var n = parseFloat(value);
+    return isFinite(n) ? n : 0;
+  }
+
+  function clip(value, max) {
+    var text = String(value == null ? "" : value).replace(/\s+/g, " ").trim();
+    if (!text) return "";
+    return text.length > max ? text.slice(0, max) : text;
+  }
+
+  function normalise(text) {
+    return String(text || "")
+      .toLowerCase()
+      .replace(/[’']/g, "'")
+      .replace(/[—–]/g, "-")
+      .replace(/[^a-z0-9+./\s-]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function parseQty(token) {
+    if (token == null || token === "") return null;
+    if (Object.prototype.hasOwnProperty.call(NUMBER_WORDS, token)) {
+      return NUMBER_WORDS[token];
+    }
+    var n = parseFloat(token);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  }
+
+  function fmtKg(value) {
+    var n = Number(value);
+    if (!Number.isFinite(n)) return "—";
+    var rounded = Math.round(n * 10) / 10;
+    var digits = Math.abs(rounded % 1) < 0.05 ? 0 : 1;
+    return rounded.toLocaleString("en-GB", { maximumFractionDigits: digits });
+  }
+
+  /* ----- Payload maths (sibling compute / custom-kit / driver / fuel) ----- */
+
+  function customKitItemKg(item) {
+    if (!item) return 0;
+    var kg = num(item.kg);
+    var qty = num(item.qty);
+    if (kg <= 0 || qty <= 0) return 0;
+    return kg * qty;
+  }
+
+  function customKitTotalKg(list) {
+    if (!Array.isArray(list)) return 0;
+    return list.reduce(function (sum, item) {
+      return sum + customKitItemKg(item);
+    }, 0);
+  }
+
+  function driverPayloadKg(opts) {
+    var kg = Number(opts && opts.driverKg);
+    var actual = Number.isFinite(kg) && kg > 0 ? kg : 0;
+    if (Number(opts && opts.actualEmpty) > 0) return actual;
+    var extra = actual - ASSUMED_DRIVER_KG;
+    return extra > 0 ? extra : 0;
+  }
+
+  function fuelActualKg(opts) {
+    var cap = Number(opts && opts.fuelCap);
+    var fillPct = Number(opts && opts.fuelFill);
+    var density = Number(opts && opts.fuelDensity);
+    var actual = cap * fillPct / 100 * density;
+    return Number.isFinite(actual) && actual > 0 ? actual : 0;
+  }
+
+  function fuelPayloadKg(opts) {
+    var actual = fuelActualKg(opts);
+    if (Number(opts && opts.actualEmpty) > 0) return actual;
+    var cap = Number(opts && opts.fuelCap) || 0;
+    var density = Number(opts && opts.fuelDensity) || 0;
+    var extra = actual - cap * 0.9 * density;
+    return extra > 0 ? extra : 0;
+  }
+
+  function emptyPayloadState() {
+    return {
+      mam: 0,
+      miro: 0,
+      actualEmpty: 0,
+      driverKg: 0,
+      extraAdults: 0,
+      adultKg: 0,
+      children: 0,
+      childKg: 0,
+      pets: 0,
+      petKg: 0,
+      freshCap: 0,
+      freshFill: 0,
+      greyCap: 0,
+      greyFill: 0,
+      blackCap: 0,
+      blackFill: 0,
+      fuelCap: 0,
+      fuelFill: 0,
+      fuelDensity: FUEL_DENSITY,
+      gas6: 0,
+      gas6Full: GAS_FULL_KG[6],
+      gas9: 0,
+      gas9Full: GAS_FULL_KG[9],
+      gas13: 0,
+      gas13Full: GAS_FULL_KG[13],
+      battKg: 0,
+      solarKg: 0,
+      inverterKg: 0,
+      elecExtrasKg: 0,
+      bikes: 0,
+      bikeKg: 0,
+      rackKg: 0,
+      foodPeople: 0,
+      foodKgEach: 0,
+      miscKg: 0,
+      awning: false,
+      awningKg: 0,
+      ramps: false,
+      rampsKg: 0,
+      furniture: false,
+      furnitureKg: 0,
+      generator: false,
+      generatorKg: 0,
+      toolbox: false,
+      toolboxKg: 0,
+      customItems: []
+    };
+  }
+
+  /**
+   * Same remaining-payload path as Payload app.js compute().
+   * Electrical presets (LiFePO4 / solar types) are not used in Phase A;
+   * pass explicit kg on inverterKg / elecExtrasKg / battKg / solarKg instead.
+   */
+  function computePayload(state) {
+    var s = Object.assign(emptyPayloadState(), state || {});
+    var mam = num(s.mam);
+    var miro = num(s.miro);
+    var base = num(s.actualEmpty) > 0 ? num(s.actualEmpty) : miro;
+
+    var driver = driverPayloadKg({
+      driverKg: s.driverKg,
+      actualEmpty: s.actualEmpty
+    });
+    var people = driver + num(s.extraAdults) * num(s.adultKg) +
+      num(s.children) * num(s.childKg) + num(s.pets) * num(s.petKg);
+
+    var fresh = num(s.freshCap) * num(s.freshFill) / 100;
+    var grey = num(s.greyCap) * num(s.greyFill) / 100;
+    var black = num(s.blackCap) * num(s.blackFill) / 100;
+    var fuelOpts = {
+      fuelCap: s.fuelCap,
+      fuelFill: s.fuelFill,
+      fuelDensity: s.fuelDensity || FUEL_DENSITY,
+      actualEmpty: s.actualEmpty
+    };
+    var fuel = fuelPayloadKg(fuelOpts);
+    var water = fresh + grey + black;
+    var gas = num(s.gas6) * num(s.gas6Full) + num(s.gas9) * num(s.gas9Full) +
+      num(s.gas13) * num(s.gas13Full);
+    var electrical = num(s.battKg) + num(s.solarKg) + num(s.inverterKg) + num(s.elecExtrasKg);
+    var bikes = num(s.bikes) * num(s.bikeKg) + (num(s.bikes) > 0 ? num(s.rackKg) : 0);
+    var food = num(s.foodPeople) * num(s.foodKgEach);
+    var gear = bikes + food + num(s.miscKg);
+    if (s.awning) gear += num(s.awningKg);
+    if (s.ramps) gear += num(s.rampsKg);
+    if (s.furniture) gear += num(s.furnitureKg);
+    if (s.generator) gear += num(s.generatorKg);
+    if (s.toolbox) gear += num(s.toolboxKg);
+    gear += customKitTotalKg(s.customItems);
+
+    var added = people + water + fuel + gas + electrical + gear;
+    var total = base + added;
+    var remaining = mam - total;
+    var plated = mam - miro;
+    var available = mam - base;
+    var usedPct = available > 0 ? (added / available) * 100 : 0;
+
+    return {
+      mam: mam,
+      miro: miro,
+      base: base,
+      people: people,
+      fresh: fresh,
+      grey: grey,
+      black: black,
+      water: water,
+      fuel: fuel,
+      gas: gas,
+      electrical: electrical,
+      gear: gear,
+      bikes: bikes,
+      added: added,
+      total: total,
+      remaining: remaining,
+      plated: plated,
+      usedPct: usedPct,
+      driver: driver
+    };
+  }
+
+  function payloadPrefillHref(state, opts) {
+    var s = state || {};
+    var params = new URLSearchParams();
+    var includeVanLimits = opts && opts.includeVanLimits;
+    if (includeVanLimits) {
+      ["mam", "miro", "actualEmpty"].forEach(function (key) {
+        if (num(s[key]) > 0) params.set(key, String(s[key]));
+      });
+    }
+    if (num(s.freshCap) > 0) {
+      params.set("freshCap", String(s.freshCap));
+      params.set("freshFill", String(s.freshFill || 100));
+    }
+    [
+      ["gas6", "gas6Full"],
+      ["gas9", "gas9Full"],
+      ["gas13", "gas13Full"]
+    ].forEach(function (pair) {
+      if (num(s[pair[0]]) > 0) {
+        params.set(pair[0], String(s[pair[0]]));
+        if (num(s[pair[1]]) > 0) params.set(pair[1], String(s[pair[1]]));
+      }
+    });
+    if (num(s.bikes) > 0) {
+      params.set("bikes", String(s.bikes));
+      if (num(s.bikeKg) > 0) params.set("bikeKg", String(s.bikeKg));
+      if (num(s.rackKg) > 0) params.set("rackKg", String(s.rackKg));
+    }
+    var qs = params.toString();
+    return PAYLOAD_HREF + (qs ? "?" + qs : "");
+  }
+
+  /* ----- Deterministic NL parse (LLM may only refine slots) ----- */
+
+  function blankIntent() {
+    return {
+      domain: "unknown",
+      calculable: false,
+      remainingPayloadKg: null,
+      mamKg: null,
+      miroKg: null,
+      items: [],
+      wantsFit: false,
+      wantsRemaining: false,
+      wantsUsage: false,
+      fullTank: false,
+      tyresHold: false
+    };
+  }
+
+  function isTyresHold(query) {
+    return /\b(?:tyres?|tires?|pressure|psi|cp\s+tyres?|cp\s+tires?)\b|\bbar\b/.test(query);
+  }
+
+  function isPowerLater(query) {
+    return /\b(?:batter(?:y|ies)|off-grid|diesel\s+heater|solar|inverter|amp-?hours?|k?wh)\b/.test(query) &&
+      !/\bpayload|mam|miro|weighbridge|kg\s+payload\b/.test(query);
+  }
+
+  function isWaterLater(query) {
+    return /\b(?:shower|grey\s+water|cassette|how\s+long|days?\s+of\s+water)\b/.test(query) &&
+      !/\bpayload|mam|kg\b/.test(query);
+  }
+
+  function extractLimit(query, intent) {
+    var remaining = query.match(
+      /(?:got|have|with|of)\s+(\d+(?:\.\d+)?)\s*kg\s+(?:of\s+)?(?:remaining\s+)?payload/
+    ) || query.match(
+      /(?:remaining\s+)?payload(?:\s+(?:of|left|remaining|is))?\s+(\d+(?:\.\d+)?)\s*kg/
+    ) || query.match(
+      /(\d+(?:\.\d+)?)\s*kg\s+(?:of\s+)?(?:remaining\s+)?payload/
+    ) || query.match(
+      /(\d+(?:\.\d+)?)\s*kg\s+left\b/
+    );
+    if (remaining) intent.remainingPayloadKg = num(remaining[1]);
+
+    var mam = query.match(/(\d+(?:\.\d+)?)\s*kg\s+mam\b/) ||
+      query.match(/\bmam\s+(?:of\s+|is\s+)?(\d+(?:\.\d+)?)/);
+    if (mam) intent.mamKg = num(mam[1]);
+
+    var miro = query.match(/\b(?:miro|mass\s+in\s+service)\s+(?:of\s+|is\s+)?(\d+(?:\.\d+)?)/) ||
+      query.match(/(\d+(?:\.\d+)?)\s*kg\s+(?:miro|mass\s+in\s+service)/);
+    if (miro) intent.miroKg = num(miro[1]);
+  }
+
+  function extractItems(query, intent) {
+    var used = [];
+
+    function take(re, builder) {
+      var flags = re.flags.indexOf("g") >= 0 ? re.flags : re.flags + "g";
+      var global = new RegExp(re.source, flags);
+      var match;
+      while ((match = global.exec(query))) {
+        var item = builder(match);
+        if (item) {
+          intent.items.push(item);
+          used.push(match[0]);
+        }
+      }
+    }
+
+    take(
+      /(\d+|a|an|one|two|three|four|five|six)\s+e-?bikes?(?:\s+(?:at|of|weighing)\s+(\d+(?:\.\d+)?)\s*kg(?:\s+each)?)?/g,
+      function (match) {
+        var qty = parseQty(match[1]);
+        if (!qty) return null;
+        return {
+          type: "ebike",
+          qty: qty,
+          kgEach: match[2] ? num(match[2]) : null
+        };
+      }
+    );
+
+    take(
+      /(\d+|a|an|one|two|three|four|five|six)\s+(\d+(?:\.\d+)?)\s*kg\s+e-?bikes?/g,
+      function (match) {
+        var qty = parseQty(match[1]);
+        if (!qty) return null;
+        return { type: "ebike", qty: qty, kgEach: num(match[2]) };
+      }
+    );
+
+    take(
+      /(\d+|a|an|one|two|three|four|five|six)\s+bikes?(?:\s+(?:at|of|weighing)\s+(\d+(?:\.\d+)?)\s*kg(?:\s+each)?)?/g,
+      function (match) {
+        if (/e-?bike/.test(match[0])) return null;
+        var qty = parseQty(match[1]);
+        if (!qty) return null;
+        return {
+          type: "bike",
+          qty: qty,
+          kgEach: match[2] ? num(match[2]) : null
+        };
+      }
+    );
+
+    take(
+      /(\d+(?:\.\d+)?)\s*l(?:itres?|iters?)?\s+(?:of\s+)?(?:fresh\s+)?water/g,
+      function (match) {
+        return { type: "water", litres: num(match[1]), fillPct: 100 };
+      }
+    );
+
+    take(
+      /(?:fresh\s+)?water\s+(\d+(?:\.\d+)?)\s*l(?:itres?|iters?)?/g,
+      function (match) {
+        return { type: "water", litres: num(match[1]), fillPct: 100 };
+      }
+    );
+
+    take(
+      /(\d+(?:\.\d+)?)\s*l(?:itres?|iters?)?\s+(?:full\s+)?(?:fresh\s+)?tank/g,
+      function (match) {
+        return { type: "water", litres: num(match[1]), fillPct: 100 };
+      }
+    );
+
+    take(
+      /(\d+|a|an|one|two|three|four|five|six)\s*(?:x\s*)?(6|9|13)\s*kg\s+(?:gas\s+)?bottles?/g,
+      function (match) {
+        var qty = parseQty(match[1]);
+        if (!qty) return null;
+        return { type: "gas", qty: qty, sizeKg: num(match[2]), fullKg: null };
+      }
+    );
+
+    take(
+      /(\d+|a|an|one|two|three|four|five|six)\s+gas bottles?(?:\s+(?:at|of|weighing)\s+(\d+(?:\.\d+)?)\s*kg(?:\s+each)?)?/g,
+      function (match) {
+        var qty = parseQty(match[1]);
+        if (!qty) return null;
+        return {
+          type: "gas",
+          qty: qty,
+          sizeKg: null,
+          fullKg: match[2] ? num(match[2]) : null
+        };
+      }
+    );
+
+    if (/\bfull\s+(?:fresh\s+)?(?:water\s+)?tank\b/.test(query)) {
+      intent.fullTank = true;
+      var hasWater = intent.items.some(function (item) { return item.type === "water"; });
+      if (!hasWater) {
+        intent.items.push({ type: "water", litres: null, fillPct: 100 });
+      }
+    }
+  }
+
+  function parseDeterministic(text) {
+    var intent = blankIntent();
+    var query = normalise(text);
+    if (!query) return intent;
+
+    if (isTyresHold(query)) {
+      intent.domain = "tyres";
+      intent.tyresHold = true;
+      intent.calculable = false;
+      return intent;
+    }
+
+    extractLimit(query, intent);
+    extractItems(query, intent);
+
+    intent.wantsFit = /\b(?:can i take|will (?:it|they|this) fit|enough payload|overweight|too heavy|do i have enough|fit in)\b/.test(query);
+    intent.wantsUsage = /\b(?:how much (?:of )?(?:my )?(?:remaining )?payload|how much (?:weight|payload)|does that use|use of my)\b/.test(query);
+    intent.wantsRemaining = /\b(?:what(?:'s| is) (?:my )?remaining payload|payload left|what(?:'s| is) left|how much (?:have i )?left)\b/.test(query) &&
+      !intent.wantsUsage;
+
+    var payloadWord = /\b(?:payload|mam|miro|mass in service|overweight|overload|weigh(?:bridge)?)\b/.test(query);
+    var hasItems = intent.items.length > 0;
+    var hasLimit = intent.remainingPayloadKg != null || intent.mamKg != null;
+
+    if (
+      hasItems && (payloadWord || hasLimit || intent.wantsFit || intent.wantsRemaining || intent.wantsUsage || intent.fullTank)
+    ) {
+      intent.domain = "payload";
+      intent.calculable = true;
+      return intent;
+    }
+
+    if (hasLimit && (intent.wantsFit || intent.wantsRemaining) && !hasItems) {
+      intent.domain = "payload";
+      intent.calculable = true;
+      return intent;
+    }
+
+    if (isPowerLater(query)) {
+      intent.domain = "power";
+      return intent;
+    }
+    if (isWaterLater(query)) {
+      intent.domain = "water";
+      return intent;
+    }
+    if (payloadWord) {
+      intent.domain = "payload";
+      intent.calculable = false;
+    }
+    return intent;
+  }
+
+  function mergeParse(base, extra) {
+    if (!extra || typeof extra !== "object") return base;
+    var out = Object.assign({}, base, extra);
+    if (!Array.isArray(extra.items)) out.items = base.items;
+    return out;
+  }
+
+  function parseIntent(text, opts) {
+    var parsed = parseDeterministic(text);
+    if (opts && typeof opts.llmParse === "function") {
+      return mergeParse(parsed, opts.llmParse(text, parsed));
+    }
+    return parsed;
+  }
+
+  /* ----- Domain handlers ----- */
+
+  function handleTyresHold() {
+    return {
+      handled: true,
+      domain: "tyres",
+      kind: "hold",
+      answer: TYRES_HOLD_MESSAGE,
+      assumptions: [],
+      gaps: [],
+      items: [],
+      href: TYRES_HREF,
+      hrefLabel: "Open Tyres (caution / hold only)",
+      usedKg: null,
+      remainingKg: null
+    };
+  }
+
+  function handleLaterDomain(domain, phase) {
+    return {
+      handled: false,
+      domain: domain,
+      phase: phase,
+      kind: "later",
+      answer: "",
+      assumptions: [],
+      gaps: []
+    };
+  }
+
+  function applyItems(intent) {
+    var state = emptyPayloadState();
+    var assumptions = [];
+    var gaps = [];
+    var lines = [];
+    var blocked = false;
+
+    if (intent.remainingPayloadKg != null) {
+      state.mam = intent.remainingPayloadKg;
+      state.miro = 0;
+      assumptions.push(
+        "Your “" + fmtKg(intent.remainingPayloadKg) +
+        " kg payload” is treated as remaining / available payload, not plated MAM."
+      );
+    } else if (intent.mamKg != null) {
+      state.mam = intent.mamKg;
+      state.miro = intent.miroKg != null ? intent.miroKg : 0;
+      if (intent.miroKg != null) {
+        assumptions.push(
+          "Base weight is Mass in Service " + fmtKg(intent.miroKg) +
+          " kg (V5 empty-van figure). Remaining = MAM − base − named items."
+        );
+      }
+    }
+
+    intent.items.forEach(function (item) {
+      if (item.type === "water") {
+        if (item.litres == null || !(item.litres > 0)) {
+          gaps.push("Fresh-tank capacity in litres. We do not invent a tank size.");
+          blocked = true;
+          return;
+        }
+        state.freshCap += item.litres;
+        state.freshFill = item.fillPct != null ? item.fillPct : 100;
+        var waterKg = item.litres * (state.freshFill / 100) * WATER_KG_PER_L;
+        lines.push({
+          label: fmtKg(item.litres) + " L fresh water",
+          kg: waterKg
+        });
+        assumptions.push("Water is " + WATER_KG_PER_L + " kg per litre (Payload calculator).");
+        return;
+      }
+
+      if (item.type === "gas") {
+        var qty = item.qty || 0;
+        var fullKg = item.fullKg;
+        var sizeKg = item.sizeKg;
+        if (fullKg == null && sizeKg == null) {
+          sizeKg = 6;
+          fullKg = GAS_FULL_KG[6];
+          assumptions.push(
+            qty + (qty === 1 ? " gas bottle" : " gas bottles") +
+            " treated as Payload 6 kg labelled bottles at " +
+            fmtKg(fullKg) + " kg full each (gas + steel cylinder). The stamped 6 kg is the gas only."
+          );
+        } else if (fullKg == null && GAS_FULL_KG[sizeKg] != null) {
+          fullKg = GAS_FULL_KG[sizeKg];
+          assumptions.push(
+            qty + " × " + sizeKg + " kg labelled bottle(s) at " +
+            fmtKg(fullKg) + " kg full each (Payload default, gas + cylinder)."
+          );
+        } else if (fullKg != null) {
+          assumptions.push(
+            qty + (qty === 1 ? " gas bottle" : " gas bottles") +
+            " at " + fmtKg(fullKg) + " kg full each, as typed."
+          );
+        }
+        if (sizeKg === 9) {
+          state.gas9 += qty;
+          state.gas9Full = fullKg;
+        } else if (sizeKg === 13) {
+          state.gas13 += qty;
+          state.gas13Full = fullKg;
+        } else {
+          state.gas6 += qty;
+          state.gas6Full = fullKg;
+        }
+        lines.push({
+          label: qty + " gas bottle" + (qty === 1 ? "" : "s"),
+          kg: qty * fullKg
+        });
+        return;
+      }
+
+      if (item.type === "ebike" || item.type === "bike") {
+        var kind = item.type === "ebike" ? "e-bike" : "bike";
+        if (item.kgEach == null || !(item.kgEach > 0)) {
+          gaps.push(
+            "Weight of each " + kind + " in kg. We do not invent bike or e-bike weights."
+          );
+          blocked = true;
+          return;
+        }
+        state.customItems.push({
+          id: kind + "-" + state.customItems.length,
+          name: kind,
+          kg: item.kgEach,
+          qty: item.qty
+        });
+        lines.push({
+          label: item.qty + " " + kind + (item.qty === 1 ? "" : "s") +
+            " at " + fmtKg(item.kgEach) + " kg each",
+          kg: item.qty * item.kgEach
+        });
+        assumptions.push(
+          item.qty + " " + kind + (item.qty === 1 ? "" : "s") +
+          " at " + fmtKg(item.kgEach) + " kg each, as typed. No bike rack added (not mentioned)."
+        );
+      }
+    });
+
+    return {
+      state: state,
+      assumptions: unique(assumptions),
+      gaps: unique(gaps),
+      lines: lines,
+      blocked: blocked
+    };
+  }
+
+  function unique(list) {
+    var seen = {};
+    return list.filter(function (item) {
+      if (seen[item]) return false;
+      seen[item] = true;
+      return true;
+    });
+  }
+
+  function handlePayload(intent) {
+    var built = applyItems(intent);
+    var gaps = built.gaps.slice();
+    var assumptions = built.assumptions.slice();
+    var hasAvailable = intent.remainingPayloadKg != null;
+    var hasMam = intent.mamKg != null;
+    var hasMiro = intent.miroKg != null;
+    var needsVanLimit = intent.wantsFit || (intent.wantsRemaining && !intent.wantsUsage);
+
+    if (needsVanLimit && !hasAvailable && !hasMam) {
+      gaps.unshift("Plated MAM, or your remaining payload in kg. We do not invent plated weights.");
+    } else if (needsVanLimit && hasMam && !hasMiro && !hasAvailable) {
+      gaps.unshift("Mass in Service or an empty weighbridge total, or remaining payload in kg. We do not invent the empty-van figure.");
+    }
+
+    var computed = computePayload(built.state);
+    var knownKg = computed.added;
+    var remainingKg = (hasAvailable || (hasMam && hasMiro) || (hasMam && hasAvailable))
+      ? computed.remaining
+      : null;
+    if (hasAvailable) remainingKg = computed.remaining;
+    if (hasMam && hasMiro) remainingKg = computed.remaining;
+    if (hasMam && !hasMiro && !hasAvailable) remainingKg = null;
+
+    var missingLimit = needsVanLimit && remainingKg == null;
+    var kind = "answer";
+    if (built.blocked || missingLimit || gaps.length) kind = "gap";
+    if (missingLimit && !hasAvailable && !hasMam && !built.blocked && !intent.wantsUsage) {
+      kind = "refuse";
+    }
+
+    var answer = buildPayloadAnswer({
+      intent: intent,
+      kind: kind,
+      knownKg: knownKg,
+      remainingKg: remainingKg,
+      lines: built.lines,
+      gaps: gaps,
+      blocked: built.blocked,
+      missingLimit: missingLimit
+    });
+
+    assumptions.push("Planning estimate only. Weigh the van. We do not invent plated weights or legal limits.");
+
+    return {
+      handled: true,
+      domain: "payload",
+      kind: kind,
+      answer: answer,
+      assumptions: unique(assumptions),
+      gaps: unique(gaps),
+      items: built.lines,
+      usedKg: knownKg,
+      remainingKg: remainingKg,
+      payloadState: built.state,
+      computed: computed,
+      href: payloadPrefillHref(built.state, {
+        includeVanLimits: intent.mamKg != null
+      }),
+      hrefLabel: "Open Payload (enter the same figures — the live page may not apply query prefill yet)"
+    };
+  }
+
+  function buildPayloadAnswer(opts) {
+    var gaps = opts.gaps;
+    var known = fmtKg(opts.knownKg);
+    var left = opts.remainingKg != null ? fmtKg(opts.remainingKg) : null;
+    var limit = opts.intent.remainingPayloadKg != null
+      ? fmtKg(opts.intent.remainingPayloadKg)
+      : null;
+
+    if (opts.kind === "refuse") {
+      return "We cannot calculate remaining payload without your plated MAM, or a remaining-payload figure in kg. We do not invent plated weights. Open Payload and enter the plate / V5 figures.";
+    }
+
+    if (opts.blocked && gaps.length) {
+      var knownBit = opts.knownKg > 0
+        ? " Known items use " + known + " kg" +
+          (left != null ? ", which would leave " + left + " kg of your " + limit + " kg remaining payload before the missing items." : ".")
+        : "";
+      return "We cannot say yet whether that load fits. " + gaps[0] + knownBit;
+    }
+
+    if (opts.missingLimit) {
+      return "Those named items use " + known + " kg. We cannot say what is left without plated MAM and Mass in Service, or your remaining payload in kg. We do not invent those figures.";
+    }
+
+    if (opts.intent.wantsUsage && (opts.remainingKg == null) && opts.knownKg > 0 && !opts.intent.wantsFit) {
+      return "That uses " + known + " kg of payload" +
+        (opts.lines.length === 1 ? " (" + opts.lines[0].label + ")." : ".") +
+        " We do not invent your remaining payload — add that figure if you want what would be left.";
+    }
+
+    if (opts.remainingKg != null && limit) {
+      if (opts.remainingKg < 0) {
+        return "Those items use " + known + " kg — " +
+          fmtKg(Math.abs(opts.remainingKg)) +
+          " kg over the " + limit + " kg remaining payload you gave. Planning estimate only; weigh the van.";
+      }
+      return "Those items use " + known + " kg of your " + limit +
+        " kg remaining payload, leaving " + left + " kg. Planning estimate only; weigh the van.";
+    }
+
+    if (opts.remainingKg != null && opts.intent.mamKg != null) {
+      if (opts.remainingKg < 0) {
+        return "Named items plus the empty-van base come to " +
+          fmtKg(opts.knownKg + (opts.intent.miroKg || 0)) +
+          " kg against MAM " + fmtKg(opts.intent.mamKg) +
+          " kg — " + fmtKg(Math.abs(opts.remainingKg)) +
+          " kg over. Planning estimate only; weigh the van.";
+      }
+      return "Remaining payload is " + left + " kg after the named items (MAM " +
+        fmtKg(opts.intent.mamKg) + " kg). Planning estimate only; weigh the van.";
+    }
+
+    if (opts.knownKg > 0) {
+      return "Those named items use " + known + " kg. Add remaining payload or MAM + Mass in Service if you want what would be left.";
+    }
+
+    return "We could not add any named weights. Ask with kg, litres, or gas-bottle size — we will not invent missing figures.";
+  }
+
+  var DOMAINS = {
+    payload: handlePayload,
+    tyres: handleTyresHold,
+    power: function () { return handleLaterDomain("power", "B"); },
+    water: function () { return handleLaterDomain("water", "C"); }
+  };
+
+  function handleAsk(text, opts) {
+    var question = clip(text, 280);
+    var intent = parseIntent(question, opts);
+
+    if (intent.tyresHold || intent.domain === "tyres") {
+      return Object.assign(handleTyresHold(), { intent: intent });
+    }
+
+    if (intent.domain === "payload" && intent.calculable) {
+      return Object.assign(handlePayload(intent), { intent: intent });
+    }
+
+    if (intent.domain === "power") {
+      return Object.assign(DOMAINS.power(), { intent: intent });
+    }
+    if (intent.domain === "water") {
+      return Object.assign(DOMAINS.water(), { intent: intent });
+    }
+
+    return {
+      handled: false,
+      domain: intent.domain || "unknown",
+      kind: "unmatched",
+      intent: intent,
+      answer: "",
+      assumptions: [],
+      gaps: []
+    };
+  }
+
+  function publicResult(result) {
+    if (!result) return null;
+    return {
+      handled: !!result.handled,
+      domain: result.domain || "unknown",
+      kind: result.kind || "unmatched",
+      answer: result.answer || "",
+      assumptions: result.assumptions || [],
+      gaps: result.gaps || [],
+      items: result.items || [],
+      usedKg: result.usedKg == null ? null : result.usedKg,
+      remainingKg: result.remainingKg == null ? null : result.remainingKg,
+      href: result.href || null,
+      hrefLabel: result.hrefLabel || null,
+      phase: result.phase || null
+    };
+  }
+
+  return {
+    PAYLOAD_SOURCE: PAYLOAD_SOURCE,
+    PAYLOAD_HREF: PAYLOAD_HREF,
+    TYRES_HREF: TYRES_HREF,
+    TYRES_HOLD_MESSAGE: TYRES_HOLD_MESSAGE,
+    GAS_FULL_KG: GAS_FULL_KG,
+    WATER_KG_PER_L: WATER_KG_PER_L,
+    DOMAINS: Object.keys(DOMAINS),
+    num: num,
+    normalise: normalise,
+    emptyPayloadState: emptyPayloadState,
+    computePayload: computePayload,
+    customKitTotalKg: customKitTotalKg,
+    customKitItemKg: customKitItemKg,
+    driverPayloadKg: driverPayloadKg,
+    fuelPayloadKg: fuelPayloadKg,
+    payloadPrefillHref: payloadPrefillHref,
+    parseIntent: parseIntent,
+    handleAsk: handleAsk,
+    publicResult: publicResult
+  };
+});

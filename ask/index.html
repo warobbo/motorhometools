@@ -41,7 +41,7 @@
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png?v=20260915logo" sizes="180x180">
     <link rel="icon" href="../assets/icon-512.png?v=20260915logo" type="image/png" sizes="512x512">
     <!-- ASSET_VERSION=20260915ai — bump this query on CSS/JS to force-refresh cached assets. -->
-    <link rel="stylesheet" href="../assets/styles.css?v=20260915ai">
+    <link rel="stylesheet" href="../assets/styles.css?v=20260917a">
   </head>
   <body>
     <a class="skip-link" href="#ask">Skip to Ask</a>
@@ -82,7 +82,8 @@
           </div>
         </form>
         <p class="ask-status" id="ask-status" role="status" aria-live="polite"></p>
-        <p class="ask-honesty">We don’t invent tyre pressures, weights or legal advice. We open the right page or pass the question to the site owner.</p>
+        <div class="ask-answer" id="ask-answer" hidden></div>
+        <p class="ask-honesty">We don’t invent tyre pressures, weights or legal advice. Payload questions can get an estimate from the calculator maths, with assumptions and gaps listed. Tyres is on hold.</p>
       </section>
     </main>
 
@@ -109,6 +110,7 @@
     </footer>
 
     <script src="../assets/router.js?v=20260915t"></script>
-    <script src="../assets/app.js?v=20260915ai"></script>
+    <script src="../assets/copilot.js?v=20260917a"></script>
+    <script src="../assets/app.js?v=20260917a"></script>
   </body>
 </html>

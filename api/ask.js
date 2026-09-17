@@ -8,6 +8,7 @@
  */
 
 const ask = require("../lib/ask");
+const copilot = require("../lib/copilot");
 
 function send(res, status, body) {
   res.statusCode = status;
@@ -59,7 +60,8 @@ async function handleAsk(req, res) {
     send(res, 200, {
       ok: true,
       mailto: email || null,
-      capture: true
+      capture: true,
+      copilot: "payload"
     });
     return;
   }
@@ -93,6 +95,16 @@ async function handleAsk(req, res) {
   }
   if (built.ignored) {
     send(res, 200, { ok: true, ignored: true });
+    return;
+  }
+
+  const copilotResult = copilot.handleAsk(built.record.question);
+  if (copilotResult.handled) {
+    send(res, 200, {
+      ok: true,
+      saved: false,
+      copilot: copilot.publicResult(copilotResult)
+    });
     return;
   }
 
