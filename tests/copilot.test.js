@@ -107,6 +107,8 @@ test("golden: 720 kg payload + 2×22 kg e-bikes + 100 L water + 2 gas bottles ma
   assert.match(result.href, /^https:\/\/motorhomepayload\.co\.uk\/\?/);
   assert.match(result.href, /freshCap=100/);
   assert.match(result.href, /gas6=2/);
+  assert.doesNotMatch(result.href, /(?:\?|&)mam=/);
+  assert.doesNotMatch(result.href, /gas9Full/);
 
   const sibling = siblingCompute({
     mam: 720,

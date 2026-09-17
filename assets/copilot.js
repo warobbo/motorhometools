@@ -260,19 +260,34 @@
     };
   }
 
-  function payloadPrefillHref(state) {
+  function payloadPrefillHref(state, opts) {
     var s = state || {};
     var params = new URLSearchParams();
-    var keys = [
-      "mam", "miro", "actualEmpty", "freshCap", "freshFill", "greyCap", "greyFill",
-      "blackCap", "blackFill", "gas6", "gas6Full", "gas9", "gas9Full", "gas13",
-      "gas13Full", "bikes", "bikeKg", "rackKg"
-    ];
-    keys.forEach(function (key) {
-      var value = s[key];
-      if (value == null || value === "" || value === 0 || value === false) return;
-      params.set(key, String(value));
+    var includeVanLimits = opts && opts.includeVanLimits;
+    if (includeVanLimits) {
+      ["mam", "miro", "actualEmpty"].forEach(function (key) {
+        if (num(s[key]) > 0) params.set(key, String(s[key]));
+      });
+    }
+    if (num(s.freshCap) > 0) {
+      params.set("freshCap", String(s.freshCap));
+      params.set("freshFill", String(s.freshFill || 100));
+    }
+    [
+      ["gas6", "gas6Full"],
+      ["gas9", "gas9Full"],
+      ["gas13", "gas13Full"]
+    ].forEach(function (pair) {
+      if (num(s[pair[0]]) > 0) {
+        params.set(pair[0], String(s[pair[0]]));
+        if (num(s[pair[1]]) > 0) params.set(pair[1], String(s[pair[1]]));
+      }
     });
+    if (num(s.bikes) > 0) {
+      params.set("bikes", String(s.bikes));
+      if (num(s.bikeKg) > 0) params.set("bikeKg", String(s.bikeKg));
+      if (num(s.rackKg) > 0) params.set("rackKg", String(s.rackKg));
+    }
     var qs = params.toString();
     return PAYLOAD_HREF + (qs ? "?" + qs : "");
   }
@@ -718,7 +733,9 @@
       remainingKg: remainingKg,
       payloadState: built.state,
       computed: computed,
-      href: payloadPrefillHref(built.state),
+      href: payloadPrefillHref(built.state, {
+        includeVanLimits: intent.mamKg != null
+      }),
       hrefLabel: "Open Payload (enter the same figures — the live page may not apply query prefill yet)"
     };
   }
