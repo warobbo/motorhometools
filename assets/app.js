@@ -2,6 +2,7 @@
 
 (function () {
   var router = window.MotorhomeToolsRouter;
+  var copilot = window.MotorhomeToolsCopilot;
   if (!router) return;
 
   var STORAGE_KEY = "motorhometools.unansweredAsks";
@@ -13,9 +14,67 @@
   var emailInput = document.getElementById("ask-email");
   var honeypot = document.getElementById("ask-website");
   var statusEl = document.getElementById("ask-status");
+  var answerEl = document.getElementById("ask-answer");
   var submitBtn = document.getElementById("ask-submit");
 
   if (!form || !questionInput || !statusEl) return;
+
+  function clearAnswer() {
+    if (!answerEl) return;
+    answerEl.hidden = true;
+    answerEl.textContent = "";
+    answerEl.removeAttribute("data-kind");
+  }
+
+  function addList(title, items) {
+    if (!items || !items.length) return;
+    var heading = document.createElement("h3");
+    heading.textContent = title;
+    answerEl.appendChild(heading);
+    var list = document.createElement("ul");
+    items.forEach(function (item) {
+      var li = document.createElement("li");
+      li.textContent = item;
+      list.appendChild(li);
+    });
+    answerEl.appendChild(list);
+  }
+
+  function showCopilot(result) {
+    var kind = result.kind === "answer" ? "ok" : "warn";
+    setStatus(
+      result.domain === "tyres"
+        ? "Tyres is on hold — no invented pressure."
+        : "Payload estimate from the calculator maths. Assumptions and gaps are listed.",
+      kind
+    );
+    if (!answerEl) return;
+    answerEl.hidden = false;
+    answerEl.dataset.kind = kind;
+    answerEl.textContent = "";
+
+    var lead = document.createElement("p");
+    lead.className = "ask-answer-lead";
+    lead.textContent = result.answer || "";
+    answerEl.appendChild(lead);
+
+    addList("Assumptions", result.assumptions);
+    addList("Gaps", result.gaps);
+
+    if (result.href && result.hrefLabel) {
+      var p = document.createElement("p");
+      var link = document.createElement("a");
+      link.href = result.href;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = result.hrefLabel;
+      p.appendChild(link);
+      answerEl.appendChild(p);
+    }
+    if (answerEl.scrollIntoView) {
+      answerEl.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+  }
 
   function setStatus(message, kind, extraLink) {
     statusEl.textContent = message;
@@ -134,16 +193,27 @@
     if (submitBtn) submitBtn.textContent = "Find it";
 
     if (honeypot && honeypot.value) {
+      clearAnswer();
       setStatus("We’ve noted your question.", "ok");
       return;
     }
 
     var question = String(questionInput.value || "").trim();
     if (!question) {
+      clearAnswer();
       setStatus("Type a few words so we can open the right page.", "warn");
       questionInput.focus();
       return;
     }
+
+    if (copilot) {
+      var copilotResult = copilot.publicResult(copilot.handleAsk(question));
+      if (copilotResult && copilotResult.handled) {
+        showCopilot(copilotResult);
+        return;
+      }
+    }
+    clearAnswer();
 
     var match = router.routeAsk(question);
     if (match) {

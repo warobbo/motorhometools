@@ -18,6 +18,8 @@ The Ask box routes **topic synonym lists** per hub, seeded from the live hub def
 
 **Process:** hub defaults are the floor. Layer 2 is free UK search / People-also-ask phrasing (no paid Keyword Planner). Seen twice in Ask logs → add a synonym in `assets/router.js`. Wayne must not discover misses by typing. Ask opens a page; it never invents a pressure, weight or legal number.
 
+**Co-pilot (Phase A):** multi-factor **Payload** questions (remaining kg + water / gas / bikes) are parsed, then answered from the Payload calculator maths — result + assumptions + gaps. Tyres questions get a HOLD / caution message only. Power and Water still open those hubs (Phases B and C). See **[COPILOT-ASK.md](COPILOT-ASK.md)**.
+
 If nothing matches, the question (and optional email) is passed to the site owner via `POST /api/ask`. It does **not** invent tyre pressures, weights or legal advice. Replies are not automated.
 
 **Guides** on the home page links to Payload, Power and Water articles. **Route** stays a coming-soon placeholder — not a route engine, and it does not link out. Tyres guides stay parked (TRA).

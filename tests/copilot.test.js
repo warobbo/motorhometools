@@ -1,0 +1,255 @@
+"use strict";
+
+/**
+ * Golden tests for Phase A Payload-first co-pilot Ask.
+ * Maths must match warobbo/motorhome-payload-calculator compute() /
+ * custom-kit for the same inputs. Never invent MAM, bike kg, or tyre pressures.
+ */
+
+const { test } = require("node:test");
+const assert = require("node:assert/strict");
+const copilot = require("../lib/copilot");
+const handleAsk = require("../api/ask");
+const ask = require("../lib/ask");
+
+/** Sibling compute() for the fields Phase A uses (app.js + custom-kit). */
+function siblingCompute(state) {
+  function num(value) {
+    const n = parseFloat(value);
+    return isFinite(n) ? n : 0;
+  }
+  const s = Object.assign({
+    mam: 0, miro: 0, actualEmpty: 0,
+    driverKg: 0, extraAdults: 0, adultKg: 0, children: 0, childKg: 0, pets: 0, petKg: 0,
+    freshCap: 0, freshFill: 0, greyCap: 0, greyFill: 0, blackCap: 0, blackFill: 0,
+    fuelCap: 0, fuelFill: 0, fuelDensity: 0.84,
+    gas6: 0, gas6Full: 13, gas9: 0, gas9Full: 18.5, gas13: 0, gas13Full: 28,
+    inverterKg: 0, elecExtrasKg: 0,
+    bikes: 0, bikeKg: 0, rackKg: 0,
+    foodPeople: 0, foodKgEach: 0, miscKg: 0,
+    awning: false, ramps: false, furniture: false, generator: false, toolbox: false,
+    customItems: []
+  }, state);
+  const mam = num(s.mam);
+  const miro = num(s.miro);
+  const base = num(s.actualEmpty) > 0 ? num(s.actualEmpty) : miro;
+  const fresh = num(s.freshCap) * num(s.freshFill) / 100;
+  const grey = num(s.greyCap) * num(s.greyFill) / 100;
+  const black = num(s.blackCap) * num(s.blackFill) / 100;
+  const water = fresh + grey + black;
+  const gas = num(s.gas6) * num(s.gas6Full) + num(s.gas9) * num(s.gas9Full) + num(s.gas13) * num(s.gas13Full);
+  const bikes = num(s.bikes) * num(s.bikeKg) + (num(s.bikes) > 0 ? num(s.rackKg) : 0);
+  const custom = copilot.customKitTotalKg(s.customItems);
+  const added = water + gas + bikes + custom;
+  return {
+    water: water,
+    gas: gas,
+    added: added,
+    remaining: mam - (base + added)
+  };
+}
+
+function fakeRes() {
+  return {
+    statusCode: 200,
+    headers: {},
+    body: "",
+    setHeader: function (key, value) { this.headers[key] = value; },
+    end: function (chunk) { this.body = chunk == null ? "" : String(chunk); }
+  };
+}
+
+test("Payload maths matches sibling compute() for the same state", function () {
+  const state = {
+    mam: 720,
+    miro: 0,
+    freshCap: 100,
+    freshFill: 100,
+    gas6: 2,
+    gas6Full: 13,
+    customItems: [{ name: "e-bike", kg: 22, qty: 2 }]
+  };
+  const ours = copilot.computePayload(state);
+  const sibling = siblingCompute(state);
+  assert.equal(ours.water, 100);
+  assert.equal(ours.gas, 26);
+  assert.equal(ours.added, 170);
+  assert.equal(ours.remaining, 550);
+  assert.deepEqual(
+    { water: ours.water, gas: ours.gas, added: ours.added, remaining: ours.remaining },
+    sibling
+  );
+});
+
+test("custom kit matches sibling: blank kg adds nothing", function () {
+  assert.equal(copilot.customKitItemKg({ name: "E-bike", kg: 22, qty: 2 }), 44);
+  assert.equal(copilot.customKitItemKg({ name: "Mystery box", kg: "", qty: 1 }), 0);
+  assert.equal(copilot.customKitTotalKg(undefined), 0);
+});
+
+test("golden: 720 kg payload + 2×22 kg e-bikes + 100 L water + 2 gas bottles matches tool", function () {
+  const question = "I've got 720 kg payload — can I take 2 e-bikes at 22 kg each, 100 L water and 2 gas bottles?";
+  const result = copilot.handleAsk(question);
+  assert.equal(result.handled, true);
+  assert.equal(result.domain, "payload");
+  assert.equal(result.kind, "answer");
+  assert.equal(result.usedKg, 170);
+  assert.equal(result.remainingKg, 550);
+  assert.match(result.answer, /170/);
+  assert.match(result.answer, /550/);
+  assert.ok(result.assumptions.some(function (line) {
+    return /1 kg per litre/i.test(line);
+  }));
+  assert.ok(result.assumptions.some(function (line) {
+    return /6 kg/.test(line) && /13/.test(line);
+  }));
+  assert.equal(result.gaps.length, 0);
+  assert.match(result.href, /^https:\/\/motorhomepayload\.co\.uk\/\?/);
+  assert.match(result.href, /freshCap=100/);
+  assert.match(result.href, /gas6=2/);
+
+  const sibling = siblingCompute({
+    mam: 720,
+    freshCap: 100,
+    freshFill: 100,
+    gas6: 2,
+    gas6Full: 13,
+    customItems: [{ name: "e-bike", kg: 22, qty: 2 }]
+  });
+  assert.equal(result.usedKg, sibling.added);
+  assert.equal(result.remainingKg, sibling.remaining);
+});
+
+test("golden: unknown e-bike weight is a gap — no invented kg", function () {
+  const question = "I've got 720 kg payload — can I take 2 e-bikes, 100 L water and 2 gas bottles?";
+  const result = copilot.handleAsk(question);
+  assert.equal(result.handled, true);
+  assert.equal(result.domain, "payload");
+  assert.equal(result.kind, "gap");
+  assert.ok(result.gaps.some(function (line) { return /e-bike/i.test(line) && /kg/i.test(line); }));
+  assert.equal(result.usedKg, 126);
+  assert.equal(result.remainingKg, 594);
+  assert.doesNotMatch(result.answer, /\b14\b/);
+  assert.ok(!result.items.some(function (item) { return /e-bike/i.test(item.label); }));
+});
+
+test("golden: unknown pedal-bike weight is refused — no 14 kg default", function () {
+  const result = copilot.handleAsk("I've got 500 kg payload — can I take 2 bikes?");
+  assert.equal(result.handled, true);
+  assert.equal(result.kind, "gap");
+  assert.ok(result.gaps.some(function (line) { return /bike/i.test(line) && /kg/i.test(line); }));
+  assert.doesNotMatch(JSON.stringify(result), /"usedKg":28|"kg":14/);
+  assert.equal(result.usedKg, 0);
+});
+
+test("golden: missing MAM / remaining payload is refused", function () {
+  const result = copilot.handleAsk("Can I take 100 L water and 2 gas bottles?");
+  assert.equal(result.handled, true);
+  assert.equal(result.domain, "payload");
+  assert.equal(result.kind, "refuse");
+  assert.ok(result.gaps.some(function (line) { return /MAM|remaining payload/i.test(line); }));
+  assert.match(result.answer, /do not invent plated weights/i);
+  assert.equal(result.remainingKg, null);
+});
+
+test("golden: tyre HOLD refuses a pressure and does not invent one", function () {
+  const result = copilot.handleAsk("tyre pressure for a 3500 kg motorhome");
+  assert.equal(result.handled, true);
+  assert.equal(result.domain, "tyres");
+  assert.equal(result.kind, "hold");
+  assert.equal(result.answer, copilot.TYRES_HOLD_MESSAGE);
+  assert.doesNotMatch(result.answer, /\d+\s*(?:psi|bar)/i);
+  assert.equal(result.usedKg, null);
+  assert.match(result.href, /tyres\.html/);
+});
+
+test("full fresh tank without litres is a gap, not a 90 L default", function () {
+  const result = copilot.handleAsk("Full fresh tank — how much of my remaining payload does that use?");
+  assert.equal(result.handled, true);
+  assert.equal(result.kind, "gap");
+  assert.ok(result.gaps.some(function (line) { return /litres/i.test(line); }));
+  assert.doesNotMatch(result.answer, /\b90\b/);
+});
+
+test("100 L full fresh tank reports 100 kg and does not invent remaining", function () {
+  const result = copilot.handleAsk("100 L full fresh tank — how much of my remaining payload does that use?");
+  assert.equal(result.handled, true);
+  assert.equal(result.usedKg, 100);
+  assert.equal(result.remainingKg, null);
+  assert.match(result.answer, /100/);
+});
+
+test("Power and campsite questions are not answered with invented numbers", function () {
+  const power = copilot.handleAsk("Will batteries last 3 days off-grid with a diesel heater?");
+  assert.equal(power.handled, false);
+  assert.equal(power.domain, "power");
+  assert.equal(power.phase, "B");
+
+  const campsite = copilot.handleAsk("best campsite near York");
+  assert.equal(campsite.handled, false);
+  assert.equal(campsite.domain, "unknown");
+});
+
+test("bare payload keywords stay unhandled so the synonym router can open the tool", function () {
+  const result = copilot.handleAsk("Mass in Service");
+  assert.equal(result.handled, false);
+  assert.equal(result.domain, "payload");
+});
+
+test("optional LLM parse may refine slots only — maths stay deterministic", function () {
+  const result = copilot.handleAsk("can I take the e-bikes on 720 kg payload", {
+    llmParse: function () {
+      return {
+        domain: "payload",
+        calculable: true,
+        remainingPayloadKg: 720,
+        items: [{ type: "ebike", qty: 2, kgEach: 22 }],
+        wantsFit: true
+      };
+    }
+  });
+  assert.equal(result.usedKg, 44);
+  assert.equal(result.remainingKg, 676);
+  assert.equal(copilot.computePayload(result.payloadState).remaining, 676);
+});
+
+test("POST /api/ask returns a copilot payload answer without unmatched logging", async function () {
+  ask.resetRateLimit();
+  const logs = [];
+  const originalLog = console.log;
+  console.log = function (line) { logs.push(String(line)); };
+  const res = fakeRes();
+  try {
+    await handleAsk({
+      method: "POST",
+      headers: {},
+      body: {
+        question: "I've got 720 kg payload — can I take 2 e-bikes at 22 kg each, 100 L water and 2 gas bottles?"
+      }
+    }, res);
+  } finally {
+    console.log = originalLog;
+  }
+  const json = JSON.parse(res.body);
+  assert.equal(res.statusCode, 200);
+  assert.equal(json.ok, true);
+  assert.equal(json.saved, false);
+  assert.equal(json.copilot.handled, true);
+  assert.equal(json.copilot.usedKg, 170);
+  assert.equal(json.copilot.remainingKg, 550);
+  assert.ok(!logs.some(function (line) { return line.indexOf("[ask]") === 0; }));
+});
+
+test("POST /api/ask tyre question is HOLD and is not captured as unmatched", async function () {
+  ask.resetRateLimit();
+  const res = fakeRes();
+  await handleAsk({
+    method: "POST",
+    headers: {},
+    body: { question: "what PSI should I run" }
+  }, res);
+  const json = JSON.parse(res.body);
+  assert.equal(json.saved, false);
+  assert.equal(json.copilot.kind, "hold");
+  assert.equal(json.copilot.domain, "tyres");
+});

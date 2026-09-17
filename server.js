@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
- * Tiny static server for the Motorhome Tools front door, plus /api/ask.
+ * Tiny static server for the Motorhome Tools front door, plus /api/ask
+ * (unmatched capture and Payload-first co-pilot).
  */
 "use strict";
 
@@ -53,7 +54,8 @@ const HIDDEN_FILES = new Set([
   ".gitignore",
   ".env.example",
   ".node-version",
-  "README.md"
+  "README.md",
+  "COPILOT-ASK.md"
 ]);
 
 function isHidden(relativePath) {

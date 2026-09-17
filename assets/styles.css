@@ -364,6 +364,57 @@ input:focus-visible {
   border: 1px solid var(--card-edge);
 }
 
+.ask-answer[hidden] {
+  display: none;
+}
+
+.ask-answer:not([hidden]) {
+  margin-top: 0.75rem;
+  padding: 0.85rem 0.95rem;
+  border-radius: 12px;
+  background: var(--card);
+  border: 1px solid var(--card-edge);
+}
+
+.ask-answer[data-kind="ok"] {
+  color: var(--pine-deep);
+  background: var(--pine-soft);
+  border-color: #b7cfc7;
+}
+
+.ask-answer[data-kind="warn"] {
+  color: #8a3b2d;
+  background: #f6ebe6;
+  border-color: #e0c4ba;
+}
+
+.ask-answer-lead {
+  margin: 0;
+  font-weight: 750;
+  line-height: 1.4;
+}
+
+.ask-answer h3 {
+  margin: 0.7rem 0 0.25rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.ask-answer ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+
+.ask-answer p {
+  margin: 0.7rem 0 0;
+}
+
+.ask-answer a {
+  color: var(--pine);
+  font-weight: 700;
+}
+
 .hp {
   position: absolute;
   left: -9999px;
