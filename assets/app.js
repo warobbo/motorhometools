@@ -48,6 +48,9 @@
 
   function statusCopy(result) {
     if (result.domain === "tyres") return "Tyres is on hold — no invented pressure.";
+    if (result.kind === "answer" && result.domain === "gas") {
+      return "Rough gas estimate. Open Gas to fine-tune with your figures.";
+    }
     if (result.kind === "answer") return "Rough payload estimate. Open Payload to fine-tune with your figures.";
     if (result.kind === "clarify") return "One quick check, then I can calculate.";
     if (result.kind === "later") return "Ask can’t calculate that yet. Open the calculator to enter your figures.";
