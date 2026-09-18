@@ -11,6 +11,11 @@
  *
  * Phase A: Payload only. Power / Water handlers are stubs (Phase B / C).
  * Tyres is HOLD — caution message only, no pressures.
+ *
+ * Labelled Payload defaults (bike 14 kg, rack 12 kg, water 1 kg/L, gas
+ * full-bottle) are applied when the visitor does not type a kg. Answer
+ * first, caveats second. Never invent plated MAM/MIRO, tyre PSI/bar,
+ * or legal limits.
  */
 "use strict";
 
@@ -30,17 +35,20 @@
    */
   var GAS_FULL_KG = { 6: 13, 9: 18.5, 13: 28 };
   var WATER_KG_PER_L = 1;
+  var BIKE_DEFAULT_KG = 14;
+  var RACK_DEFAULT_KG = 12;
   var ASSUMED_DRIVER_KG = 75;
   var FUEL_DENSITY = 0.84;
+  var CTA_NOTE = "Ask is a quick guide. The calculator is where you enter accurate data.";
 
   var PAYLOAD_SOURCE = {
     repo: "warobbo/motorhome-payload-calculator",
     commit: "611d2207d6e91d4a48fb3dc2c66d957092c59a59",
     waterKgPerLitre: WATER_KG_PER_L,
     gasFullKg: GAS_FULL_KG,
-    bikeDefaultKg: 14,
-    rackDefaultKg: 12,
-    note: "Ask never applies first-paint kit defaults (passengers, spare gas, toolbox). Only slots the visitor named, plus labelled gas-size defaults."
+    bikeDefaultKg: BIKE_DEFAULT_KG,
+    rackDefaultKg: RACK_DEFAULT_KG,
+    note: "Ask applies labelled Payload defaults when kg is omitted (pedal bike 14 kg, rack 12 kg if bikes > 0, water 1 kg/L, gas full-bottle). It does not copy first-paint kit defaults (passengers, spare gas, toolbox, 90 L tank)."
   };
 
   var TYRES_HOLD_MESSAGE =
@@ -306,7 +314,8 @@
       wantsRemaining: false,
       wantsUsage: false,
       fullTank: false,
-      tyresHold: false
+      tyresHold: false,
+      needsClarify: null
     };
   }
 
@@ -362,7 +371,7 @@
     }
 
     take(
-      /(\d+|a|an|one|two|three|four|five|six)\s+e-?bikes?(?:\s+(?:at|of|weighing)\s+(\d+(?:\.\d+)?)\s*kg(?:\s+each)?)?/g,
+      /(\d+|a|an|one|two|three|four|five|six)\s+e(?:-|\s+)?b(?:i(?:k(?:es?)?)?)?(?:\s+(?:at|of|weighing)\s+(\d+(?:\.\d+)?)\s*kg(?:\s+each)?)?(?=\s|$)/g,
       function (match) {
         var qty = parseQty(match[1]);
         if (!qty) return null;
@@ -384,9 +393,9 @@
     );
 
     take(
-      /(\d+|a|an|one|two|three|four|five|six)\s+bikes?(?:\s+(?:at|of|weighing)\s+(\d+(?:\.\d+)?)\s*kg(?:\s+each)?)?/g,
+      /(\d+|a|an|one|two|three|four|five|six)\s+b(?:i(?:k(?:es?)?)?)?(?:\s+(?:at|of|weighing)\s+(\d+(?:\.\d+)?)\s*kg(?:\s+each)?)?(?=\s|$)/g,
       function (match) {
-        if (/e-?bike/.test(match[0])) return null;
+        if (/e-?b/.test(match[0]) || /\be(?:-|\s+)b/.test(match[0])) return null;
         var qty = parseQty(match[1]);
         if (!qty) return null;
         return {
@@ -394,6 +403,20 @@
           qty: qty,
           kgEach: match[2] ? num(match[2]) : null
         };
+      }
+    );
+
+    take(
+      /(\d+(?:\.\d+)?)\s*kg\s+(?:bike\s+)?rack/g,
+      function (match) {
+        return { type: "rack", kg: num(match[1]) };
+      }
+    );
+
+    take(
+      /(?:bike\s+)?rack(?:\s+(?:at|of|weighing)\s+(\d+(?:\.\d+)?)\s*kg)/g,
+      function (match) {
+        return { type: "rack", kg: num(match[1]) };
       }
     );
 
@@ -450,6 +473,31 @@
     }
   }
 
+  function extractDanglingQty(query, intent) {
+    if (intent.items.some(function (item) {
+      return item.type === "bike" || item.type === "ebike" || item.type === "gas" || item.type === "water";
+    })) {
+      return;
+    }
+    var match = query.match(
+      /(?:take|add|with|fit|bring)\s+(\d+|a|an|one|two|three|four|five|six)(?:\s+([a-z]{1,4}))?\s*$/
+    );
+    if (!match) return;
+    var qty = parseQty(match[1]);
+    if (!qty) return;
+    var stub = match[2] || "";
+    if (!stub || /^(?:b|bi|bik|bike|bikes)$/.test(stub)) {
+      if (stub && /^(?:b|bi|bik|bike|bikes)$/.test(stub)) {
+        intent.items.push({ type: "bike", qty: qty, kgEach: null });
+        return;
+      }
+      intent.needsClarify = {
+        qty: qty,
+        question: "Did you mean " + qty + " bikes? Say that (and the kg if you know it) and I’ll work out what’s left."
+      };
+    }
+  }
+
   function parseDeterministic(text) {
     var intent = blankIntent();
     var query = normalise(text);
@@ -464,6 +512,7 @@
 
     extractLimit(query, intent);
     extractItems(query, intent);
+    extractDanglingQty(query, intent);
 
     intent.wantsFit = /\b(?:can i take|will (?:it|they|this) fit|enough payload|overweight|too heavy|do i have enough|fit in)\b/.test(query);
     intent.wantsUsage = /\b(?:how much (?:of )?(?:my )?(?:remaining )?payload|how much (?:weight|payload)|does that use|use of my)\b/.test(query);
@@ -520,6 +569,14 @@
 
   /* ----- Domain handlers ----- */
 
+  function payloadCta(state, opts) {
+    return {
+      href: payloadPrefillHref(state, opts),
+      hrefLabel: "Open Payload to fine-tune with your real figures",
+      ctaNote: CTA_NOTE
+    };
+  }
+
   function handleTyresHold() {
     return {
       handled: true,
@@ -528,9 +585,11 @@
       answer: TYRES_HOLD_MESSAGE,
       assumptions: [],
       gaps: [],
+      followUps: [],
       items: [],
       href: TYRES_HREF,
       hrefLabel: "Open Tyres (caution / hold only)",
+      ctaNote: "Tyres stays on hold — we will not invent a pressure.",
       usedKg: null,
       remainingKg: null
     };
@@ -553,7 +612,10 @@
     var assumptions = [];
     var gaps = [];
     var lines = [];
-    var blocked = false;
+    var followUps = [];
+    var bikeQty = 0;
+    var bikeKgTyped = null;
+    var rackKgTyped = null;
 
     if (intent.remainingPayloadKg != null) {
       state.mam = intent.remainingPayloadKg;
@@ -576,8 +638,7 @@
     intent.items.forEach(function (item) {
       if (item.type === "water") {
         if (item.litres == null || !(item.litres > 0)) {
-          gaps.push("Fresh-tank capacity in litres. We do not invent a tank size.");
-          blocked = true;
+          gaps.push("Fresh-tank capacity in litres. I don’t invent a tank size — tell me the litres and I’ll add 1 kg per litre.");
           return;
         }
         state.freshCap += item.litres;
@@ -632,39 +693,86 @@
         return;
       }
 
-      if (item.type === "ebike" || item.type === "bike") {
-        var kind = item.type === "ebike" ? "e-bike" : "bike";
+      if (item.type === "rack") {
+        if (item.kg != null && item.kg > 0) rackKgTyped = item.kg;
+        return;
+      }
+
+      if (item.type === "bike") {
+        bikeQty += item.qty || 0;
+        if (item.kgEach != null && item.kgEach > 0) bikeKgTyped = item.kgEach;
+        return;
+      }
+
+      if (item.type === "ebike") {
         if (item.kgEach == null || !(item.kgEach > 0)) {
           gaps.push(
-            "Weight of each " + kind + " in kg. We do not invent bike or e-bike weights."
+            "Weight of each e-bike in kg. E-bikes vary a lot, so I will not guess — tell me the kg and I’ll include them."
           );
-          blocked = true;
           return;
         }
         state.customItems.push({
-          id: kind + "-" + state.customItems.length,
-          name: kind,
+          id: "e-bike-" + state.customItems.length,
+          name: "e-bike",
           kg: item.kgEach,
           qty: item.qty
         });
         lines.push({
-          label: item.qty + " " + kind + (item.qty === 1 ? "" : "s") +
+          label: item.qty + " e-bike" + (item.qty === 1 ? "" : "s") +
             " at " + fmtKg(item.kgEach) + " kg each",
           kg: item.qty * item.kgEach
         });
         assumptions.push(
-          item.qty + " " + kind + (item.qty === 1 ? "" : "s") +
+          item.qty + " e-bike" + (item.qty === 1 ? "" : "s") +
           " at " + fmtKg(item.kgEach) + " kg each, as typed. No bike rack added (not mentioned)."
         );
       }
     });
 
+    if (bikeQty > 0) {
+      var kgEach = bikeKgTyped != null ? bikeKgTyped : BIKE_DEFAULT_KG;
+      var rackKg = rackKgTyped != null ? rackKgTyped : RACK_DEFAULT_KG;
+      state.bikes = bikeQty;
+      state.bikeKg = kgEach;
+      state.rackKg = rackKg;
+      lines.push({
+        label: bikeQty + " bike" + (bikeQty === 1 ? "" : "s") +
+          " at " + fmtKg(kgEach) + " kg each",
+        kg: bikeQty * kgEach
+      });
+      lines.push({
+        label: "bike rack at " + fmtKg(rackKg) + " kg",
+        kg: rackKg
+      });
+      if (bikeKgTyped == null) {
+        assumptions.push(
+          bikeQty + " bike" + (bikeQty === 1 ? "" : "s") +
+          " at " + fmtKg(BIKE_DEFAULT_KG) +
+          " kg each — Payload pedal-bike default, used as a labelled assumption."
+        );
+        followUps.push("If your bikes differ, tell me the kg and I’ll recalculate.");
+      } else {
+        assumptions.push(
+          bikeQty + " bike" + (bikeQty === 1 ? "" : "s") +
+          " at " + fmtKg(kgEach) + " kg each, as typed."
+        );
+      }
+      if (rackKgTyped == null) {
+        assumptions.push(
+          "Bike rack at " + fmtKg(RACK_DEFAULT_KG) +
+          " kg — Payload default, applied because you have bikes and didn’t specify a rack."
+        );
+      } else {
+        assumptions.push("Bike rack at " + fmtKg(rackKg) + " kg, as typed.");
+      }
+    }
+
     return {
       state: state,
       assumptions: unique(assumptions),
       gaps: unique(gaps),
-      lines: lines,
-      blocked: blocked
+      followUps: unique(followUps),
+      lines: lines
     };
   }
 
@@ -678,9 +786,30 @@
   }
 
   function handlePayload(intent) {
+    var cta = payloadCta(emptyPayloadState(), { includeVanLimits: false });
+
+    if (intent.needsClarify && (!intent.items || !intent.items.length)) {
+      return {
+        handled: true,
+        domain: "payload",
+        kind: "clarify",
+        answer: intent.needsClarify.question,
+        assumptions: [],
+        gaps: [],
+        followUps: [],
+        items: [],
+        usedKg: null,
+        remainingKg: intent.remainingPayloadKg,
+        href: cta.href,
+        hrefLabel: cta.hrefLabel,
+        ctaNote: cta.ctaNote
+      };
+    }
+
     var built = applyItems(intent);
     var gaps = built.gaps.slice();
     var assumptions = built.assumptions.slice();
+    var followUps = (built.followUps || []).slice();
     var hasAvailable = intent.remainingPayloadKg != null;
     var hasMam = intent.mamKg != null;
     var hasMiro = intent.miroKg != null;
@@ -703,8 +832,8 @@
 
     var missingLimit = needsVanLimit && remainingKg == null;
     var kind = "answer";
-    if (built.blocked || missingLimit || gaps.length) kind = "gap";
-    if (missingLimit && !hasAvailable && !hasMam && !built.blocked && !intent.wantsUsage) {
+    if (missingLimit || gaps.length) kind = "gap";
+    if (missingLimit && !hasAvailable && !hasMam && !intent.wantsUsage) {
       kind = "refuse";
     }
 
@@ -715,11 +844,11 @@
       remainingKg: remainingKg,
       lines: built.lines,
       gaps: gaps,
-      blocked: built.blocked,
       missingLimit: missingLimit
     });
 
     assumptions.push("Planning estimate only. Weigh the van. We do not invent plated weights or legal limits.");
+    cta = payloadCta(built.state, { includeVanLimits: intent.mamKg != null });
 
     return {
       handled: true,
@@ -728,56 +857,64 @@
       answer: answer,
       assumptions: unique(assumptions),
       gaps: unique(gaps),
+      followUps: unique(followUps),
       items: built.lines,
       usedKg: knownKg,
       remainingKg: remainingKg,
       payloadState: built.state,
       computed: computed,
-      href: payloadPrefillHref(built.state, {
-        includeVanLimits: intent.mamKg != null
-      }),
-      hrefLabel: "Open Payload (enter the same figures — the live page may not apply query prefill yet)"
+      href: cta.href,
+      hrefLabel: cta.hrefLabel,
+      ctaNote: cta.ctaNote
     };
   }
 
+  function itemBreakdown(lines) {
+    if (!lines || !lines.length) return "";
+    return " (" + lines.map(function (line) {
+      return line.label;
+    }).join(", ") + ")";
+  }
+
   function buildPayloadAnswer(opts) {
-    var gaps = opts.gaps;
+    var gaps = opts.gaps || [];
     var known = fmtKg(opts.knownKg);
     var left = opts.remainingKg != null ? fmtKg(opts.remainingKg) : null;
     var limit = opts.intent.remainingPayloadKg != null
       ? fmtKg(opts.intent.remainingPayloadKg)
       : null;
+    var bits = itemBreakdown(opts.lines);
+    var gapNote = gaps.length ? " " + gaps[0] : "";
 
     if (opts.kind === "refuse") {
-      return "We cannot calculate remaining payload without your plated MAM, or a remaining-payload figure in kg. We do not invent plated weights. Open Payload and enter the plate / V5 figures.";
+      return "I need your remaining payload in kg, or plated MAM and Mass in Service, before I can say what is left. I do not invent plated weights. Open Payload and enter the plate / V5 figures — that is the accurate place to do this.";
     }
 
-    if (opts.blocked && gaps.length) {
-      var knownBit = opts.knownKg > 0
-        ? " Known items use " + known + " kg" +
-          (left != null ? ", which would leave " + left + " kg of your " + limit + " kg remaining payload before the missing items." : ".")
-        : "";
-      return "We cannot say yet whether that load fits. " + gaps[0] + knownBit;
-    }
-
-    if (opts.missingLimit) {
-      return "Those named items use " + known + " kg. We cannot say what is left without plated MAM and Mass in Service, or your remaining payload in kg. We do not invent those figures.";
+    if (opts.missingLimit && opts.knownKg > 0) {
+      return "Those items use " + known + " kg" + bits +
+        ". To say what is left I still need plated MAM and Mass in Service, or your remaining payload in kg. I do not invent those figures.";
     }
 
     if (opts.intent.wantsUsage && (opts.remainingKg == null) && opts.knownKg > 0 && !opts.intent.wantsFit) {
       return "That uses " + known + " kg of payload" +
-        (opts.lines.length === 1 ? " (" + opts.lines[0].label + ")." : ".") +
-        " We do not invent your remaining payload — add that figure if you want what would be left.";
+        (opts.lines.length ? bits + "." : ".") +
+        " Add remaining payload if you want what would be left — I do not invent that figure.";
     }
 
     if (opts.remainingKg != null && limit) {
+      if (opts.knownKg === 0 && gaps.length) {
+        return "Your " + limit + " kg remaining payload is unused so far." + gapNote;
+      }
       if (opts.remainingKg < 0) {
-        return "Those items use " + known + " kg — " +
+        return "Those items use " + known + " kg" + bits + " — " +
           fmtKg(Math.abs(opts.remainingKg)) +
-          " kg over the " + limit + " kg remaining payload you gave. Planning estimate only; weigh the van.";
+          " kg over the " + limit + " kg remaining payload you gave. Planning estimate only; weigh the van." +
+          (gaps.length ? gapNote : "");
       }
       return "Those items use " + known + " kg of your " + limit +
-        " kg remaining payload, leaving " + left + " kg. Planning estimate only; weigh the van.";
+        " kg remaining payload, leaving " + left + " kg" + bits +
+        ". Planning estimate only; weigh the van." +
+        (gaps.length ? gapNote : "");
     }
 
     if (opts.remainingKg != null && opts.intent.mamKg != null) {
@@ -793,10 +930,15 @@
     }
 
     if (opts.knownKg > 0) {
-      return "Those named items use " + known + " kg. Add remaining payload or MAM + Mass in Service if you want what would be left.";
+      return "Those named items use " + known + " kg" + bits +
+        ". Add remaining payload or MAM + Mass in Service if you want what would be left.";
     }
 
-    return "We could not add any named weights. Ask with kg, litres, or gas-bottle size — we will not invent missing figures.";
+    if (gaps.length) {
+      return gaps[0];
+    }
+
+    return "Tell me the items and a remaining-payload figure — I’ll use labelled Payload defaults where we have them, and I will not invent plated weights.";
   }
 
   var DOMAINS = {
@@ -850,6 +992,8 @@
       remainingKg: result.remainingKg == null ? null : result.remainingKg,
       href: result.href || null,
       hrefLabel: result.hrefLabel || null,
+      ctaNote: result.ctaNote || null,
+      followUps: result.followUps || [],
       phase: result.phase || null
     };
   }
@@ -861,6 +1005,9 @@
     TYRES_HOLD_MESSAGE: TYRES_HOLD_MESSAGE,
     GAS_FULL_KG: GAS_FULL_KG,
     WATER_KG_PER_L: WATER_KG_PER_L,
+    BIKE_DEFAULT_KG: BIKE_DEFAULT_KG,
+    RACK_DEFAULT_KG: RACK_DEFAULT_KG,
+    CTA_NOTE: CTA_NOTE,
     DOMAINS: Object.keys(DOMAINS),
     num: num,
     normalise: normalise,

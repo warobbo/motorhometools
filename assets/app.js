@@ -40,14 +40,23 @@
     answerEl.appendChild(list);
   }
 
+  function visualKind(result) {
+    if (result.kind === "answer") return "ok";
+    if (result.kind === "clarify") return "note";
+    return "warn";
+  }
+
+  function statusCopy(result) {
+    if (result.domain === "tyres") return "Tyres is on hold — no invented pressure.";
+    if (result.kind === "answer") return "Rough payload estimate. Open Payload to fine-tune with your figures.";
+    if (result.kind === "clarify") return "One quick check, then I can calculate.";
+    if (result.kind === "refuse") return "Need a plated or remaining-payload figure — I don’t invent those.";
+    return "Need a figure we don’t have a standard for. Open Payload to enter yours.";
+  }
+
   function showCopilot(result) {
-    var kind = result.kind === "answer" ? "ok" : "warn";
-    setStatus(
-      result.domain === "tyres"
-        ? "Tyres is on hold — no invented pressure."
-        : "Payload estimate from the calculator maths. Assumptions and gaps are listed.",
-      kind
-    );
+    var kind = visualKind(result);
+    setStatus(statusCopy(result), kind);
     if (!answerEl) return;
     answerEl.hidden = false;
     answerEl.dataset.kind = kind;
@@ -58,18 +67,41 @@
     lead.textContent = result.answer || "";
     answerEl.appendChild(lead);
 
+    if (result.items && result.items.length) {
+      addList("What’s included", result.items.map(function (item) {
+        return item.label + " — " + item.kg + " kg";
+      }));
+    }
     addList("Assumptions", result.assumptions);
-    addList("Gaps", result.gaps);
+    if (result.followUps && result.followUps.length) {
+      result.followUps.forEach(function (line) {
+        var note = document.createElement("p");
+        note.className = "ask-follow-up";
+        note.textContent = line;
+        answerEl.appendChild(note);
+      });
+    }
+    if (result.gaps && result.gaps.length) {
+      addList("Still needed", result.gaps);
+    }
 
     if (result.href && result.hrefLabel) {
-      var p = document.createElement("p");
+      var cta = document.createElement("p");
+      cta.className = "ask-cta";
       var link = document.createElement("a");
+      link.className = "ask-cta-link";
       link.href = result.href;
       link.target = "_blank";
       link.rel = "noopener noreferrer";
       link.textContent = result.hrefLabel;
-      p.appendChild(link);
-      answerEl.appendChild(p);
+      cta.appendChild(link);
+      answerEl.appendChild(cta);
+      if (result.ctaNote) {
+        var hint = document.createElement("p");
+        hint.className = "ask-cta-note";
+        hint.textContent = result.ctaNote;
+        answerEl.appendChild(hint);
+      }
     }
     if (answerEl.scrollIntoView) {
       answerEl.scrollIntoView({ block: "nearest", behavior: "smooth" });
