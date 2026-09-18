@@ -3,7 +3,8 @@
 /**
  * Golden tests for Phase A Payload-first co-pilot Ask.
  * Maths must match warobbo/motorhome-payload-calculator compute() /
- * custom-kit for the same inputs. Never invent MAM, bike kg, or tyre pressures.
+ * custom-kit for the same inputs. Pedal bikes without kg use the labelled
+ * 14 kg + 12 kg rack defaults. Never invent MAM, tyre pressures, or e-bike kg.
  */
 
 const { test } = require("node:test");
@@ -109,6 +110,8 @@ test("golden: 720 kg payload + 2×22 kg e-bikes + 100 L water + 2 gas bottles ma
   assert.match(result.href, /gas6=2/);
   assert.doesNotMatch(result.href, /(?:\?|&)mam=/);
   assert.doesNotMatch(result.href, /gas9Full/);
+  assert.match(result.hrefLabel, /Open Payload to fine-tune/i);
+  assert.equal(result.ctaNote, copilot.CTA_NOTE);
 
   const sibling = siblingCompute({
     mam: 720,
@@ -131,17 +134,72 @@ test("golden: unknown e-bike weight is a gap — no invented kg", function () {
   assert.ok(result.gaps.some(function (line) { return /e-bike/i.test(line) && /kg/i.test(line); }));
   assert.equal(result.usedKg, 126);
   assert.equal(result.remainingKg, 594);
+  assert.match(result.answer, /126/);
+  assert.match(result.answer, /594/);
+  assert.doesNotMatch(result.answer, /cannot say yet/i);
   assert.doesNotMatch(result.answer, /\b14\b/);
   assert.ok(!result.items.some(function (item) { return /e-bike/i.test(item.label); }));
+  assert.match(result.hrefLabel, /Open Payload/i);
+  assert.equal(result.ctaNote, copilot.CTA_NOTE);
 });
 
-test("golden: unknown pedal-bike weight is refused — no 14 kg default", function () {
-  const result = copilot.handleAsk("I've got 500 kg payload — can I take 2 bikes?");
+test("golden: 500 kg payload + 3 bikes (no kg) uses 14 kg + 12 kg rack defaults", function () {
+  const result = copilot.handleAsk("I've got 500 kg payload — can I take 3 bikes?");
   assert.equal(result.handled, true);
-  assert.equal(result.kind, "gap");
-  assert.ok(result.gaps.some(function (line) { return /bike/i.test(line) && /kg/i.test(line); }));
-  assert.doesNotMatch(JSON.stringify(result), /"usedKg":28|"kg":14/);
-  assert.equal(result.usedKg, 0);
+  assert.equal(result.domain, "payload");
+  assert.equal(result.kind, "answer");
+  assert.equal(result.usedKg, 54);
+  assert.equal(result.remainingKg, 446);
+  assert.match(result.answer, /54/);
+  assert.match(result.answer, /446/);
+  assert.match(result.answer, /14/);
+  assert.match(result.answer, /12/);
+  assert.doesNotMatch(result.answer, /cannot say yet/i);
+  assert.doesNotMatch(result.answer, /we cannot/i);
+  assert.equal(result.gaps.length, 0);
+  assert.ok(result.assumptions.some(function (line) {
+    return /14/.test(line) && /bike/i.test(line);
+  }));
+  assert.ok(result.assumptions.some(function (line) {
+    return /12/.test(line) && /rack/i.test(line);
+  }));
+  assert.ok(result.followUps.some(function (line) {
+    return /tell me the kg/i.test(line);
+  }));
+  assert.match(result.href, /^https:\/\/motorhomepayload\.co\.uk\/\?/);
+  assert.match(result.href, /bikes=3/);
+  assert.match(result.href, /bikeKg=14/);
+  assert.match(result.href, /rackKg=12/);
+  assert.match(result.hrefLabel, /Open Payload to fine-tune/i);
+  assert.equal(result.ctaNote, copilot.CTA_NOTE);
+
+  const sibling = siblingCompute({
+    mam: 500,
+    bikes: 3,
+    bikeKg: copilot.BIKE_DEFAULT_KG,
+    rackKg: copilot.RACK_DEFAULT_KG
+  });
+  assert.equal(result.usedKg, sibling.added);
+  assert.equal(result.remainingKg, sibling.remaining);
+});
+
+test("incomplete “3 b” in payload context infers bikes and computes", function () {
+  const result = copilot.handleAsk("I've got 500 kg payload — add 3 b");
+  assert.equal(result.handled, true);
+  assert.equal(result.kind, "answer");
+  assert.equal(result.usedKg, 54);
+  assert.equal(result.remainingKg, 446);
+  assert.ok(result.items.some(function (item) { return /bike/i.test(item.label); }));
+});
+
+test("dangling qty without an item asks one clarifying question", function () {
+  const result = copilot.handleAsk("I've got 500 kg payload — can I take 3");
+  assert.equal(result.handled, true);
+  assert.equal(result.kind, "clarify");
+  assert.match(result.answer, /3 bikes/i);
+  assert.doesNotMatch(result.answer, /cannot say/i);
+  assert.match(result.hrefLabel, /Open Payload/i);
+  assert.equal(result.ctaNote, copilot.CTA_NOTE);
 });
 
 test("golden: missing MAM / remaining payload is refused", function () {
@@ -152,6 +210,8 @@ test("golden: missing MAM / remaining payload is refused", function () {
   assert.ok(result.gaps.some(function (line) { return /MAM|remaining payload/i.test(line); }));
   assert.match(result.answer, /do not invent plated weights/i);
   assert.equal(result.remainingKg, null);
+  assert.match(result.hrefLabel, /Open Payload/i);
+  assert.equal(result.ctaNote, copilot.CTA_NOTE);
 });
 
 test("golden: tyre HOLD refuses a pressure and does not invent one", function () {

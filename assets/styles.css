@@ -388,10 +388,42 @@ input:focus-visible {
   border-color: #e0c4ba;
 }
 
+.ask-answer[data-kind="note"] {
+  color: var(--ink);
+  background: var(--card);
+  border-color: var(--card-edge);
+}
+
 .ask-answer-lead {
   margin: 0;
   font-weight: 750;
   line-height: 1.4;
+}
+
+.ask-follow-up {
+  margin: 0.65rem 0 0;
+  font-weight: 650;
+}
+
+.ask-cta {
+  margin: 0.9rem 0 0;
+}
+
+.ask-cta-link {
+  display: inline-block;
+  padding: 0.55rem 0.95rem;
+  border-radius: 999px;
+  background: var(--pine);
+  color: #fff !important;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.ask-cta-note {
+  margin: 0.45rem 0 0;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--muted);
 }
 
 .ask-answer h3 {
