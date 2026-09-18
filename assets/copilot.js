@@ -28,6 +28,15 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
   var PAYLOAD_HREF = "https://motorhomepayload.co.uk/";
   var TYRES_HREF = "https://motorhomepayload.co.uk/tyres.html";
+  var POWER_HREF = "https://motorhomepower.co.uk/";
+  var BATTERY_HREF = "https://motorhomepower.co.uk/battery.html";
+  var SOLAR_HREF = "https://motorhomepower.co.uk/solar.html";
+  var INVERTER_HREF = "https://motorhomepower.co.uk/inverter.html";
+  var WIRE_HREF = "https://motorhomepower.co.uk/wire.html";
+  var WATER_HREF = "https://motorhomewater.co.uk/";
+  var GAS_HREF = "https://motorhomewater.co.uk/gas.html";
+  var TANKS_HREF = "https://motorhomewater.co.uk/tanks.html";
+  var CASSETTE_HREF = "https://motorhomewater.co.uk/cassette.html";
 
   /**
    * Full-bottle defaults from Payload DEFAULTS (gas only + steel cylinder).
@@ -324,13 +333,20 @@
   }
 
   function isPowerLater(query) {
-    return /\b(?:batter(?:y|ies)|off-grid|diesel\s+heater|solar|inverter|amp-?hours?|k?wh)\b/.test(query) &&
-      !/\bpayload|mam|miro|weighbridge|kg\s+payload\b/.test(query);
+    if (/\bpayload|mam|miro|weighbridge|kg\s+payload\b/.test(query)) return false;
+    return /\b(?:batter(?:y|ies)|off-grid|diesel\s+heater|solar|inverter|amp-?hours?|k?wh|cool[-\s]?box(?:es)?|air[-\s]?cons?|air[-\s]?condition(?:er|ing)|portable\s+acs?)\b/.test(query);
+  }
+
+  function isGasLater(query) {
+    if (/\bpayload|mam|miro|weighbridge\b/.test(query)) return false;
+    return /\b(?:gas|lpg|calor|propane|butane|bbqs?|barbecues?|barbeques?)\b/.test(query);
   }
 
   function isWaterLater(query) {
-    return /\b(?:shower|grey\s+water|cassette|how\s+long|days?\s+of\s+water)\b/.test(query) &&
-      !/\bpayload|mam|kg\b/.test(query);
+    if (/\bpayload|mam|\bkg\b/.test(query)) return false;
+    if (isGasLater(query)) return false;
+    return /\b(?:shower|grey\s+water|cassette|days?\s+of\s+water)\b/.test(query) ||
+      /\bhow\s+(?:long|much)\b[\s\S]{0,40}\bwaters?\b/.test(query);
   }
 
   function extractLimit(query, intent) {
@@ -420,26 +436,38 @@
       }
     );
 
+    // l / litre(s) / liter(s) / ltr / ltrs — UK shorthand “100ltrs” must not be dropped.
     take(
-      /(\d+(?:\.\d+)?)\s*l(?:itres?|iters?)?\s+(?:of\s+)?(?:fresh\s+)?water/g,
+      /(\d+(?:\.\d+)?)\s*l(?:itres?|iters?|trs?)?\b\s+(?:of\s+)?(?:fresh\s+)?water/g,
       function (match) {
         return { type: "water", litres: num(match[1]), fillPct: 100 };
       }
     );
 
     take(
-      /(?:fresh\s+)?water\s+(\d+(?:\.\d+)?)\s*l(?:itres?|iters?)?/g,
+      /(?:fresh\s+)?water\s+(\d+(?:\.\d+)?)\s*l(?:itres?|iters?|trs?)?\b/g,
       function (match) {
         return { type: "water", litres: num(match[1]), fillPct: 100 };
       }
     );
 
     take(
-      /(\d+(?:\.\d+)?)\s*l(?:itres?|iters?)?\s+(?:full\s+)?(?:fresh\s+)?tank/g,
+      /(\d+(?:\.\d+)?)\s*l(?:itres?|iters?|trs?)?\b\s+(?:full\s+)?(?:fresh\s+)?tank/g,
       function (match) {
         return { type: "water", litres: num(match[1]), fillPct: 100 };
       }
     );
+
+    var hasWater = intent.items.some(function (item) { return item.type === "water"; });
+    if (!hasWater) {
+      take(
+        /(\d+(?:\.\d+)?)\s*(?:litres?|liters?|ltrs?)\b/g,
+        function (match) {
+          return { type: "water", litres: num(match[1]), fillPct: 100 };
+        }
+      );
+      hasWater = intent.items.some(function (item) { return item.type === "water"; });
+    }
 
     take(
       /(\d+|a|an|one|two|three|four|five|six)\s*(?:x\s*)?(6|9|13)\s*kg\s+(?:gas\s+)?bottles?/g,
@@ -466,11 +494,23 @@
 
     if (/\bfull\s+(?:fresh\s+)?(?:water\s+)?tank\b/.test(query)) {
       intent.fullTank = true;
-      var hasWater = intent.items.some(function (item) { return item.type === "water"; });
       if (!hasWater) {
         intent.items.push({ type: "water", litres: null, fillPct: 100 });
+        hasWater = true;
       }
     }
+
+    if (!hasWater && mentionsFreshWater(query)) {
+      intent.items.push({ type: "water", litres: null, fillPct: 100 });
+    }
+  }
+
+  function mentionsFreshWater(query) {
+    var cleaned = String(query || "")
+      .replace(/\b(?:grey|gray|waste|black|dirty)\s+waters?\b/g, " ")
+      .replace(/\bwaters?\s+(?:pump|heater|tap|hose|filter)s?\b/g, " ")
+      .replace(/\b(?:pump|heater)\s+waters?\b/g, " ");
+    return /\b(?:fresh\s+)?waters?\b/.test(cleaned);
   }
 
   function extractDanglingQty(query, intent) {
@@ -541,6 +581,10 @@
       intent.domain = "power";
       return intent;
     }
+    if (isGasLater(query)) {
+      intent.domain = "gas";
+      return intent;
+    }
     if (isWaterLater(query)) {
       intent.domain = "water";
       return intent;
@@ -595,15 +639,140 @@
     };
   }
 
-  function handleLaterDomain(domain, phase) {
+  function laterGuide(id) {
+    var guides = {
+      payload: {
+        phase: "A",
+        href: PAYLOAD_HREF,
+        hrefLabel: "Open Payload to enter your figures",
+        answer: "I need a remaining-payload figure, or named items with kg / litres, before I can estimate. Open Payload and enter the plate / V5 figures — I do not invent plated weights."
+      },
+      tyres: {
+        phase: null,
+        href: TYRES_HREF,
+        hrefLabel: "Open Tyres (caution / hold only)",
+        answer: TYRES_HOLD_MESSAGE
+      },
+      power: {
+        phase: "B",
+        href: POWER_HREF,
+        hrefLabel: "Open Power to enter your figures",
+        answer: "I don’t calculate battery life, coolbox draw or air-con run-time in Ask yet — that would mean inventing amp-hours or watts. Open Power and enter your kit there."
+      },
+      battery: {
+        phase: "B",
+        href: BATTERY_HREF,
+        hrefLabel: "Open Battery to enter your figures",
+        answer: "I don’t calculate battery size or run-time in Ask yet — I will not invent amp-hours. Open Battery and enter your figures there."
+      },
+      solar: {
+        phase: "B",
+        href: SOLAR_HREF,
+        hrefLabel: "Open Solar to enter your figures",
+        answer: "I don’t calculate solar watts in Ask yet — I will not invent a panel size. Open Solar and enter your figures there."
+      },
+      inverter: {
+        phase: "B",
+        href: INVERTER_HREF,
+        hrefLabel: "Open Inverter to enter your figures",
+        answer: "I don’t calculate inverter watts in Ask yet — I will not invent a continuous-watt figure. Open Inverter and enter your kit there."
+      },
+      wire: {
+        phase: "B",
+        href: WIRE_HREF,
+        hrefLabel: "Open Wire & fuse to enter your figures",
+        answer: "I don’t calculate cable or fuse size in Ask yet — I will not invent a rating. Open Wire & fuse and enter your run there."
+      },
+      water: {
+        phase: "C",
+        href: WATER_HREF,
+        hrefLabel: "Open Water to enter your figures",
+        answer: "I don’t calculate days of water in Ask yet. Open Water and enter your use there — I will not invent a tank size or litres per day."
+      },
+      gas: {
+        phase: "C",
+        href: GAS_HREF,
+        hrefLabel: "Open Gas to enter your figures",
+        answer: "I don’t calculate how long a gas bottle will last in Ask — I will not invent a burn rate or bottle-days. Open Gas and enter your bottle and how you use it."
+      },
+      tanks: {
+        phase: "C",
+        href: TANKS_HREF,
+        hrefLabel: "Open Tanks to enter your figures",
+        answer: "I don’t plan tank fills in Ask yet. Open Tanks and enter your figures there — I will not invent a capacity."
+      },
+      cassette: {
+        phase: "C",
+        href: CASSETTE_HREF,
+        hrefLabel: "Open Cassette to enter your figures",
+        answer: "I don’t plan cassette empties in Ask yet. Open Cassette and enter your figures there."
+      }
+    };
+    var guide = guides[id] || guides.power;
     return {
-      handled: false,
-      domain: domain,
-      phase: phase,
-      kind: "later",
-      answer: "",
+      handled: true,
+      domain: id,
+      phase: guide.phase,
+      kind: id === "tyres" ? "hold" : "later",
+      answer: guide.answer,
       assumptions: [],
-      gaps: []
+      gaps: [],
+      followUps: [],
+      items: [],
+      href: guide.href,
+      hrefLabel: guide.hrefLabel,
+      ctaNote: CTA_NOTE,
+      usedKg: null,
+      remainingKg: null
+    };
+  }
+
+  function handleLaterDomain(domain, phase) {
+    var result = laterGuide(domain);
+    if (phase) result.phase = phase;
+    return result;
+  }
+
+  function applyRouteHref(result, match) {
+    if (!result || !match) return result;
+    if (result.kind === "later") {
+      var guided = laterGuide(match.id);
+      return Object.assign({}, guided, {
+        intent: result.intent,
+        href: match.href || guided.href,
+        hrefLabel: "Open " + match.label + " to enter your figures"
+      });
+    }
+    return Object.assign({}, result, {
+      href: match.href || result.href,
+      hrefLabel: result.hrefLabel || ("Open " + match.label + " to enter your figures")
+    });
+  }
+
+  function resolveAsk(text, opts) {
+    var routeAsk = opts && typeof opts.routeAsk === "function" ? opts.routeAsk : null;
+    var result = handleAsk(text, opts);
+    var match = routeAsk ? routeAsk(text) : null;
+
+    if (result && result.handled) {
+      if (match && (result.kind === "later" || !result.href)) {
+        result = applyRouteHref(result, match);
+      }
+      return { view: publicResult(result), navigate: false, unmatched: false };
+    }
+
+    if (match) {
+      return {
+        view: publicResult(applyRouteHref(laterGuide(match.id), match)),
+        navigate: false,
+        unmatched: false
+      };
+    }
+
+    return {
+      view: publicResult(result),
+      navigate: false,
+      unmatched: true
     };
   }
 
@@ -945,6 +1114,7 @@
     payload: handlePayload,
     tyres: handleTyresHold,
     power: function () { return handleLaterDomain("power", "B"); },
+    gas: function () { return handleLaterDomain("gas", "C"); },
     water: function () { return handleLaterDomain("water", "C"); }
   };
 
@@ -963,8 +1133,14 @@
     if (intent.domain === "power") {
       return Object.assign(DOMAINS.power(), { intent: intent });
     }
+    if (intent.domain === "gas") {
+      return Object.assign(DOMAINS.gas(), { intent: intent });
+    }
     if (intent.domain === "water") {
       return Object.assign(DOMAINS.water(), { intent: intent });
+    }
+    if (intent.domain === "payload") {
+      return Object.assign(laterGuide("payload"), { intent: intent });
     }
 
     return {
@@ -1020,6 +1196,8 @@
     payloadPrefillHref: payloadPrefillHref,
     parseIntent: parseIntent,
     handleAsk: handleAsk,
+    resolveAsk: resolveAsk,
+    laterGuide: laterGuide,
     publicResult: publicResult
   };
 });
