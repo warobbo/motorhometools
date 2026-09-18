@@ -413,7 +413,10 @@ test("golden: gas BBQ twice a day estimates 0.28 kg/day and ~25 days, stays in A
   assert.match(result.href, /boilerEnabled=0/);
   assert.match(result.href, /gasType=butane/);
   assert.match(result.href, /bottleId=butane7/);
-  assert.match(result.href, /bottleKg=7/);
+  assert.doesNotMatch(result.href, /bottleKg=/);
+  assert.doesNotMatch(result.href, /heatingHours=/);
+  assert.doesNotMatch(result.href, /boilerLevel=/);
+  assert.doesNotMatch(result.href, /boilerHours=/);
   assert.match(result.hrefLabel, /Open Gas to fine-tune/i);
   assert.equal(result.ctaNote, copilot.CTA_NOTE);
 
@@ -465,10 +468,59 @@ test("golden: named 13 kg propane BBQ uses that bottle, not the 7 kg default", f
   }));
   assert.match(result.href, /gasType=propane/);
   assert.match(result.href, /bottleId=propane13/);
-  assert.match(result.href, /bottleKg=13/);
+  assert.doesNotMatch(result.href, /bottleKg=/);
   assert.match(result.href, /cookingStyle=heavy/);
   assert.match(result.href, /heatingLevel=off/);
+  assert.match(result.href, /fridgeGasEnabled=0/);
+  assert.match(result.href, /boilerEnabled=0/);
   assert.equal(copilot.resolveAsk(question, { routeAsk: routeAsk }).navigate, false);
+});
+
+test("Gas CTA href matches mhwater buildGasPrefillHref contract for BBQ twice a day", function () {
+  const href = copilot.buildGasPrefillHref({
+    adults: 2,
+    children: 0,
+    mealsPerDay: 2,
+    cookingStyle: "heavy",
+    heatingLevel: "off",
+    fridgeGasEnabled: 0,
+    boilerEnabled: 0,
+    gasType: "butane",
+    bottleId: "butane7"
+  }, "https://motorhomewater.co.uk/gas.html");
+  const qs = href.slice(href.indexOf("?") + 1);
+  const params = new URLSearchParams(qs);
+  assert.equal(href.startsWith("https://motorhomewater.co.uk/gas.html?"), true);
+  assert.equal(params.get("adults"), "2");
+  assert.equal(params.get("children"), "0");
+  assert.equal(params.get("mealsPerDay"), "2");
+  assert.equal(params.get("cookingStyle"), "heavy");
+  assert.equal(params.get("heatingLevel"), "off");
+  assert.equal(params.get("fridgeGasEnabled"), "0");
+  assert.equal(params.get("boilerEnabled"), "0");
+  assert.equal(params.get("gasType"), "butane");
+  assert.equal(params.get("bottleId"), "butane7");
+  assert.equal(params.get("bottleKg"), null);
+  assert.equal(params.get("heatingHours"), null);
+  assert.equal(params.get("tripDays"), null);
+  copilot.GAS_PREFILL_KEYS.forEach(function (key) {
+    assert.ok(typeof key === "string");
+  });
+});
+
+test("custom bottle kg is sent only when bottleId is custom", function () {
+  const href = copilot.gasPrefillHref({
+    adults: 2,
+    children: 0,
+    mealsPerDay: 2,
+    cookingStyle: "heavy",
+    bottleId: "custom",
+    bottleKg: 10,
+    gasType: "propane"
+  });
+  assert.match(href, /bottleId=custom/);
+  assert.match(href, /bottleKg=10/);
+  assert.match(href, /gasType=propane/);
 });
 
 test("gas fridge stays a later stub — cooking estimate is not invented for absorption fridges", function () {

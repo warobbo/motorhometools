@@ -391,11 +391,15 @@
     return {
       adults: 2,
       children: 0,
+      tripDays: null,
       mealsPerDay: 2,
       cookingStyle: "normal",
       heatingLevel: "off",
+      heatingHours: 0,
       fridgeGasEnabled: 0,
       boilerEnabled: 0,
+      boilerLevel: null,
+      boilerHours: null,
       gasType: GAS_DEFAULT_BOTTLE.gasType,
       bottleId: GAS_DEFAULT_BOTTLE.id,
       bottleKg: GAS_DEFAULT_BOTTLE.kg,
@@ -449,6 +453,7 @@
     return {
       adults: adults,
       children: children,
+      tripDays: source.tripDays != null && source.tripDays !== "" ? num(source.tripDays) : null,
       peopleUnits: peopleUnits,
       mealsPerDay: mealsPerDay,
       cookingStyle: cookingStyle,
@@ -459,25 +464,133 @@
       gasType: gasType,
       bottleDays: dailyKg > 0 ? bottleKg / dailyKg : 0,
       heatingLevel: "off",
+      heatingHours: 0,
       fridgeGasEnabled: 0,
-      boilerEnabled: 0
+      boilerEnabled: 0,
+      boilerLevel: null,
+      boilerHours: null
     };
+  }
+
+  /**
+   * Mirrored from warobbo/mhwater GasCalc.buildGasPrefillQuery / Href
+   * (PR #18, now on main). Unknown keys stay off the URL. bottleKg is
+   * only sent for custom bottles; heatingHours only when heatingLevel
+   * is omitted; boilerHours only when boilerLevel is omitted.
+   */
+  var GAS_PREFILL_KEYS = [
+    "adults",
+    "children",
+    "tripDays",
+    "mealsPerDay",
+    "cookingStyle",
+    "heatingLevel",
+    "heatingHours",
+    "fridgeGasEnabled",
+    "boilerEnabled",
+    "boilerLevel",
+    "boilerHours",
+    "gasType",
+    "bottleId",
+    "bottleKg"
+  ];
+  var GAS_HEATING_LEVELS = { off: 1, low: 1, medium: 1, high: 1 };
+  var GAS_BOILER_LEVELS = { light: 1, normal: 1, heavy: 1 };
+  var GAS_TYPES = { butane: 1, propane: 1 };
+
+  function parsePrefillNumber(value) {
+    if (value == null) return undefined;
+    var trimmed = String(value).trim();
+    if (trimmed === "") return undefined;
+    var n = Number(trimmed);
+    return Number.isFinite(n) ? n : undefined;
+  }
+
+  function parsePrefillBool(value) {
+    if (value == null) return undefined;
+    if (typeof value === "boolean") return value;
+    var s = String(value).trim().toLowerCase();
+    if (s === "1" || s === "true") return true;
+    if (s === "0" || s === "false") return false;
+    return undefined;
+  }
+
+  function addPrefillParam(parts, key, value) {
+    parts.push(encodeURIComponent(key) + "=" + encodeURIComponent(String(value)));
+  }
+
+  function buildGasPrefillQuery(usage) {
+    var u = usage && typeof usage === "object" ? usage : {};
+    var parts = [];
+
+    if (parsePrefillNumber(u.adults) != null) {
+      addPrefillParam(parts, "adults", Math.round(parsePrefillNumber(u.adults)));
+    }
+    if (parsePrefillNumber(u.children) != null) {
+      addPrefillParam(parts, "children", Math.round(parsePrefillNumber(u.children)));
+    }
+    if (parsePrefillNumber(u.tripDays) != null) {
+      addPrefillParam(parts, "tripDays", parsePrefillNumber(u.tripDays));
+    }
+    if (parsePrefillNumber(u.mealsPerDay) != null) {
+      addPrefillParam(parts, "mealsPerDay", parsePrefillNumber(u.mealsPerDay));
+    }
+    if (GAS_COOK_STYLES[u.cookingStyle]) addPrefillParam(parts, "cookingStyle", u.cookingStyle);
+    if (GAS_HEATING_LEVELS[u.heatingLevel]) {
+      addPrefillParam(parts, "heatingLevel", u.heatingLevel);
+    } else if (parsePrefillNumber(u.heatingHours) != null) {
+      addPrefillParam(parts, "heatingHours", parsePrefillNumber(u.heatingHours));
+    }
+    if (parsePrefillBool(u.fridgeGasEnabled) != null) {
+      addPrefillParam(parts, "fridgeGasEnabled", parsePrefillBool(u.fridgeGasEnabled) ? "1" : "0");
+    }
+    if (parsePrefillBool(u.boilerEnabled) != null) {
+      addPrefillParam(parts, "boilerEnabled", parsePrefillBool(u.boilerEnabled) ? "1" : "0");
+    }
+    if (GAS_BOILER_LEVELS[u.boilerLevel]) {
+      addPrefillParam(parts, "boilerLevel", u.boilerLevel);
+    } else if (parsePrefillNumber(u.boilerHours) != null) {
+      addPrefillParam(parts, "boilerHours", parsePrefillNumber(u.boilerHours));
+    }
+    if (GAS_TYPES[u.gasType]) addPrefillParam(parts, "gasType", u.gasType);
+    if (u.bottleId === "custom" || GAS_BOTTLES[u.bottleId]) {
+      addPrefillParam(parts, "bottleId", u.bottleId);
+    }
+    if (u.bottleId === "custom" && parsePrefillNumber(u.bottleKg) != null) {
+      addPrefillParam(parts, "bottleKg", parsePrefillNumber(u.bottleKg));
+    } else if (!u.bottleId && parsePrefillNumber(u.bottleKg) != null) {
+      addPrefillParam(parts, "bottleKg", parsePrefillNumber(u.bottleKg));
+    }
+
+    return parts.join("&");
+  }
+
+  function buildGasPrefillHref(usage, base) {
+    var query = buildGasPrefillQuery(usage);
+    var path = base == null || base === "" ? "gas.html" : String(base);
+    return query ? path + "?" + query : path;
   }
 
   function gasPrefillHref(usage) {
     var computed = calcGasCooking(usage);
-    var params = new URLSearchParams();
-    params.set("adults", String(computed.adults));
-    params.set("children", String(computed.children));
-    params.set("mealsPerDay", String(computed.mealsPerDay));
-    params.set("cookingStyle", computed.cookingStyle);
-    params.set("heatingLevel", "off");
-    params.set("fridgeGasEnabled", "0");
-    params.set("boilerEnabled", "0");
-    params.set("gasType", computed.gasType);
-    params.set("bottleId", computed.bottleId);
-    params.set("bottleKg", String(computed.bottleKg));
-    return GAS_HREF + "?" + params.toString();
+    var prefill = {
+      adults: computed.adults,
+      children: computed.children,
+      mealsPerDay: computed.mealsPerDay,
+      cookingStyle: computed.cookingStyle,
+      heatingLevel: "off",
+      fridgeGasEnabled: 0,
+      boilerEnabled: 0,
+      gasType: computed.gasType,
+      bottleId: computed.bottleId
+    };
+    if (computed.tripDays != null && computed.tripDays > 0) {
+      prefill.tripDays = computed.tripDays;
+    }
+    if (computed.bottleId === "custom") {
+      prefill.bottleKg = computed.bottleKg;
+    }
+    return buildGasPrefillHref(prefill, GAS_HREF);
   }
 
   /* ----- Deterministic NL parse (LLM may only refine slots) ----- */
@@ -1584,6 +1697,9 @@
     payloadPrefillHref: payloadPrefillHref,
     emptyGasUsage: emptyGasUsage,
     calcGasCooking: calcGasCooking,
+    GAS_PREFILL_KEYS: GAS_PREFILL_KEYS,
+    buildGasPrefillQuery: buildGasPrefillQuery,
+    buildGasPrefillHref: buildGasPrefillHref,
     gasPrefillHref: gasPrefillHref,
     parseGasUsage: parseGasUsage,
     parseIntent: parseIntent,
