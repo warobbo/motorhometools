@@ -420,26 +420,38 @@
       }
     );
 
+    // l / litre(s) / liter(s) / ltr / ltrs — UK shorthand “100ltrs” must not be dropped.
     take(
-      /(\d+(?:\.\d+)?)\s*l(?:itres?|iters?)?\s+(?:of\s+)?(?:fresh\s+)?water/g,
+      /(\d+(?:\.\d+)?)\s*l(?:itres?|iters?|trs?)?\b\s+(?:of\s+)?(?:fresh\s+)?water/g,
       function (match) {
         return { type: "water", litres: num(match[1]), fillPct: 100 };
       }
     );
 
     take(
-      /(?:fresh\s+)?water\s+(\d+(?:\.\d+)?)\s*l(?:itres?|iters?)?/g,
+      /(?:fresh\s+)?water\s+(\d+(?:\.\d+)?)\s*l(?:itres?|iters?|trs?)?\b/g,
       function (match) {
         return { type: "water", litres: num(match[1]), fillPct: 100 };
       }
     );
 
     take(
-      /(\d+(?:\.\d+)?)\s*l(?:itres?|iters?)?\s+(?:full\s+)?(?:fresh\s+)?tank/g,
+      /(\d+(?:\.\d+)?)\s*l(?:itres?|iters?|trs?)?\b\s+(?:full\s+)?(?:fresh\s+)?tank/g,
       function (match) {
         return { type: "water", litres: num(match[1]), fillPct: 100 };
       }
     );
+
+    var hasWater = intent.items.some(function (item) { return item.type === "water"; });
+    if (!hasWater) {
+      take(
+        /(\d+(?:\.\d+)?)\s*(?:litres?|liters?|ltrs?)\b/g,
+        function (match) {
+          return { type: "water", litres: num(match[1]), fillPct: 100 };
+        }
+      );
+      hasWater = intent.items.some(function (item) { return item.type === "water"; });
+    }
 
     take(
       /(\d+|a|an|one|two|three|four|five|six)\s*(?:x\s*)?(6|9|13)\s*kg\s+(?:gas\s+)?bottles?/g,
@@ -466,11 +478,23 @@
 
     if (/\bfull\s+(?:fresh\s+)?(?:water\s+)?tank\b/.test(query)) {
       intent.fullTank = true;
-      var hasWater = intent.items.some(function (item) { return item.type === "water"; });
       if (!hasWater) {
         intent.items.push({ type: "water", litres: null, fillPct: 100 });
+        hasWater = true;
       }
     }
+
+    if (!hasWater && mentionsFreshWater(query)) {
+      intent.items.push({ type: "water", litres: null, fillPct: 100 });
+    }
+  }
+
+  function mentionsFreshWater(query) {
+    var cleaned = String(query || "")
+      .replace(/\b(?:grey|gray|waste|black|dirty)\s+waters?\b/g, " ")
+      .replace(/\bwaters?\s+(?:pump|heater|tap|hose|filter)s?\b/g, " ")
+      .replace(/\b(?:pump|heater)\s+waters?\b/g, " ");
+    return /\b(?:fresh\s+)?waters?\b/.test(cleaned);
   }
 
   function extractDanglingQty(query, intent) {

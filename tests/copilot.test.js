@@ -183,6 +183,65 @@ test("golden: 500 kg payload + 3 bikes (no kg) uses 14 kg + 12 kg rack defaults"
   assert.equal(result.remainingKg, sibling.remaining);
 });
 
+test("golden: 500 kg payload + 3 bikes + 100ltrs water uses 154 kg / 346 kg left", function () {
+  const variants = [
+    "I have 500kg of payload, what happens when I add 3 bikes and 100ltrs of water",
+    "I have 500kg of payload, what happens when I add 3 bikes and 100 ltrs of water",
+    "I have 500kg of payload, what happens when I add 3 bikes and 100ltr of water",
+    "I have 500kg of payload, what happens when I add 3 bikes and 100 litres of water",
+    "I have 500kg of payload, what happens when I add 3 bikes and 100l of water",
+    "I have 500kg of payload, what happens when I add 3 bikes and 100L water",
+    "I have 500kg of payload, what happens when I add 3 bikes and 100 liters"
+  ];
+  const sibling = siblingCompute({
+    mam: 500,
+    freshCap: 100,
+    freshFill: 100,
+    bikes: 3,
+    bikeKg: copilot.BIKE_DEFAULT_KG,
+    rackKg: copilot.RACK_DEFAULT_KG
+  });
+  assert.equal(sibling.added, 154);
+  assert.equal(sibling.remaining, 346);
+
+  variants.forEach(function (question) {
+    const result = copilot.handleAsk(question);
+    assert.equal(result.handled, true, question);
+    assert.equal(result.domain, "payload", question);
+    assert.equal(result.kind, "answer", question);
+    assert.equal(result.usedKg, 154, question);
+    assert.equal(result.remainingKg, 346, question);
+    assert.equal(result.usedKg, sibling.added, question);
+    assert.equal(result.remainingKg, sibling.remaining, question);
+    assert.ok(result.items.some(function (item) {
+      return /fresh water/i.test(item.label) && item.kg === 100;
+    }), question);
+    assert.ok(result.items.some(function (item) {
+      return /3 bike/i.test(item.label);
+    }), question);
+    assert.ok(result.assumptions.some(function (line) {
+      return /1 kg per litre/i.test(line);
+    }), question);
+    assert.equal(result.gaps.length, 0, question);
+    assert.match(result.href, /freshCap=100/, question);
+  });
+});
+
+test("payload + bikes + water with no litres is a gap, not a silent omit", function () {
+  const result = copilot.handleAsk(
+    "I have 500kg of payload, what happens when I add 3 bikes and water"
+  );
+  assert.equal(result.handled, true);
+  assert.equal(result.domain, "payload");
+  assert.equal(result.kind, "gap");
+  assert.equal(result.usedKg, 54);
+  assert.equal(result.remainingKg, 446);
+  assert.ok(result.gaps.some(function (line) { return /litres/i.test(line); }));
+  assert.ok(!result.items.some(function (item) { return /water/i.test(item.label); }));
+  assert.doesNotMatch(result.answer, /\b90\b/);
+  assert.match(result.answer, /54/);
+});
+
 test("incomplete “3 b” in payload context infers bikes and computes", function () {
   const result = copilot.handleAsk("I've got 500 kg payload — add 3 b");
   assert.equal(result.handled, true);

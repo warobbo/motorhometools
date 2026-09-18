@@ -27,7 +27,7 @@ Source: [warobbo/motorhome-payload-calculator](https://github.com/warobbo/motorh
 | --- | --- | --- |
 | Remaining payload the visitor already knows | Treated as `mam` with `miro = 0` so `remaining = available − named items` | Same as `mam − (base + added)` with empty base |
 | MAM + Mass in Service | `mam`, `miro` | `remaining = mam − (miro + added)` |
-| Fresh water litres | `freshCap` × `freshFill` / 100 | **1 kg per litre** |
+| Fresh water litres (`l` / litre(s) / liter(s) / `ltr` / `ltrs`) | `freshCap` × `freshFill` / 100 | **1 kg per litre** |
 | Gas bottles 6 / 9 / 13 kg labels | `gas6` / `gas9` / `gas13` × full-bottle kg | Full defaults **13 / 18.5 / 28 kg** (gas + steel cylinder) |
 | Pedal bikes, kg omitted | `bikes`, `bikeKg` | **14 kg each** — labelled Payload pedal-bike default |
 | Bike rack, not specified | `rackKg` when `bikes > 0` | **12 kg** — labelled Payload rack default |
@@ -56,7 +56,8 @@ Electrical presets (`BATT_KG`, `SOLAR_KG`), axle check, DVLA plate lookup, and t
 - Incomplete tokens like “3 b” in a payload question → infer bikes, or ask **one** short clarifying question, then compute. Do not dump blockers.
 - Unknown e-bike kg → gap / ask for kg. Do not use the 14 kg pedal default.
 - No remaining payload and no MAM → refuse plated invention, still hand off to Payload.
-- Full fresh tank with no litres → gap. Do not use the tool’s 90 L default.
+- Fresh water with litres (including UK `100ltrs` / `100 ltr`) → include at **1 kg per litre**. Do not drop the item.
+- Water mentioned with no litres (and full tank with no litres) → gap. Do not invent a tank size. Do not silently omit.
 - Tyres / PSI / bar / pressure → HOLD message only. Do not open a calculated pressure.
 - Power (“will batteries last 3 days…”) and water-duration questions → unhandled; existing synonym router / capture. **Phase B Power, Phase C Water** — same CTA pattern when those answers land.
 - Campsite / route / trip planner → unmatched capture. Hard stop.
