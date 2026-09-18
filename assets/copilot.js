@@ -116,7 +116,17 @@
   var CASSETTE_DEFAULT_FLUSHES = 5;
   var CASSETTE_DEFAULT_LITRES_PER_FLUSH = 0.25;
   var CASSETTE_DEFAULT_START_PERCENT = 0;
-  var CASSETTE_BLACK_KINDS = { cassette: 1, fixed: 1 };
+  /**
+   * blackKind contract from mhwater cassette-calc.js (PR #19).
+   * Aliases normalise to cassette | fixed.
+   */
+  var CASSETTE_BLACK_KIND_ALIASES = {
+    cassette: "cassette",
+    fixed: "fixed",
+    fixedblack: "fixed",
+    "fixed-black": "fixed",
+    fixed_black: "fixed"
+  };
   var CASSETTE_SOURCE = {
     repo: "warobbo/mhwater",
     file: "assets/cassette-calc.js",
@@ -129,7 +139,7 @@
       litresPerFlush: CASSETTE_DEFAULT_LITRES_PER_FLUSH,
       startPercent: CASSETTE_DEFAULT_START_PERCENT
     },
-    note: "Ask uses Cassette-calculator labelled defaults only. A 2nd / spare cassette is a second empty tank of the same litres — the Cassette page still shows one cassette; spare days are explained in Ask text."
+    note: "Ask uses Cassette-calculator labelled defaults only. A 2nd / spare cassette keeps blackTankLitres as one cassette and sends cassetteCount=2 (mhwater#19 multiplies into blackTankLitres on the page)."
   };
 
   var TYRES_HOLD_MESSAGE =
@@ -659,11 +669,25 @@
       flushesPerPersonPerDay: CASSETTE_DEFAULT_FLUSHES,
       litresPerFlush: CASSETTE_DEFAULT_LITRES_PER_FLUSH,
       startPercent: CASSETTE_DEFAULT_START_PERCENT,
+      cassetteCount: 1,
       hasSpare: false,
       peopleNamed: false,
       childrenNamed: false,
       sizeNamed: false
     };
+  }
+
+  function sanitiseCassetteBlackKind(value) {
+    if (value == null) return undefined;
+    var id = String(value).trim();
+    if (!id) return undefined;
+    return CASSETTE_BLACK_KIND_ALIASES[id] || CASSETTE_BLACK_KIND_ALIASES[id.toLowerCase()] || undefined;
+  }
+
+  function sanitiseCassetteCount(value) {
+    var n = parsePrefillNumber(value);
+    if (n == null || n < 1 || Math.round(n) !== n) return undefined;
+    return n;
   }
 
   function calcCassetteDays(raw) {
@@ -692,7 +716,7 @@
       children: children,
       heads: heads,
       tripDays: source.tripDays != null && source.tripDays !== "" ? num(source.tripDays) : null,
-      blackKind: source.blackKind === "fixed" ? "fixed" : "cassette",
+      blackKind: sanitiseCassetteBlackKind(source.blackKind) || "cassette",
       blackTankLitres: blackTankLitres,
       flushesPerPersonPerDay: flushes,
       litresPerFlush: litresPerFlush,
@@ -702,14 +726,15 @@
       daysOne: daysOne,
       daysTwo: daysTwo,
       extraDays: daysTwo - daysOne,
-      hasSpare: !!source.hasSpare
+      hasSpare: !!source.hasSpare,
+      cassetteCount: sanitiseCassetteCount(source.cassetteCount) || (source.hasSpare ? 2 : 1)
     };
   }
 
   /**
-   * Ask→Cassette query keys aligned with mhwater cassette defaults /
-   * a sibling cassette URL-prefill change. cassetteCount is not sent:
-   * mhwater still plans one cassette; spare days stay in Ask prose.
+   * Ask→Cassette query keys — mhwater cassette-calc.js PR #19 contract.
+   * cassetteCount is an Ask convenience: the page multiplies it into
+   * blackTankLitres. Ask keeps blackTankLitres as one cassette.
    */
   var CASSETTE_PREFILL_KEYS = [
     "adults",
@@ -717,6 +742,7 @@
     "tripDays",
     "blackKind",
     "blackTankLitres",
+    "cassetteCount",
     "flushesPerPersonPerDay",
     "litresPerFlush",
     "startPercent"
@@ -735,11 +761,14 @@
     if (parsePrefillNumber(u.tripDays) != null) {
       addPrefillParam(parts, "tripDays", parsePrefillNumber(u.tripDays));
     }
-    if (CASSETTE_BLACK_KINDS[u.blackKind]) {
-      addPrefillParam(parts, "blackKind", u.blackKind);
-    }
+    var blackKind = sanitiseCassetteBlackKind(u.blackKind);
+    if (blackKind) addPrefillParam(parts, "blackKind", blackKind);
     if (parsePrefillNumber(u.blackTankLitres) != null) {
       addPrefillParam(parts, "blackTankLitres", parsePrefillNumber(u.blackTankLitres));
+    }
+    var cassetteCount = sanitiseCassetteCount(u.cassetteCount);
+    if (cassetteCount != null && cassetteCount > 1) {
+      addPrefillParam(parts, "cassetteCount", cassetteCount);
     }
     if (parsePrefillNumber(u.flushesPerPersonPerDay) != null) {
       addPrefillParam(parts, "flushesPerPersonPerDay", parsePrefillNumber(u.flushesPerPersonPerDay));
@@ -773,6 +802,9 @@
     };
     if (computed.tripDays != null && computed.tripDays > 0) {
       prefill.tripDays = computed.tripDays;
+    }
+    if (computed.cassetteCount != null && computed.cassetteCount > 1) {
+      prefill.cassetteCount = computed.cassetteCount;
     }
     return buildCassettePrefillHref(prefill, CASSETTE_HREF);
   }
@@ -938,6 +970,8 @@
     usage.hasSpare = /\b(?:2nd|second|spare|extra)\s+(?:toilet\s+)?cassettes?\b/.test(query) ||
       /\b(?:2nd|second|spare|extra)\s+toilet\b/.test(query) ||
       /\bextra\s+days\b/.test(query);
+    if (usage.hasSpare) usage.cassetteCount = 2;
+    if (/\bfixed[\s_-]*black\b/.test(query)) usage.blackKind = "fixed";
 
     var adults = query.match(/\b(\d+|one|two|three|four|five|six)\s+adults?\b/);
     var people = query.match(/\b(\d+|one|two|three|four|five|six)\s+(?:people|persons?)\b/);
@@ -1571,7 +1605,7 @@
       assumptions.push(
         "A 2nd / spare cassette is another empty " +
         formatCassetteLitres(computed.blackTankLitres) +
-        " L tank. Cassette still shows one cassette; extra days are this second tank."
+        " L tank. Open Cassette sends cassetteCount=2 so the page multiplies that into the tank size."
       );
     }
     assumptions.push("Planning estimate from Cassette flush litres only. Not a waste test or a venue list.");

@@ -649,7 +649,7 @@ test("golden: 2nd toilet cassette for 2 estimates ~7 extra / ~14 total days, sta
   assert.match(result.href, /flushesPerPersonPerDay=5/);
   assert.match(result.href, /litresPerFlush=0\.25/);
   assert.match(result.href, /startPercent=0/);
-  assert.doesNotMatch(result.href, /cassetteCount=/);
+  assert.match(result.href, /cassetteCount=2/);
   assert.doesNotMatch(result.href, /blackTankLitres=36/);
   assert.match(result.hrefLabel, /Open Cassette to fine-tune/i);
   assert.equal(result.ctaNote, copilot.CTA_NOTE);
@@ -662,6 +662,7 @@ test("golden: 2nd toilet cassette for 2 estimates ~7 extra / ~14 total days, sta
   assert.equal(decision.view.domain, "cassette");
   assert.match(decision.view.href, /blackTankLitres=18/);
   assert.match(decision.view.href, /adults=2/);
+  assert.match(decision.view.href, /cassetteCount=2/);
   assert.equal(decision.view.wasteDaily, 2.5);
   assert.ok(Math.abs(decision.view.extraDays - 7.2) < 1e-9);
 
@@ -677,7 +678,7 @@ test("golden: 2nd toilet cassette for 2 estimates ~7 extra / ~14 total days, sta
   assert.equal(result.extraDays, sibling.extraDays);
 });
 
-test("Cassette CTA href matches Ask prefill contract for two people", function () {
+test("Cassette CTA href matches mhwater PR #19 contract for a 2nd cassette", function () {
   const href = copilot.buildCassettePrefillHref({
     adults: 2,
     children: 0,
@@ -685,7 +686,8 @@ test("Cassette CTA href matches Ask prefill contract for two people", function (
     blackTankLitres: 18,
     flushesPerPersonPerDay: 5,
     litresPerFlush: 0.25,
-    startPercent: 0
+    startPercent: 0,
+    cassetteCount: 2
   }, "https://motorhomewater.co.uk/cassette.html");
   const qs = href.slice(href.indexOf("?") + 1);
   const params = new URLSearchParams(qs);
@@ -697,11 +699,27 @@ test("Cassette CTA href matches Ask prefill contract for two people", function (
   assert.equal(params.get("flushesPerPersonPerDay"), "5");
   assert.equal(params.get("litresPerFlush"), "0.25");
   assert.equal(params.get("startPercent"), "0");
+  assert.equal(params.get("cassetteCount"), "2");
   assert.equal(params.get("tripDays"), null);
-  assert.equal(params.get("cassetteCount"), null);
-  copilot.CASSETTE_PREFILL_KEYS.forEach(function (key) {
-    assert.ok(typeof key === "string");
-  });
+  assert.deepEqual(copilot.CASSETTE_PREFILL_KEYS, [
+    "adults",
+    "children",
+    "tripDays",
+    "blackKind",
+    "blackTankLitres",
+    "cassetteCount",
+    "flushesPerPersonPerDay",
+    "litresPerFlush",
+    "startPercent"
+  ]);
+  assert.equal(
+    copilot.buildCassettePrefillHref({ blackKind: "fixedBlack" }, "cassette.html"),
+    "cassette.html?blackKind=fixed"
+  );
+  assert.equal(
+    copilot.buildCassettePrefillHref({ blackKind: "fixed-black" }, "cassette.html"),
+    "cassette.html?blackKind=fixed"
+  );
 });
 
 test("vague cassette / toilet stays a later stub — no invented empty-days", function () {
