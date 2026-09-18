@@ -59,7 +59,7 @@ Electrical presets (`BATT_KG`, `SOLAR_KG`), axle check, DVLA plate lookup, and t
 - Fresh water with litres (including UK `100ltrs` / `100 ltr`) → include at **1 kg per litre**. Do not drop the item.
 - Water mentioned with no litres (and full tank with no litres) → gap. Do not invent a tank size. Do not silently omit.
 - Tyres / PSI / bar / pressure → HOLD message only. Do not open a calculated pressure.
-- Power (“will batteries last 3 days…”) and water-duration questions → unhandled; existing synonym router / capture. **Phase B Power, Phase C Water** — same CTA pattern when those answers land.
+- Power / Water / Gas duration questions → stay in Ask with an honest “not calculated yet” card and a soft calculator CTA. Do not auto-open a tab. Do not invent Ah, watts, burn rates or bottle-days. **Phase B Power, Phase C Water / Gas.**
 - Campsite / route / trip planner → unmatched capture. Hard stop.
 
 Tone: guidance / solutions. Gaps are secondary notes, not the headline. Strong pink/red styling is for true unknowns with no standard, or Tyres HOLD — not for labelled bike / water / gas assumptions.
