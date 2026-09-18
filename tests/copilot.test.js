@@ -1,12 +1,15 @@
 "use strict";
 
 /**
- * Golden tests for Phase A Payload-first co-pilot Ask and Phase Gas
- * cooking-line estimates. Payload maths must match
+ * Golden tests for Phase A Payload-first co-pilot Ask, Phase Gas
+ * cooking-line estimates, and Phase Cassette empty-days estimates.
+ * Payload maths must match
  * warobbo/motorhome-payload-calculator compute() / custom-kit.
  * Gas maths must match warobbo/mhwater gas-calc.js cooking line only
- * (light 0.025 / normal 0.04 / heavy 0.07, child 0.7). Never invent
- * MAM, tyre pressures, e-bike kg, or an outdoor BBQ kg/h.
+ * (light 0.025 / normal 0.04 / heavy 0.07, child 0.7). Cassette maths
+ * must match mhwater cassette-calc.js labelled defaults (18 L, 5
+ * flushes, 0.25 L/flush, start 0%). Never invent MAM, tyre pressures,
+ * e-bike kg, an outdoor BBQ kg/h, or cassette flush rates.
  */
 
 const { test } = require("node:test");
@@ -558,6 +561,164 @@ test("custom bottle kg is sent only when bottleId is custom", function () {
   assert.match(href, /bottleId=custom/);
   assert.match(href, /bottleKg=10/);
   assert.match(href, /gasType=propane/);
+});
+
+function siblingCassetteDays(state) {
+  const adults = state.adults;
+  const children = state.children || 0;
+  const flushes = state.flushesPerPersonPerDay;
+  const litresPerFlush = state.litresPerFlush;
+  const blackTankLitres = state.blackTankLitres;
+  const startPercent = state.startPercent == null ? 0 : state.startPercent;
+  const wasteDaily = (adults + children) * flushes * litresPerFlush;
+  const usable = blackTankLitres * (1 - startPercent / 100);
+  const daysOne = wasteDaily > 0 && usable > 0 ? usable / wasteDaily : 0;
+  const daysTwo = wasteDaily > 0 && usable > 0 ? (2 * usable) / wasteDaily : 0;
+  return {
+    wasteDaily: wasteDaily,
+    daysOne: daysOne,
+    daysTwo: daysTwo,
+    extraDays: daysTwo - daysOne
+  };
+}
+
+test("Cassette empty-days maths matches mhwater calcCassette days-until-empty", function () {
+  const ours = copilot.calcCassetteDays({
+    adults: 2,
+    children: 0,
+    flushesPerPersonPerDay: 5,
+    litresPerFlush: 0.25,
+    blackTankLitres: 18,
+    startPercent: 0
+  });
+  const sibling = siblingCassetteDays({
+    adults: 2,
+    children: 0,
+    flushesPerPersonPerDay: 5,
+    litresPerFlush: 0.25,
+    blackTankLitres: 18,
+    startPercent: 0
+  });
+  assert.equal(ours.wasteDaily, 2.5);
+  assert.equal(ours.wasteDaily, sibling.wasteDaily);
+  assert.ok(Math.abs(ours.daysOne - 7.2) < 1e-9);
+  assert.ok(Math.abs(ours.daysTwo - 14.4) < 1e-9);
+  assert.ok(Math.abs(ours.extraDays - 7.2) < 1e-9);
+  assert.equal(ours.daysOne, sibling.daysOne);
+  assert.equal(ours.extraDays, sibling.extraDays);
+  assert.equal(ours.blackTankLitres, copilot.CASSETTE_DEFAULT_LITRES);
+  assert.equal(ours.flushesPerPersonPerDay, copilot.CASSETTE_DEFAULT_FLUSHES);
+  assert.equal(ours.litresPerFlush, copilot.CASSETTE_DEFAULT_LITRES_PER_FLUSH);
+});
+
+test("golden: 2nd toilet cassette for 2 estimates ~7 extra / ~14 total days, stays in Ask", function () {
+  const question = "how many extra days with a 2nd toilet cassette for 2";
+  const result = copilot.handleAsk(question);
+  assert.equal(result.handled, true);
+  assert.equal(result.domain, "cassette");
+  assert.equal(result.kind, "answer");
+  assert.equal(result.wasteDaily, 2.5);
+  assert.ok(Math.abs(result.daysOne - 7.2) < 1e-9);
+  assert.ok(Math.abs(result.daysTwo - 14.4) < 1e-9);
+  assert.ok(Math.abs(result.extraDays - 7.2) < 1e-9);
+  assert.match(result.answer, /2\.5/);
+  assert.match(result.answer, /7\.2/);
+  assert.match(result.answer, /14/);
+  assert.match(result.answer, /extra days/i);
+  assert.match(result.answer, /planning estimate/i);
+  assert.ok(result.assumptions.some(function (line) {
+    return /18\s*L/i.test(line) && /default/i.test(line);
+  }));
+  assert.ok(result.assumptions.some(function (line) {
+    return /5/.test(line) && /0\.25/.test(line);
+  }));
+  assert.ok(result.assumptions.some(function (line) {
+    return /empty/i.test(line) && /0/.test(line);
+  }));
+  assert.ok(result.assumptions.some(function (line) {
+    return /2nd|spare/i.test(line) && /18/.test(line);
+  }));
+  assert.ok(result.followUps.some(function (line) {
+    return /cassette litres \/ flushes/i.test(line);
+  }));
+  assert.match(result.href, /^https:\/\/motorhomewater\.co\.uk\/cassette\.html\?/);
+  assert.match(result.href, /adults=2/);
+  assert.match(result.href, /children=0/);
+  assert.match(result.href, /blackKind=cassette/);
+  assert.match(result.href, /blackTankLitres=18/);
+  assert.match(result.href, /flushesPerPersonPerDay=5/);
+  assert.match(result.href, /litresPerFlush=0\.25/);
+  assert.match(result.href, /startPercent=0/);
+  assert.doesNotMatch(result.href, /cassetteCount=/);
+  assert.doesNotMatch(result.href, /blackTankLitres=36/);
+  assert.match(result.hrefLabel, /Open Cassette to fine-tune/i);
+  assert.equal(result.ctaNote, copilot.CTA_NOTE);
+
+  const decision = copilot.resolveAsk(question, { routeAsk: routeAsk });
+  assert.equal(decision.navigate, false);
+  assert.equal(decision.unmatched, false);
+  assert.equal(decision.view.handled, true);
+  assert.equal(decision.view.kind, "answer");
+  assert.equal(decision.view.domain, "cassette");
+  assert.match(decision.view.href, /blackTankLitres=18/);
+  assert.match(decision.view.href, /adults=2/);
+  assert.equal(decision.view.wasteDaily, 2.5);
+  assert.ok(Math.abs(decision.view.extraDays - 7.2) < 1e-9);
+
+  const sibling = siblingCassetteDays({
+    adults: 2,
+    children: 0,
+    flushesPerPersonPerDay: 5,
+    litresPerFlush: 0.25,
+    blackTankLitres: 18,
+    startPercent: 0
+  });
+  assert.equal(result.wasteDaily, sibling.wasteDaily);
+  assert.equal(result.extraDays, sibling.extraDays);
+});
+
+test("Cassette CTA href matches Ask prefill contract for two people", function () {
+  const href = copilot.buildCassettePrefillHref({
+    adults: 2,
+    children: 0,
+    blackKind: "cassette",
+    blackTankLitres: 18,
+    flushesPerPersonPerDay: 5,
+    litresPerFlush: 0.25,
+    startPercent: 0
+  }, "https://motorhomewater.co.uk/cassette.html");
+  const qs = href.slice(href.indexOf("?") + 1);
+  const params = new URLSearchParams(qs);
+  assert.equal(href.startsWith("https://motorhomewater.co.uk/cassette.html?"), true);
+  assert.equal(params.get("adults"), "2");
+  assert.equal(params.get("children"), "0");
+  assert.equal(params.get("blackKind"), "cassette");
+  assert.equal(params.get("blackTankLitres"), "18");
+  assert.equal(params.get("flushesPerPersonPerDay"), "5");
+  assert.equal(params.get("litresPerFlush"), "0.25");
+  assert.equal(params.get("startPercent"), "0");
+  assert.equal(params.get("tripDays"), null);
+  assert.equal(params.get("cassetteCount"), null);
+  copilot.CASSETTE_PREFILL_KEYS.forEach(function (key) {
+    assert.ok(typeof key === "string");
+  });
+});
+
+test("vague cassette / toilet stays a later stub — no invented empty-days", function () {
+  const result = copilot.handleAsk("open cassette");
+  assert.equal(result.handled, true);
+  assert.equal(result.domain, "cassette");
+  assert.equal(result.kind, "later");
+  assert.equal(result.wasteDaily, null);
+  assert.match(result.hrefLabel, /Open Cassette/i);
+  assert.doesNotMatch(result.answer, /7\.2/);
+  assert.doesNotMatch(result.answer, /2\.5/);
+  assert.match(result.answer, /I don.t plan cassette empties in Ask yet/i);
+
+  const toilet = copilot.handleAsk("toilet");
+  assert.equal(toilet.kind, "later");
+  assert.equal(toilet.domain, "cassette");
+  assert.equal(copilot.resolveAsk("cassette", { routeAsk: routeAsk }).navigate, false);
 });
 
 test("gas fridge stays a later stub — cooking estimate is not invented for absorption fridges", function () {

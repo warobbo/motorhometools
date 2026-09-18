@@ -51,6 +51,9 @@
     if (result.kind === "answer" && result.domain === "gas") {
       return "Rough gas estimate. Open Gas to fine-tune with your figures.";
     }
+    if (result.kind === "answer" && result.domain === "cassette") {
+      return "Rough cassette estimate. Open Cassette to fine-tune with your figures.";
+    }
     if (result.kind === "answer") return "Rough payload estimate. Open Payload to fine-tune with your figures.";
     if (result.kind === "clarify") return "One quick check, then I can calculate.";
     if (result.kind === "later") return "Ask can’t calculate that yet. Open the calculator to enter your figures.";
@@ -94,7 +97,7 @@
       cta.className = "ask-cta";
       var link = document.createElement("a");
       link.className = "ask-cta-link";
-      // Copilot href already includes Payload prefill (?bikes=, mam + miro=0, …).
+      // Copilot href already includes calculator prefill (?bikes=, gas, cassette).
       // Do not replace this with the bare hub URL.
       link.href = result.href;
       link.target = "_blank";

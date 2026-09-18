@@ -10,8 +10,10 @@
  *   lib/fuel-payload.js
  *
  * Phase A: Payload estimates. Phase Gas: cooking-line bottle-days from
- * mhwater gas-calc.js (no invented outdoor BBQ kg/h). Power / Water
- * stay later stubs. Tyres is HOLD — caution message only, no pressures.
+ * mhwater gas-calc.js (no invented outdoor BBQ kg/h). Phase Cassette:
+ * empty-days from mhwater cassette-calc.js labelled defaults (no invented
+ * flush or tank rates). Power / Water stay later stubs. Tyres is HOLD —
+ * caution message only, no pressures.
  *
  * Labelled Payload defaults (bike 14 kg, rack 12 kg, water 1 kg/L, gas
  * full-bottle) are applied when the visitor does not type a kg. Answer
@@ -54,6 +56,8 @@
   var GAS_FOLLOW_UP = "Tell me bottle kg / minutes and I’ll recalculate.";
   var GAS_BBQ_PROXY_NOTE =
     "Treating each BBQ use as a Gas-calculator heavy cook meal (oven/grill/long simmer rate) — not a separate outdoor BBQ kg/h.";
+  var CASSETTE_CTA_LABEL = "Open Cassette to fine-tune";
+  var CASSETTE_FOLLOW_UP = "Tell me cassette litres / flushes and I’ll recalculate.";
 
   /**
    * Cooking-line constants from warobbo/mhwater assets/gas-calc.js.
@@ -101,6 +105,31 @@
     childFactor: GAS_CHILD_FACTOR,
     defaultBottle: { id: "butane7", gasType: "butane", kg: 7 },
     note: "Ask uses the Gas-calculator cooking line only. Heating, fridge-on-gas and boiler stay off for BBQ / outdoor-cook longevity unless the visitor said otherwise. No invented outdoor BBQ kg/h."
+  };
+
+  /**
+   * Cassette empty-days constants from warobbo/mhwater
+   * assets/cassette-defaults.js / cassette-calc.js labelled defaults.
+   * Do not drift. Ask does not invent flush rates or tank litres.
+   */
+  var CASSETTE_DEFAULT_LITRES = 18;
+  var CASSETTE_DEFAULT_FLUSHES = 5;
+  var CASSETTE_DEFAULT_LITRES_PER_FLUSH = 0.25;
+  var CASSETTE_DEFAULT_START_PERCENT = 0;
+  var CASSETTE_BLACK_KINDS = { cassette: 1, fixed: 1 };
+  var CASSETTE_SOURCE = {
+    repo: "warobbo/mhwater",
+    file: "assets/cassette-calc.js",
+    defaults: {
+      adults: 2,
+      children: 0,
+      blackKind: "cassette",
+      blackTankLitres: CASSETTE_DEFAULT_LITRES,
+      flushesPerPersonPerDay: CASSETTE_DEFAULT_FLUSHES,
+      litresPerFlush: CASSETTE_DEFAULT_LITRES_PER_FLUSH,
+      startPercent: CASSETTE_DEFAULT_START_PERCENT
+    },
+    note: "Ask uses Cassette-calculator labelled defaults only. A 2nd / spare cassette is a second empty tank of the same litres — the Cassette page still shows one cassette; spare days are explained in Ask text."
   };
 
   var TYRES_HOLD_MESSAGE =
@@ -174,6 +203,18 @@
     if (!Number.isFinite(n)) return "—";
     var digits = n >= 10 ? 0 : 1;
     return n.toLocaleString("en-GB", { maximumFractionDigits: digits });
+  }
+
+  function formatCassetteLitres(value) {
+    var n = Number(value);
+    if (!Number.isFinite(n)) return "—";
+    if (Math.abs(n - Math.round(n)) < 1e-9) {
+      return Math.round(n).toLocaleString("en-GB");
+    }
+    return n.toLocaleString("en-GB", {
+      maximumFractionDigits: 2,
+      minimumFractionDigits: n < 1 ? 2 : 0
+    });
   }
 
   function clampGas(value, min, max) {
@@ -601,6 +642,141 @@
     return buildGasPrefillHref(prefill, GAS_HREF);
   }
 
+  /**
+   * Cassette empty-days from mhwater cassette-calc.js:
+   * wasteDaily = heads × flushes × litresPerFlush
+   * daysOne = usable / wasteDaily
+   * usable = blackTankLitres × (1 − startPercent/100)
+   * A 2nd cassette doubles usable litres; extraDays = daysTwo − daysOne.
+   */
+  function emptyCassetteUsage() {
+    return {
+      adults: 2,
+      children: 0,
+      tripDays: null,
+      blackKind: "cassette",
+      blackTankLitres: CASSETTE_DEFAULT_LITRES,
+      flushesPerPersonPerDay: CASSETTE_DEFAULT_FLUSHES,
+      litresPerFlush: CASSETTE_DEFAULT_LITRES_PER_FLUSH,
+      startPercent: CASSETTE_DEFAULT_START_PERCENT,
+      hasSpare: false,
+      peopleNamed: false,
+      childrenNamed: false,
+      sizeNamed: false
+    };
+  }
+
+  function calcCassetteDays(raw) {
+    var source = raw && typeof raw === "object" ? raw : {};
+    var adults = clampGas(Math.round(num(source.adults) || 0), 0, GAS_MAX_PEOPLE);
+    var children = clampGas(Math.round(num(source.children) || 0), 0, GAS_MAX_PEOPLE);
+    var flushes = source.flushesPerPersonPerDay == null || source.flushesPerPersonPerDay === ""
+      ? CASSETTE_DEFAULT_FLUSHES
+      : num(source.flushesPerPersonPerDay);
+    var litresPerFlush = source.litresPerFlush == null || source.litresPerFlush === ""
+      ? CASSETTE_DEFAULT_LITRES_PER_FLUSH
+      : num(source.litresPerFlush);
+    var blackTankLitres = source.blackTankLitres == null || source.blackTankLitres === ""
+      ? CASSETTE_DEFAULT_LITRES
+      : num(source.blackTankLitres);
+    var startPercent = source.startPercent == null || source.startPercent === ""
+      ? CASSETTE_DEFAULT_START_PERCENT
+      : clampGas(num(source.startPercent), 0, 100);
+    var heads = adults + children;
+    var wasteDaily = heads * flushes * litresPerFlush;
+    var usableLitres = blackTankLitres * (1 - startPercent / 100);
+    var daysOne = wasteDaily > 0 && usableLitres > 0 ? usableLitres / wasteDaily : 0;
+    var daysTwo = wasteDaily > 0 && usableLitres > 0 ? (2 * usableLitres) / wasteDaily : 0;
+    return {
+      adults: adults,
+      children: children,
+      heads: heads,
+      tripDays: source.tripDays != null && source.tripDays !== "" ? num(source.tripDays) : null,
+      blackKind: source.blackKind === "fixed" ? "fixed" : "cassette",
+      blackTankLitres: blackTankLitres,
+      flushesPerPersonPerDay: flushes,
+      litresPerFlush: litresPerFlush,
+      startPercent: startPercent,
+      wasteDaily: wasteDaily,
+      usableLitres: usableLitres,
+      daysOne: daysOne,
+      daysTwo: daysTwo,
+      extraDays: daysTwo - daysOne,
+      hasSpare: !!source.hasSpare
+    };
+  }
+
+  /**
+   * Ask→Cassette query keys aligned with mhwater cassette defaults /
+   * a sibling cassette URL-prefill change. cassetteCount is not sent:
+   * mhwater still plans one cassette; spare days stay in Ask prose.
+   */
+  var CASSETTE_PREFILL_KEYS = [
+    "adults",
+    "children",
+    "tripDays",
+    "blackKind",
+    "blackTankLitres",
+    "flushesPerPersonPerDay",
+    "litresPerFlush",
+    "startPercent"
+  ];
+
+  function buildCassettePrefillQuery(usage) {
+    var u = usage && typeof usage === "object" ? usage : {};
+    var parts = [];
+
+    if (parsePrefillNumber(u.adults) != null) {
+      addPrefillParam(parts, "adults", Math.round(parsePrefillNumber(u.adults)));
+    }
+    if (parsePrefillNumber(u.children) != null) {
+      addPrefillParam(parts, "children", Math.round(parsePrefillNumber(u.children)));
+    }
+    if (parsePrefillNumber(u.tripDays) != null) {
+      addPrefillParam(parts, "tripDays", parsePrefillNumber(u.tripDays));
+    }
+    if (CASSETTE_BLACK_KINDS[u.blackKind]) {
+      addPrefillParam(parts, "blackKind", u.blackKind);
+    }
+    if (parsePrefillNumber(u.blackTankLitres) != null) {
+      addPrefillParam(parts, "blackTankLitres", parsePrefillNumber(u.blackTankLitres));
+    }
+    if (parsePrefillNumber(u.flushesPerPersonPerDay) != null) {
+      addPrefillParam(parts, "flushesPerPersonPerDay", parsePrefillNumber(u.flushesPerPersonPerDay));
+    }
+    if (parsePrefillNumber(u.litresPerFlush) != null) {
+      addPrefillParam(parts, "litresPerFlush", parsePrefillNumber(u.litresPerFlush));
+    }
+    if (parsePrefillNumber(u.startPercent) != null) {
+      addPrefillParam(parts, "startPercent", parsePrefillNumber(u.startPercent));
+    }
+
+    return parts.join("&");
+  }
+
+  function buildCassettePrefillHref(usage, base) {
+    var query = buildCassettePrefillQuery(usage);
+    var path = base == null || base === "" ? "cassette.html" : String(base);
+    return query ? path + "?" + query : path;
+  }
+
+  function cassettePrefillHref(usage) {
+    var computed = calcCassetteDays(usage);
+    var prefill = {
+      adults: computed.adults,
+      children: computed.children,
+      blackKind: computed.blackKind,
+      blackTankLitres: computed.blackTankLitres,
+      flushesPerPersonPerDay: computed.flushesPerPersonPerDay,
+      litresPerFlush: computed.litresPerFlush,
+      startPercent: computed.startPercent
+    };
+    if (computed.tripDays != null && computed.tripDays > 0) {
+      prefill.tripDays = computed.tripDays;
+    }
+    return buildCassettePrefillHref(prefill, CASSETTE_HREF);
+  }
+
   /* ----- Deterministic NL parse (LLM may only refine slots) ----- */
 
   function blankIntent() {
@@ -738,10 +914,81 @@
     return usage;
   }
 
+  function isCassetteTopic(query) {
+    if (/\bpayload|mam|miro|weighbridge|\bkg\b/.test(query)) return false;
+    if (isGasLater(query)) return false;
+    return /\b(?:cassettes?|toilets?|loos?|chemical\s+toilets?|porta[-\s]?pott(?:y|ies)|portapott(?:y|ies))\b/.test(query);
+  }
+
+  /**
+   * Cassette empties / days / 2nd-cassette questions can use Cassette defaults.
+   * Bare “cassette” / “toilet” / “open cassette” stay on the later soft CTA.
+   */
+  function isCassetteEstimate(query) {
+    if (!isCassetteTopic(query)) return false;
+    var longevity = /\b(?:how\s+(?:long|many|often)|days?|last(?:s|ing)?)\b/.test(query);
+    var empties = /\bempties\b/.test(query);
+    var spare = /\b(?:2nd|second|spare|extra)\s+(?:toilet\s+)?cassettes?\b/.test(query) ||
+      /\b(?:2nd|second|spare|extra)\s+toilet\b/.test(query);
+    return longevity || empties || spare;
+  }
+
+  function parseCassetteUsage(query) {
+    var usage = emptyCassetteUsage();
+    usage.hasSpare = /\b(?:2nd|second|spare|extra)\s+(?:toilet\s+)?cassettes?\b/.test(query) ||
+      /\b(?:2nd|second|spare|extra)\s+toilet\b/.test(query) ||
+      /\bextra\s+days\b/.test(query);
+
+    var adults = query.match(/\b(\d+|one|two|three|four|five|six)\s+adults?\b/);
+    var people = query.match(/\b(\d+|one|two|three|four|five|six)\s+(?:people|persons?)\b/);
+    var forN = query.match(/\bfor\s+(\d+|one|two|three|four|five|six)\b/);
+    var justMe = /\b(?:just me|on my own|myself|alone|solo)\b/.test(query);
+    var couple = /\b(?:couple|two of us)\b/.test(query);
+    if (adults) {
+      usage.adults = parseQty(adults[1]) || 2;
+      usage.peopleNamed = true;
+    } else if (people) {
+      usage.adults = parseQty(people[1]) || 2;
+      usage.peopleNamed = true;
+    } else if (forN) {
+      usage.adults = parseQty(forN[1]) || 2;
+      usage.peopleNamed = true;
+    } else if (justMe) {
+      usage.adults = 1;
+      usage.peopleNamed = true;
+    } else if (couple) {
+      usage.adults = 2;
+      usage.peopleNamed = true;
+    }
+
+    var children = query.match(/\b(\d+|a|an|one|two|three|four|five|six)\s+child(?:ren)?\b/) ||
+      query.match(/\b(\d+|a|an|one|two|three|four|five|six)\s+kids?\b/);
+    if (children) {
+      usage.children = parseQty(children[1]) || 1;
+      usage.childrenNamed = true;
+    } else if (/\b(?:kids?|children)\b/.test(query)) {
+      usage.children = 1;
+      usage.childrenNamed = true;
+    }
+
+    var size = query.match(/\b(\d+(?:\.\d+)?)\s*l(?:itres?|iters?)?\s+cassettes?\b/) ||
+      query.match(/\bcassettes?\s+(?:of\s+)?(\d+(?:\.\d+)?)\s*l(?:itres?|iters?)?\b/);
+    if (size) {
+      var litres = num(size[1]);
+      if (litres > 0) {
+        usage.blackTankLitres = litres;
+        usage.sizeNamed = true;
+      }
+    }
+
+    return usage;
+  }
+
   function isWaterLater(query) {
     if (/\bpayload|mam|\bkg\b/.test(query)) return false;
     if (isGasLater(query)) return false;
-    return /\b(?:shower|grey\s+water|cassette|days?\s+of\s+water)\b/.test(query) ||
+    if (isCassetteTopic(query)) return false;
+    return /\b(?:shower|grey\s+water|days?\s+of\s+water)\b/.test(query) ||
       /\bhow\s+(?:long|much)\b[\s\S]{0,40}\bwaters?\b/.test(query);
   }
 
@@ -981,6 +1228,10 @@
       intent.domain = "gas";
       return intent;
     }
+    if (isCassetteTopic(query)) {
+      intent.domain = "cassette";
+      return intent;
+    }
     if (isWaterLater(query)) {
       intent.domain = "water";
       return intent;
@@ -1121,7 +1372,11 @@
       usedKg: null,
       remainingKg: null,
       dailyKg: null,
-      bottleDays: null
+      bottleDays: null,
+      wasteDaily: null,
+      daysOne: null,
+      daysTwo: null,
+      extraDays: null
     };
   }
 
@@ -1232,13 +1487,130 @@
     };
   }
 
+  function cassetteCta(usage) {
+    return {
+      href: cassettePrefillHref(usage),
+      hrefLabel: CASSETTE_CTA_LABEL,
+      ctaNote: CTA_NOTE
+    };
+  }
+
+  function cassettePeoplePhrase(computed) {
+    var bits = [];
+    bits.push(computed.adults + (computed.adults === 1 ? " adult" : " adults"));
+    if (computed.children > 0) {
+      bits.push(computed.children + (computed.children === 1 ? " child" : " children"));
+    }
+    return bits.join(" + ");
+  }
+
+  function buildCassetteAnswer(computed, usage) {
+    var waste = formatCassetteLitres(computed.wasteDaily);
+    var daysOne = formatGasDays(computed.daysOne);
+    var litres = formatCassetteLitres(computed.blackTankLitres);
+    var flushes = formatCassetteLitres(computed.flushesPerPersonPerDay);
+    var perFlush = formatCassetteLitres(computed.litresPerFlush);
+    var lead = cassettePeoplePhrase(computed) +
+      " × " + flushes + " flushes × " + perFlush + " L = " + waste +
+      " L/day. An empty " + litres + " L cassette lasts about " + daysOne +
+      " days (planning estimate).";
+    if (!usage.hasSpare) return lead;
+    var extra = formatGasDays(computed.extraDays);
+    var total = formatGasDays(computed.daysTwo);
+    return cassettePeoplePhrase(computed) +
+      " × " + flushes + " flushes × " + perFlush + " L = " + waste +
+      " L/day. One empty " + litres + " L cassette lasts about " + daysOne +
+      " days. A 2nd cassette adds about " + extra +
+      " extra days (about " + total + " days total). Planning estimate.";
+  }
+
+  function handleCassette(intent, text) {
+    var query = normalise(text);
+    if (!isCassetteEstimate(query)) {
+      return laterGuide("cassette");
+    }
+
+    var usage = parseCassetteUsage(query);
+    var computed = calcCassetteDays(usage);
+    var assumptions = [];
+    var followUps = [CASSETTE_FOLLOW_UP];
+
+    if (!usage.peopleNamed) {
+      assumptions.push("2 adults — Cassette-calculator default, used because you didn’t say how many people.");
+    }
+    if (usage.childrenNamed) {
+      assumptions.push(
+        computed.children +
+        (computed.children === 1 ? " child" : " children") +
+        " counted as a full person on Cassette (flush litres, no child factor)."
+      );
+    }
+    if (!usage.sizeNamed) {
+      assumptions.push(
+        formatCassetteLitres(computed.blackTankLitres) +
+        " L cassette — Cassette-calculator labelled default."
+      );
+    } else {
+      assumptions.push(
+        formatCassetteLitres(computed.blackTankLitres) +
+        " L cassette, as typed."
+      );
+    }
+    assumptions.push(
+      formatCassetteLitres(computed.flushesPerPersonPerDay) +
+      " flushes per person per day × " +
+      formatCassetteLitres(computed.litresPerFlush) +
+      " L per flush — Cassette-calculator labelled defaults."
+    );
+    assumptions.push(
+      "Starting empty (" +
+      formatCassetteLitres(computed.startPercent) +
+      "%) — Cassette-calculator labelled default."
+    );
+    if (usage.hasSpare) {
+      assumptions.push(
+        "A 2nd / spare cassette is another empty " +
+        formatCassetteLitres(computed.blackTankLitres) +
+        " L tank. Cassette still shows one cassette; extra days are this second tank."
+      );
+    }
+    assumptions.push("Planning estimate from Cassette flush litres only. Not a waste test or a venue list.");
+
+    var cta = cassetteCta(Object.assign({}, usage, computed));
+
+    return {
+      handled: true,
+      domain: "cassette",
+      phase: "Cassette",
+      kind: "answer",
+      answer: buildCassetteAnswer(computed, usage),
+      assumptions: unique(assumptions),
+      gaps: [],
+      followUps: unique(followUps),
+      items: [],
+      href: cta.href,
+      hrefLabel: cta.hrefLabel,
+      ctaNote: cta.ctaNote,
+      usedKg: null,
+      remainingKg: null,
+      dailyKg: null,
+      bottleDays: null,
+      wasteDaily: computed.wasteDaily,
+      daysOne: computed.daysOne,
+      daysTwo: computed.daysTwo,
+      extraDays: computed.extraDays,
+      cassetteUsage: usage,
+      computed: computed
+    };
+  }
+
   function hasPrefillQuery(href) {
     return typeof href === "string" && href.indexOf("?") >= 0;
   }
 
   function applyRouteHref(result, match) {
     if (!result || !match) return result;
-    // Keep a prefilled calculator href (bikes, remaining mam+miro=0, water, gas).
+    // Keep a prefilled calculator href (bikes, remaining mam+miro=0, water, gas, cassette).
     // The synonym router only knows the bare hub URL.
     if (hasPrefillQuery(result.href)) return result;
     if (result.kind === "later") {
@@ -1628,6 +2000,7 @@
     tyres: handleTyresHold,
     power: function () { return handleLaterDomain("power", "B"); },
     gas: handleGas,
+    cassette: handleCassette,
     water: function () { return handleLaterDomain("water", "C"); }
   };
 
@@ -1648,6 +2021,9 @@
     }
     if (intent.domain === "gas") {
       return Object.assign(handleGas(intent, question), { intent: intent });
+    }
+    if (intent.domain === "cassette") {
+      return Object.assign(handleCassette(intent, question), { intent: intent });
     }
     if (intent.domain === "water") {
       return Object.assign(DOMAINS.water(), { intent: intent });
@@ -1685,7 +2061,11 @@
       followUps: result.followUps || [],
       phase: result.phase || null,
       dailyKg: result.dailyKg == null ? null : result.dailyKg,
-      bottleDays: result.bottleDays == null ? null : result.bottleDays
+      bottleDays: result.bottleDays == null ? null : result.bottleDays,
+      wasteDaily: result.wasteDaily == null ? null : result.wasteDaily,
+      daysOne: result.daysOne == null ? null : result.daysOne,
+      daysTwo: result.daysTwo == null ? null : result.daysTwo,
+      extraDays: result.extraDays == null ? null : result.extraDays
     };
   }
 
@@ -1703,6 +2083,14 @@
     GAS_BBQ_PROXY_NOTE: GAS_BBQ_PROXY_NOTE,
     GAS_CTA_LABEL: GAS_CTA_LABEL,
     GAS_FOLLOW_UP: GAS_FOLLOW_UP,
+    CASSETTE_HREF: CASSETTE_HREF,
+    CASSETTE_SOURCE: CASSETTE_SOURCE,
+    CASSETTE_DEFAULT_LITRES: CASSETTE_DEFAULT_LITRES,
+    CASSETTE_DEFAULT_FLUSHES: CASSETTE_DEFAULT_FLUSHES,
+    CASSETTE_DEFAULT_LITRES_PER_FLUSH: CASSETTE_DEFAULT_LITRES_PER_FLUSH,
+    CASSETTE_DEFAULT_START_PERCENT: CASSETTE_DEFAULT_START_PERCENT,
+    CASSETTE_CTA_LABEL: CASSETTE_CTA_LABEL,
+    CASSETTE_FOLLOW_UP: CASSETTE_FOLLOW_UP,
     WATER_KG_PER_L: WATER_KG_PER_L,
     BIKE_DEFAULT_KG: BIKE_DEFAULT_KG,
     RACK_DEFAULT_KG: RACK_DEFAULT_KG,
@@ -1724,6 +2112,14 @@
     buildGasPrefillHref: buildGasPrefillHref,
     gasPrefillHref: gasPrefillHref,
     parseGasUsage: parseGasUsage,
+    emptyCassetteUsage: emptyCassetteUsage,
+    calcCassetteDays: calcCassetteDays,
+    CASSETTE_PREFILL_KEYS: CASSETTE_PREFILL_KEYS,
+    buildCassettePrefillQuery: buildCassettePrefillQuery,
+    buildCassettePrefillHref: buildCassettePrefillHref,
+    cassettePrefillHref: cassettePrefillHref,
+    parseCassetteUsage: parseCassetteUsage,
+    isCassetteEstimate: isCassetteEstimate,
     parseIntent: parseIntent,
     handleAsk: handleAsk,
     resolveAsk: resolveAsk,
