@@ -183,6 +183,11 @@
     { id: "power", ask: "fan" },
     { id: "power", ask: "heater fan" },
     { id: "power", ask: "diesel heater" },
+    { id: "power", ask: "aircon" },
+    { id: "power", ask: "air-con" },
+    { id: "power", ask: "air conditioner" },
+    { id: "power", ask: "portable aircon" },
+    { id: "power", ask: "portable ac" },
     { id: "power", ask: "pump" },
     { id: "power", ask: "freezer" },
     { id: "power", ask: "hob" },
@@ -271,7 +276,10 @@
     "speakers?",
     "12\\s*-?v\\s+sockets?",
     "leisure\\s+sockets?",
-    "blowers?"
+    "blowers?",
+    "air[\\s-]?cons?",
+    "air[\\s-]?condition(?:ers?|ing)",
+    "portable\\s+acs?"
   ];
 
   var POWER_LOAD = POWER_APPLIANCE_TOKENS.join("|");

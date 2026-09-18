@@ -42,7 +42,7 @@
 
   function visualKind(result) {
     if (result.kind === "answer") return "ok";
-    if (result.kind === "clarify") return "note";
+    if (result.kind === "clarify" || result.kind === "later") return "note";
     return "warn";
   }
 
@@ -50,6 +50,7 @@
     if (result.domain === "tyres") return "Tyres is on hold — no invented pressure.";
     if (result.kind === "answer") return "Rough payload estimate. Open Payload to fine-tune with your figures.";
     if (result.kind === "clarify") return "One quick check, then I can calculate.";
+    if (result.kind === "later") return "Ask can’t calculate that yet. Open the calculator to enter your figures.";
     if (result.kind === "refuse") return "Need a plated or remaining-payload figure — I don’t invent those.";
     return "Need a figure we don’t have a standard for. Open Payload to enter yours.";
   }
@@ -238,23 +239,38 @@
       return;
     }
 
-    if (copilot) {
+    if (copilot && typeof copilot.resolveAsk === "function") {
+      var decision = copilot.resolveAsk(question, { routeAsk: router.routeAsk });
+      if (decision && decision.view && decision.view.handled) {
+        showCopilot(decision.view);
+        return;
+      }
+    } else if (copilot) {
       var copilotResult = copilot.publicResult(copilot.handleAsk(question));
       if (copilotResult && copilotResult.handled) {
         showCopilot(copilotResult);
         return;
       }
     }
-    clearAnswer();
 
     var match = router.routeAsk(question);
     if (match) {
-      setStatus("Opening " + match.label + " — we don’t invent numbers; that page will ask for yours.", "ok");
-      window.setTimeout(function () {
-        window.open(match.href, "_blank", "noopener,noreferrer");
-      }, 280);
+      if (copilot && typeof copilot.laterGuide === "function") {
+        showCopilot(copilot.publicResult(Object.assign(copilot.laterGuide(match.id), {
+          href: match.href,
+          hrefLabel: "Open " + match.label + " to enter your figures"
+        })));
+        return;
+      }
+      setStatus(
+        "The " + match.label + " calculator is the right place — we don’t invent numbers in Ask.",
+        "note",
+        { href: match.href, label: "Open " + match.label }
+      );
       return;
     }
+
+    clearAnswer();
 
     var email = emailInput && String(emailInput.value || "").trim();
     var record = buildRecord(question, email);

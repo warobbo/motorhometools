@@ -66,14 +66,14 @@ Tone: guidance / solutions. Gaps are secondary notes, not the headline. Strong p
 
 ## Extension point
 
-`assets/copilot.js` `DOMAINS`: `payload` (live), `tyres` (hold), `power` (Phase B stub), `water` (Phase C stub).
+`assets/copilot.js` `DOMAINS`: `payload` (live), `tyres` (hold), `power` (Phase B stub), `gas` / `water` (Phase C stubs). Later stubs answer in Ask and hand off with a soft CTA.
 
 Parse is deterministic. `handleAsk(text, { llmParse })` may refine **slots only**; maths stay in `computePayload()`. No paid LLM API is wired. Leave it off.
 
 ## Flow
 
-1. Co-pilot (`handleAsk`)
-2. Synonym router (`routeAsk`) — Power, Water, bare Payload words, …
+1. Co-pilot (`handleAsk` / `resolveAsk`) — Payload estimates and Tyres HOLD in Ask
+2. Later domains (Power / Water / Gas / …) stay **in Ask** with a soft calculator CTA. The synonym router still chooses the page; it must not `window.open` / wipe the thread
 3. Unmatched `POST /api/ask`
 
 Homepage Ask size / heading is unchanged. The answer card only appears after submit.

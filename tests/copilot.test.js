@@ -9,9 +9,12 @@
 
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
 const copilot = require("../lib/copilot");
 const handleAsk = require("../api/ask");
 const ask = require("../lib/ask");
+const { routeAsk } = require("../assets/router");
 
 /** Sibling compute() for the fields Phase A uses (app.js + custom-kit). */
 function siblingCompute(state) {
@@ -302,19 +305,59 @@ test("100 L full fresh tank reports 100 kg and does not invent remaining", funct
 
 test("Power and campsite questions are not answered with invented numbers", function () {
   const power = copilot.handleAsk("Will batteries last 3 days off-grid with a diesel heater?");
-  assert.equal(power.handled, false);
+  assert.equal(power.handled, true);
   assert.equal(power.domain, "power");
+  assert.equal(power.kind, "later");
   assert.equal(power.phase, "B");
+  assert.doesNotMatch(power.answer, /\d+\s*(?:ah|wh|kwh|amp)/i);
+  assert.match(power.hrefLabel, /Open Power/i);
 
   const campsite = copilot.handleAsk("best campsite near York");
   assert.equal(campsite.handled, false);
   assert.equal(campsite.domain, "unknown");
 });
 
-test("bare payload keywords stay unhandled so the synonym router can open the tool", function () {
+test("bare payload keywords stay in Ask with a Payload CTA — no invented plated weight", function () {
   const result = copilot.handleAsk("Mass in Service");
-  assert.equal(result.handled, false);
+  assert.equal(result.handled, true);
   assert.equal(result.domain, "payload");
+  assert.equal(result.kind, "later");
+  assert.match(result.href, /motorhomepayload/);
+  assert.doesNotMatch(result.answer, /\b\d+\s*kg\b/);
+});
+
+test("coolbox + portable aircon + battery stays in Ask with a soft Power CTA", function () {
+  const question = "what happens to my battery if I add a coolbox and a portable aircon";
+  const decision = copilot.resolveAsk(question, { routeAsk: routeAsk });
+  assert.equal(decision.navigate, false);
+  assert.equal(decision.unmatched, false);
+  assert.equal(decision.view.handled, true);
+  assert.equal(decision.view.kind, "later");
+  assert.equal(decision.view.domain, "power");
+  assert.match(decision.view.href, /motorhomepower/);
+  assert.match(decision.view.hrefLabel, /Open (?:Power|Battery)/i);
+  assert.doesNotMatch(decision.view.answer, /\d+\s*(?:ah|wh|w|kwh|amp)/i);
+  assert.doesNotMatch(decision.view.answer, /\b\d+\s*hours?\b/i);
+});
+
+test("gas BBQ twice a day stays in Ask with a soft Gas CTA — no invented days", function () {
+  const question = "i have bought a gas bbq, if i use it twice a day, how long will my gas last";
+  const decision = copilot.resolveAsk(question, { routeAsk: routeAsk });
+  assert.equal(decision.navigate, false);
+  assert.equal(decision.unmatched, false);
+  assert.equal(decision.view.handled, true);
+  assert.equal(decision.view.kind, "later");
+  assert.equal(decision.view.domain, "gas");
+  assert.match(decision.view.href, /gas\.html/);
+  assert.match(decision.view.hrefLabel, /Open Gas/i);
+  assert.doesNotMatch(decision.view.answer, /\b\d+\s*days?\b/i);
+  assert.doesNotMatch(decision.view.answer, /\b\d+\s*(?:hours?|kg)\b/i);
+});
+
+test("Ask front door never auto-navigates away from a router match", function () {
+  const appJs = fs.readFileSync(path.join(__dirname, "../assets/app.js"), "utf8");
+  assert.doesNotMatch(appJs, /window\.open/);
+  assert.doesNotMatch(appJs, /Opening /);
 });
 
 test("optional LLM parse may refine slots only — maths stay deterministic", function () {
