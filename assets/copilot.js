@@ -885,12 +885,14 @@
   }
 
   /**
-   * Ask→Power Wave 3 query keys — warobbo/power-tool PR #26 contract.
+   * Ask→Power Wave 3 query keys — warobbo/power-tool PR #26 contract,
+   * plus #wave3 so Power can scroll to the air-con row on handoff.
    * wave3=1 enables the starter. hours only when the visitor named them
    * (page keeps 0 if omitted). watts only if Ask overrides; missing watts
    * keeps the page’s 640 W DC. Unknown keys stay off the URL.
    */
   var POWER_PREFILL_KEYS = ["wave3", "hours", "hours-wave3", "watts", "watts-wave3"];
+  var POWER_WAVE3_HASH = "#wave3";
 
   function buildPowerPrefillQuery(usage) {
     var u = usage && typeof usage === "object" ? usage : {};
@@ -917,7 +919,12 @@
   function buildPowerPrefillHref(usage, base) {
     var query = buildPowerPrefillQuery(usage);
     var path = base == null || base === "" ? POWER_HREF : String(base);
-    return query ? path + (path.indexOf("?") >= 0 ? "&" : "?") + query : path;
+    var hashIndex = path.indexOf("#");
+    if (hashIndex >= 0) {
+      path = path.slice(0, hashIndex);
+    }
+    var href = query ? path + (path.indexOf("?") >= 0 ? "&" : "?") + query : path;
+    return href + POWER_WAVE3_HASH;
   }
 
   function wave3PrefillHref(usage) {
@@ -2401,6 +2408,7 @@
     emptyWave3Usage: emptyWave3Usage,
     calcWave3: calcWave3,
     POWER_PREFILL_KEYS: POWER_PREFILL_KEYS,
+    POWER_WAVE3_HASH: POWER_WAVE3_HASH,
     buildPowerPrefillQuery: buildPowerPrefillQuery,
     buildPowerPrefillHref: buildPowerPrefillHref,
     wave3PrefillHref: wave3PrefillHref,

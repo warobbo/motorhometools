@@ -404,6 +404,7 @@ test("golden: portable aircon with no hours asks for hours / soft CTA — no inv
     }), question);
     assert.match(result.href, /^https:\/\/motorhomepower\.co\.uk\/\?/, question);
     assert.match(result.href, /wave3=1/, question);
+    assert.match(result.href, /#wave3/, question);
     assert.doesNotMatch(result.href, /hours=/, question);
     assert.doesNotMatch(result.href, /watts=/, question);
     assert.match(result.hrefLabel, /Open Power to set hours/i, question);
@@ -415,6 +416,7 @@ test("golden: portable aircon with no hours asks for hours / soft CTA — no inv
     assert.equal(decision.view.kind, "answer", question);
     assert.equal(decision.view.dailyWh, null, question);
     assert.match(decision.view.href, /wave3=1/, question);
+    assert.match(decision.view.href, /#wave3/, question);
     assert.doesNotMatch(decision.view.href, /hours=/, question);
   });
 });
@@ -447,6 +449,7 @@ test("golden: portable aircon 4 hours a day is 2560 Wh/day and ~213 Ah at 12 V",
   assert.match(result.href, /^https:\/\/motorhomepower\.co\.uk\/\?/);
   assert.match(result.href, /wave3=1/);
   assert.match(result.href, /hours=4/);
+  assert.match(result.href, /#wave3/);
   assert.doesNotMatch(result.href, /watts=/);
   assert.match(result.hrefLabel, /Open Power to fine-tune/i);
   assert.equal(result.ctaNote, copilot.CTA_NOTE);
@@ -459,6 +462,7 @@ test("golden: portable aircon 4 hours a day is 2560 Wh/day and ~213 Ah at 12 V",
   assert.equal(decision.view.domain, "power");
   assert.equal(decision.view.dailyWh, 2560);
   assert.match(decision.view.href, /hours=4/);
+  assert.match(decision.view.href, /#wave3/);
   assert.equal(copilot.calcWave3({ hours: 4 }).dailyWh, 2560);
   assert.equal(copilot.WAVE3_WATTS, 640);
 });
@@ -468,17 +472,19 @@ test("Wave 3 CTA href matches power-tool PR #26 contract for 4 hours", function 
     wave3: 1,
     hours: 4
   }, "https://motorhomepower.co.uk/");
-  const params = new URLSearchParams(href.slice(href.indexOf("?") + 1));
-  assert.equal(href, "https://motorhomepower.co.uk/?wave3=1&hours=4");
-  assert.equal(params.get("wave3"), "1");
-  assert.equal(params.get("hours"), "4");
-  assert.equal(params.get("watts"), null);
+  const url = new URL(href);
+  assert.equal(href, "https://motorhomepower.co.uk/?wave3=1&hours=4#wave3");
+  assert.equal(url.hash, "#wave3");
+  assert.equal(url.searchParams.get("wave3"), "1");
+  assert.equal(url.searchParams.get("hours"), "4");
+  assert.equal(url.searchParams.get("watts"), null);
   copilot.POWER_PREFILL_KEYS.forEach(function (key) {
     assert.ok(typeof key === "string");
   });
 
   const noHours = copilot.buildPowerPrefillHref({ wave3: 1 }, "https://motorhomepower.co.uk/");
-  assert.equal(noHours, "https://motorhomepower.co.uk/?wave3=1");
+  assert.equal(noHours, "https://motorhomepower.co.uk/?wave3=1#wave3");
+  assert.match(noHours, /#wave3/);
 });
 
 test("overnight 8h names hours; overnight alone does not invent 8 h", function () {
@@ -486,11 +492,13 @@ test("overnight 8h names hours; overnight alone does not invent 8 h", function (
   assert.equal(named.hours, 8);
   assert.equal(named.dailyWh, 5120);
   assert.match(named.href, /hours=8/);
+  assert.match(named.href, /#wave3/);
 
   const bare = copilot.handleAsk("wave 3 overnight");
   assert.equal(bare.hours, null);
   assert.equal(bare.dailyWh, null);
   assert.doesNotMatch(bare.href, /hours=/);
+  assert.match(bare.href, /#wave3/);
   assert.doesNotMatch(bare.answer, /5,?120/);
 });
 
