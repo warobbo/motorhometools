@@ -12,8 +12,10 @@
  * Phase A: Payload estimates. Phase Gas: cooking-line bottle-days from
  * mhwater gas-calc.js (no invented outdoor BBQ kg/h). Phase Cassette:
  * empty-days from mhwater cassette-calc.js labelled defaults (no invented
- * flush or tank rates). Power / Water stay later stubs. Tyres is HOLD —
- * caution message only, no pressures.
+ * flush or tank rates). Phase Wave 3: portable air-con at EcoFlow UK
+ * rated cooling 640 W DC only — hours are never defaulted. Other Power
+ * / Water stay later stubs. Tyres is HOLD — caution message only, no
+ * pressures.
  *
  * Labelled Payload defaults (bike 14 kg, rack 12 kg, water 1 kg/L, gas
  * full-bottle) are applied when the visitor does not type a kg. Answer
@@ -58,6 +60,14 @@
     "Treating each BBQ use as a Gas-calculator heavy cook meal (oven/grill/long simmer rate) — not a separate outdoor BBQ kg/h.";
   var CASSETTE_CTA_LABEL = "Open Cassette to fine-tune";
   var CASSETTE_FOLLOW_UP = "Tell me cassette litres / flushes and I’ll recalculate.";
+  var POWER_CTA_LABEL = "Open Power to fine-tune";
+  var POWER_HOURS_CTA_LABEL = "Open Power to set hours";
+  var POWER_FOLLOW_UP = "Tell me hours a day and I’ll recalculate.";
+  /** Locked EcoFlow UK Wave 3 rated cooling DC. Never invent watts. */
+  var WAVE3_WATTS = 640;
+  var WAVE3_VOLTAGE_12 = 12;
+  var WAVE3_VOLTAGE_24 = 24;
+  var WAVE3_MAX_HOURS = 24;
 
   /**
    * Cooking-line constants from warobbo/mhwater assets/gas-calc.js.
@@ -142,6 +152,13 @@
     note: "Ask uses Cassette-calculator labelled defaults only. A 2nd / spare cassette keeps blackTankLitres as one cassette and sends cassetteCount=2 (mhwater#19 multiplies into blackTankLitres on the page)."
   };
 
+  var WAVE3_SOURCE = {
+    product: "EcoFlow Wave 3 portable air conditioner",
+    wattsDc: WAVE3_WATTS,
+    source: "EcoFlow UK rated cooling DC (640 W). Not 6100 BTU / 1800 W cooling capacity.",
+    note: "Hours are never defaulted. If the visitor does not say hours / hours a day, Ask cites the per-hour figure and asks, or soft-opens Power. No 4 h / 8 h invention."
+  };
+
   var TYRES_HOLD_MESSAGE =
     "Tyres is on hold. We will not invent a tyre pressure, PSI, bar, or load figure. The Tyres page is a caution only — it still refuses a number if the size is not in a published table.";
 
@@ -153,7 +170,13 @@
     three: 3,
     four: 4,
     five: 5,
-    six: 6
+    six: 6,
+    seven: 7,
+    eight: 8,
+    nine: 9,
+    ten: 10,
+    eleven: 11,
+    twelve: 12
   };
 
   function num(value) {
@@ -213,6 +236,28 @@
     if (!Number.isFinite(n)) return "—";
     var digits = n >= 10 ? 0 : 1;
     return n.toLocaleString("en-GB", { maximumFractionDigits: digits });
+  }
+
+  function formatPowerWh(value) {
+    var n = Number(value);
+    if (!Number.isFinite(n)) return "—";
+    var rounded = Math.round(n);
+    return rounded.toLocaleString("en-GB", { maximumFractionDigits: 0 });
+  }
+
+  function formatPowerAh(value) {
+    var n = Number(value);
+    if (!Number.isFinite(n)) return "—";
+    return Math.round(n).toLocaleString("en-GB", { maximumFractionDigits: 0 });
+  }
+
+  function formatPowerHours(value) {
+    var n = Number(value);
+    if (!Number.isFinite(n)) return "—";
+    if (Math.abs(n - Math.round(n)) < 1e-9) {
+      return String(Math.round(n));
+    }
+    return n.toLocaleString("en-GB", { maximumFractionDigits: 2 });
   }
 
   function formatCassetteLitres(value) {
@@ -809,6 +854,81 @@
     return buildCassettePrefillHref(prefill, CASSETTE_HREF);
   }
 
+  /**
+   * Wave 3 portable air-con: 640 W DC × hours. Hours are never invented.
+   * Ah = Wh / voltage (same as PowerCalc, no Peukert).
+   */
+  function emptyWave3Usage() {
+    return {
+      hours: null,
+      hoursNamed: false,
+      watts: WAVE3_WATTS
+    };
+  }
+
+  function calcWave3(raw) {
+    var source = raw && typeof raw === "object" ? raw : {};
+    var named = source.hours != null && source.hours !== "" && Number.isFinite(num(source.hours)) && num(source.hours) > 0;
+    var hours = named ? Math.min(WAVE3_MAX_HOURS, Math.max(0.05, num(source.hours))) : null;
+    var dailyWh = hours != null ? WAVE3_WATTS * hours : null;
+    return {
+      watts: WAVE3_WATTS,
+      hours: hours,
+      hoursNamed: named,
+      dailyWh: dailyWh,
+      ah12: dailyWh != null ? dailyWh / WAVE3_VOLTAGE_12 : null,
+      ah24: dailyWh != null ? dailyWh / WAVE3_VOLTAGE_24 : null,
+      whPerHour: WAVE3_WATTS,
+      ah12PerHour: WAVE3_WATTS / WAVE3_VOLTAGE_12,
+      ah24PerHour: WAVE3_WATTS / WAVE3_VOLTAGE_24
+    };
+  }
+
+  /**
+   * Ask→Power Wave 3 query keys — warobbo/power-tool PR #26 contract.
+   * wave3=1 enables the starter. hours only when the visitor named them
+   * (page keeps 0 if omitted). watts only if Ask overrides; missing watts
+   * keeps the page’s 640 W DC. Unknown keys stay off the URL.
+   */
+  var POWER_PREFILL_KEYS = ["wave3", "hours", "hours-wave3", "watts", "watts-wave3"];
+
+  function buildPowerPrefillQuery(usage) {
+    var u = usage && typeof usage === "object" ? usage : {};
+    var parts = [];
+    var enabled = parsePrefillBool(u.wave3);
+    if (enabled === false) {
+      addPrefillParam(parts, "wave3", "0");
+    } else {
+      addPrefillParam(parts, "wave3", "1");
+    }
+    if (parsePrefillNumber(u["hours-wave3"]) != null) {
+      addPrefillParam(parts, "hours-wave3", parsePrefillNumber(u["hours-wave3"]));
+    } else if (parsePrefillNumber(u.hours) != null && parsePrefillNumber(u.hours) > 0) {
+      addPrefillParam(parts, "hours", parsePrefillNumber(u.hours));
+    }
+    if (parsePrefillNumber(u["watts-wave3"]) != null) {
+      addPrefillParam(parts, "watts-wave3", parsePrefillNumber(u["watts-wave3"]));
+    } else if (u.watts != null && parsePrefillNumber(u.watts) != null) {
+      addPrefillParam(parts, "watts", parsePrefillNumber(u.watts));
+    }
+    return parts.join("&");
+  }
+
+  function buildPowerPrefillHref(usage, base) {
+    var query = buildPowerPrefillQuery(usage);
+    var path = base == null || base === "" ? POWER_HREF : String(base);
+    return query ? path + (path.indexOf("?") >= 0 ? "&" : "?") + query : path;
+  }
+
+  function wave3PrefillHref(usage) {
+    var computed = calcWave3(usage);
+    var prefill = { wave3: 1 };
+    if (computed.hoursNamed && computed.hours != null) {
+      prefill.hours = computed.hours;
+    }
+    return buildPowerPrefillHref(prefill, POWER_HREF);
+  }
+
   /* ----- Deterministic NL parse (LLM may only refine slots) ----- */
 
   function blankIntent() {
@@ -834,7 +954,40 @@
 
   function isPowerLater(query) {
     if (/\bpayload|mam|miro|weighbridge|kg\s+payload\b/.test(query)) return false;
-    return /\b(?:batter(?:y|ies)|off-grid|diesel\s+heater|solar|inverter|amp-?hours?|k?wh|cool[-\s]?box(?:es)?|air[-\s]?cons?|air[-\s]?condition(?:er|ing)|portable\s+acs?)\b/.test(query);
+    return /\b(?:batter(?:y|ies)|off-grid|diesel\s+heater|solar|inverter|amp-?hours?|k?wh|cool[-\s]?box(?:es)?|air[-\s]?cons?|air[-\s]?condition(?:er|ing)|portable\s+acs?|wave\s*3|ecoflow)\b/.test(query);
+  }
+
+  function isAirconTopic(query) {
+    if (/\bpayload|mam|miro|weighbridge|kg\s+payload\b/.test(query)) return false;
+    return /\b(?:air[-\s]?cons?|air[-\s]?condition(?:er|ing)|portable\s+acs?|wave\s*3|ecoflow\s+wave)\b/.test(query);
+  }
+
+  /**
+   * Hours only when the visitor typed them. Never default 4 h / 8 h /
+   * overnight. “overnight 8h” counts because 8 is named.
+   */
+  function parseAirconHours(query) {
+    var match = query.match(/\bovernight\s+(\d+(?:\.\d+)?)\s*h(?:ours?|rs?)?\b/) ||
+      query.match(/\b(\d+(?:\.\d+)?)\s*(?:hours?|hrs?)\s+(?:a|per)\s+day\b/) ||
+      query.match(/\b(\d+(?:\.\d+)?)\s*(?:hours?|hrs?)\b/) ||
+      query.match(/\b(\d+(?:\.\d+)?)\s*h\b/) ||
+      query.match(/\b(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+hours?\b/);
+    if (!match) return null;
+    var hours = Object.prototype.hasOwnProperty.call(NUMBER_WORDS, match[1])
+      ? NUMBER_WORDS[match[1]]
+      : num(match[1]);
+    if (!(hours > 0)) return null;
+    return Math.min(WAVE3_MAX_HOURS, hours);
+  }
+
+  function parseWave3Usage(query) {
+    var usage = emptyWave3Usage();
+    var hours = parseAirconHours(query);
+    if (hours != null) {
+      usage.hours = hours;
+      usage.hoursNamed = true;
+    }
+    return usage;
   }
 
   function isGasLater(query) {
@@ -1338,7 +1491,7 @@
         phase: "B",
         href: POWER_HREF,
         hrefLabel: "Open Power to enter your figures",
-        answer: "I don’t calculate battery life, coolbox draw or air-con run-time in Ask yet — that would mean inventing amp-hours or watts. Open Power and enter your kit there."
+        answer: "I don’t calculate battery life or coolbox draw in Ask yet — that would mean inventing amp-hours or watts. Open Power and enter your kit there."
       },
       battery: {
         phase: "B",
@@ -1638,13 +1791,94 @@
     };
   }
 
+  function powerCta(usage) {
+    var computed = calcWave3(usage);
+    return {
+      href: wave3PrefillHref(usage),
+      hrefLabel: computed.hoursNamed ? POWER_CTA_LABEL : POWER_HOURS_CTA_LABEL,
+      ctaNote: CTA_NOTE
+    };
+  }
+
+  function buildWave3Answer(computed) {
+    if (!computed.hoursNamed || computed.hours == null) {
+      return "An EcoFlow Wave 3 portable air-con is 640 W DC (EcoFlow UK rated cooling). Each hour is about " +
+        formatPowerWh(computed.whPerHour) + " Wh (~" +
+        formatPowerAh(computed.ah12PerHour) +
+        " Ah at 12 V). How many hours a day will it run? Or open Power and set the hours there.";
+    }
+    return "EcoFlow Wave 3 at 640 W DC × " +
+      formatPowerHours(computed.hours) +
+      (computed.hours === 1 ? " hour" : " hours") +
+      " = " + formatPowerWh(computed.dailyWh) +
+      " Wh/day (~" + formatPowerAh(computed.ah12) +
+      " Ah at 12 V, ~" + formatPowerAh(computed.ah24) +
+      " Ah at 24 V). Planning estimate.";
+  }
+
+  function handlePower(intent, text) {
+    var query = normalise(text);
+    if (!isAirconTopic(query)) {
+      return laterGuide("power");
+    }
+
+    var usage = parseWave3Usage(query);
+    var computed = calcWave3(usage);
+    var assumptions = [];
+    var followUps = [POWER_FOLLOW_UP];
+    var gaps = [];
+
+    assumptions.push(
+      "Wave 3 rated cooling 640 W DC from EcoFlow UK. Not cooling-capacity watts."
+    );
+    if (computed.hoursNamed) {
+      assumptions.push(
+        formatPowerHours(computed.hours) +
+        (computed.hours === 1 ? " hour" : " hours") +
+        " — from the question. Planning estimate only."
+      );
+    } else {
+      assumptions.push("Hours are not assumed. Ask does not pick 4 h or 8 h for you.");
+      gaps.push("Hours a day the Wave 3 will run. I will not invent a daily Wh total without that.");
+    }
+    assumptions.push("Planning estimate only. Other kit (coolbox, fridge, lights) is not included on this Wave 3 line.");
+
+    var cta = powerCta(Object.assign({}, usage, computed));
+
+    return {
+      handled: true,
+      domain: "power",
+      phase: "Wave3",
+      kind: "answer",
+      answer: buildWave3Answer(computed),
+      assumptions: unique(assumptions),
+      gaps: unique(gaps),
+      followUps: unique(followUps),
+      items: [],
+      href: cta.href,
+      hrefLabel: cta.hrefLabel,
+      ctaNote: cta.ctaNote,
+      usedKg: null,
+      remainingKg: null,
+      dailyKg: null,
+      bottleDays: null,
+      dailyWh: computed.dailyWh,
+      hours: computed.hours,
+      ah12: computed.ah12,
+      ah24: computed.ah24,
+      watts: computed.watts,
+      wave3Usage: usage,
+      computed: computed
+    };
+  }
+
   function hasPrefillQuery(href) {
     return typeof href === "string" && href.indexOf("?") >= 0;
   }
 
   function applyRouteHref(result, match) {
     if (!result || !match) return result;
-    // Keep a prefilled calculator href (bikes, remaining mam+miro=0, water, gas, cassette).
+    // Keep a prefilled calculator href (bikes, remaining mam+miro=0, water, gas, cassette, Wave 3).
     // The synonym router only knows the bare hub URL.
     if (hasPrefillQuery(result.href)) return result;
     if (result.kind === "later") {
@@ -2032,7 +2266,7 @@
   var DOMAINS = {
     payload: handlePayload,
     tyres: handleTyresHold,
-    power: function () { return handleLaterDomain("power", "B"); },
+    power: handlePower,
     gas: handleGas,
     cassette: handleCassette,
     water: function () { return handleLaterDomain("water", "C"); }
@@ -2051,7 +2285,7 @@
     }
 
     if (intent.domain === "power") {
-      return Object.assign(DOMAINS.power(), { intent: intent });
+      return Object.assign(handlePower(intent, question), { intent: intent });
     }
     if (intent.domain === "gas") {
       return Object.assign(handleGas(intent, question), { intent: intent });
@@ -2099,7 +2333,11 @@
       wasteDaily: result.wasteDaily == null ? null : result.wasteDaily,
       daysOne: result.daysOne == null ? null : result.daysOne,
       daysTwo: result.daysTwo == null ? null : result.daysTwo,
-      extraDays: result.extraDays == null ? null : result.extraDays
+      extraDays: result.extraDays == null ? null : result.extraDays,
+      dailyWh: result.dailyWh == null ? null : result.dailyWh,
+      hours: result.hours == null ? null : result.hours,
+      ah12: result.ah12 == null ? null : result.ah12,
+      ah24: result.ah24 == null ? null : result.ah24
     };
   }
 
@@ -2125,6 +2363,12 @@
     CASSETTE_DEFAULT_START_PERCENT: CASSETTE_DEFAULT_START_PERCENT,
     CASSETTE_CTA_LABEL: CASSETTE_CTA_LABEL,
     CASSETTE_FOLLOW_UP: CASSETTE_FOLLOW_UP,
+    POWER_HREF: POWER_HREF,
+    POWER_CTA_LABEL: POWER_CTA_LABEL,
+    POWER_HOURS_CTA_LABEL: POWER_HOURS_CTA_LABEL,
+    POWER_FOLLOW_UP: POWER_FOLLOW_UP,
+    WAVE3_WATTS: WAVE3_WATTS,
+    WAVE3_SOURCE: WAVE3_SOURCE,
     WATER_KG_PER_L: WATER_KG_PER_L,
     BIKE_DEFAULT_KG: BIKE_DEFAULT_KG,
     RACK_DEFAULT_KG: RACK_DEFAULT_KG,
@@ -2154,6 +2398,14 @@
     cassettePrefillHref: cassettePrefillHref,
     parseCassetteUsage: parseCassetteUsage,
     isCassetteEstimate: isCassetteEstimate,
+    emptyWave3Usage: emptyWave3Usage,
+    calcWave3: calcWave3,
+    POWER_PREFILL_KEYS: POWER_PREFILL_KEYS,
+    buildPowerPrefillQuery: buildPowerPrefillQuery,
+    buildPowerPrefillHref: buildPowerPrefillHref,
+    wave3PrefillHref: wave3PrefillHref,
+    parseWave3Usage: parseWave3Usage,
+    isAirconTopic: isAirconTopic,
     parseIntent: parseIntent,
     handleAsk: handleAsk,
     resolveAsk: resolveAsk,

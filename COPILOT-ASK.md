@@ -1,4 +1,4 @@
-# Co-pilot Ask (Phase A Payload + Phase Gas + Phase Cassette estimate)
+# Co-pilot Ask (Phase A Payload + Phase Gas + Phase Cassette + Wave 3)
 
 Wayne lock, 18 Sep 2026: natural-language Ask may call **only** existing calculator maths. Answer first, labelled assumptions second. Never invent plated MAM / MIRO, tyre pressures, or legal limits. Tyres is HOLD. No homepage Ask resize. No campsite / trip planner.
 
@@ -59,7 +59,8 @@ Electrical presets (`BATT_KG`, `SOLAR_KG`), axle check, DVLA plate lookup, and t
 - Fresh water with litres (including UK `100ltrs` / `100 ltr`) → include at **1 kg per litre**. Do not drop the item.
 - Water mentioned with no litres (and full tank with no litres) → gap. Do not invent a tank size. Do not silently omit.
 - Tyres / PSI / bar / pressure → HOLD message only. Do not open a calculated pressure.
-- Power / Water duration questions → stay in Ask with an honest “not calculated yet” card and a soft calculator CTA. Do not auto-open a tab. Do not invent Ah, watts, or tank litres-per-day. **Phase B Power, Phase C Water.**
+- Power / Water duration questions (except locked Wave 3 portable air-con) → stay in Ask with an honest “not calculated yet” card and a soft calculator CTA. Do not auto-open a tab. Do not invent Ah, watts, or tank litres-per-day. **Phase B Power, Phase C Water.**
+- Portable air-con / Wave 3 / “what will aircon do to my battery” → **Phase Wave 3 estimate**: EcoFlow Wave 3 only at **640 W DC** (EcoFlow UK rated cooling). Never invent watts. Never use 6100 BTU / 1800 W cooling capacity as electrical draw. **Hours are not defaulted** — no 4 h / 8 h invention. If hours are named (`4 hours`, `overnight 8h`, `3 hrs a day`): `Wh/day = 640 × hours`, `Ah at 12 V ≈ Wh / 12` (and 24 V = Wh / 24). If hours are missing: cite 640 W DC, each hour ≈ 640 Wh (~53 Ah at 12 V), ask hours/day or soft-open Power. Soft CTA stays in Ask (`navigate: false`) — no `window.open`. Prefill contract matches [power-tool#26](https://github.com/warobbo/power-tool/pull/26) on `https://motorhomepower.co.uk/`: `wave3=1` and `hours=N` only when named (page keeps 640 W and 0 h if those keys are omitted). Example: 4 hours → **2560 Wh/day**, **~213 Ah at 12 V**, CTA `?wave3=1&hours=4`.
 - Gas BBQ / outdoor-cook / bottle-days → **Phase Gas estimate**: cooking-line only from mhwater `gas-calc.js` (`light` 0.025 / `normal` 0.04 / `heavy` 0.07 kg per person-unit per meal; child factor 0.7). BBQ / barbecue N times a day → `mealsPerDay = N` (default 2), `cookingStyle = heavy`, labelled as a heavy-cook proxy — **not** a separate outdoor BBQ kg/h. Default bottle **7 kg butane** (`butane7`) if none named. Heating / fridge-on-gas / boiler stay **off** for these longevity questions unless the visitor said otherwise. Soft CTA uses the mhwater `buildGasPrefillHref` contract on `https://motorhomewater.co.uk/gas.html` (landed [mhwater#18](https://github.com/warobbo/mhwater/pull/18)): `adults`, `children`, `tripDays` (only if named), `mealsPerDay`, `cookingStyle`, `heatingLevel`, `heatingHours` (only if level omitted), `fridgeGasEnabled` (0|1), `boilerEnabled` (0|1), `boilerLevel` / `boilerHours` (only if boiler on), `gasType`, `bottleId`, `bottleKg` (custom bottles only). BBQ twice/day example: `mealsPerDay=2&cookingStyle=heavy&adults=2&heatingLevel=off&fridgeGasEnabled=0&boilerEnabled=0&gasType=butane&bottleId=butane7` → 0.28 kg/day, ~25 days on 7 kg. Stay in Ask — no `window.open`.
 - Cassette empties / days / 2nd cassette → **Phase Cassette estimate**: flush-litre empty-days from mhwater `cassette-calc.js` labelled defaults only (`blackTankLitres` **18**, `flushesPerPersonPerDay` **5**, `litresPerFlush` **0.25**, `startPercent` **0**, `blackKind` **cassette**). Adults default **2** when “for 2” / couple / unspecified. Children **0** unless said (full person, no Gas child factor). `wasteDaily = (adults + children) × flushes × litresPerFlush`. `daysOne = usable / wasteDaily` where `usable = blackTankLitres × (1 − startPercent/100)`. For 2nd / second / spare / extra cassette: `daysTwo = (2 × usable) / wasteDaily`, `extraDays = daysTwo − daysOne` (≈ `daysOne` when start is empty). Soft CTA uses the mhwater cassette URL-prefill contract (landed [mhwater#19](https://github.com/warobbo/mhwater/pull/19)) on `https://motorhomewater.co.uk/cassette.html`: `adults`, `children`, `tripDays` (only if named), `blackKind` (`cassette` \| `fixed`; aliases `fixedBlack`, `fixed-black`, `fixed_black`), `blackTankLitres` (one cassette), optional `cassetteCount` (page multiplies into `blackTankLitres`), `flushesPerPersonPerDay`, `litresPerFlush`, `startPercent`. 2nd-cassette example: `adults=2&blackTankLitres=18&flushesPerPersonPerDay=5&litresPerFlush=0.25&startPercent=0&cassetteCount=2` → 2.5 L/day, **7.2 days** one cassette, **~7 extra / ~14 total**. Stay in Ask — no `window.open`. Bare “cassette” / “toilet” / “open cassette” keep the later soft CTA.
 - Gas fridge / heating / winter / boiler as the topic (no BBQ / cook meals) → later stub. Do not invent those burn hours in Ask.
@@ -69,9 +70,9 @@ Tone: guidance / solutions. Gaps are secondary notes, not the headline. Strong p
 
 ## Extension point
 
-`assets/copilot.js` `DOMAINS`: `payload` (live), `gas` (Phase Gas cooking-line estimate), `cassette` (Phase Cassette empty-days estimate), `tyres` (hold), `power` (Phase B stub), `water` (Phase C stub). Later stubs and Gas fridge / heating questions answer in Ask and hand off with a soft CTA.
+`assets/copilot.js` `DOMAINS`: `payload` (live), `gas` (Phase Gas cooking-line estimate), `cassette` (Phase Cassette empty-days estimate), `power` (Wave 3 portable air-con estimate; other Power stays Phase B stub), `tyres` (hold), `water` (Phase C stub). Later stubs and Gas fridge / heating questions answer in Ask and hand off with a soft CTA.
 
-Parse is deterministic. `handleAsk(text, { llmParse })` may refine **slots only**; maths stay in `computePayload()`, `calcGasCooking()`, or `calcCassetteDays()`. No paid LLM API is wired. Leave it off.
+Parse is deterministic. `handleAsk(text, { llmParse })` may refine **slots only**; maths stay in `computePayload()`, `calcGasCooking()`, `calcCassetteDays()`, or `calcWave3()`. No paid LLM API is wired. Leave it off.
 
 ## Phase Gas — cooking-line inventory
 
@@ -104,10 +105,25 @@ Source: [warobbo/mhwater](https://github.com/warobbo/mhwater) `assets/cassette-d
 
 `wasteDaily = heads × 5 × 0.25`. Example: 2 adults → **2.5 L/day**; empty 18 L → **7.2 days**; a 2nd empty cassette → **7.2 extra / 14.4 total** (shown as ~7 extra / ~14 total). CTA keeps `blackTankLitres=18` and sends `cassetteCount=2` (mhwater multiplies to 36 L on the page).
 
+## Phase Wave 3 — portable air-con inventory
+
+Source: EcoFlow UK Wave 3 **rated cooling DC 640 W**. Not cooling capacity (6100 BTU / 1800 W).
+
+| Slot | Default if omitted | Maths |
+| --- | --- | --- |
+| Product | EcoFlow Wave 3 | locked |
+| Watts | **640 W DC** | never invented; never 1800 W |
+| Hours / day | **none** — ask or soft-open Power | never 4 h / 8 h |
+| Wh/day | only when hours named | `640 × hours` |
+| Ah at 12 V | only when hours named | `Wh / 12` |
+| Ah at 24 V | only when hours named (optional) | `Wh / 24` |
+
+Example: 4 hours a day → **2560 Wh/day**, **~213 Ah at 12 V**. Missing hours → per-hour **640 Wh (~53 Ah at 12 V)** and a question, no daily total.
+
 ## Flow
 
-1. Co-pilot (`handleAsk` / `resolveAsk`) — Payload estimates, Phase Gas cooking-line estimates, Phase Cassette empty-days estimates, and Tyres HOLD in Ask
-2. Later domains (Power / Water / Gas fridge or heating / vague cassette / …) stay **in Ask** with a soft calculator CTA. The synonym router still chooses the page; it must not `window.open` / wipe the thread
+1. Co-pilot (`handleAsk` / `resolveAsk`) — Payload estimates, Phase Gas cooking-line estimates, Phase Cassette empty-days estimates, Wave 3 portable air-con estimates, and Tyres HOLD in Ask
+2. Later domains (other Power / Water / Gas fridge or heating / vague cassette / …) stay **in Ask** with a soft calculator CTA. The synonym router still chooses the page; it must not `window.open` / wipe the thread
 3. Unmatched `POST /api/ask`
 
 Homepage Ask size / heading is unchanged. The answer card only appears after submit.
