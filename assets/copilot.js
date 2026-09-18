@@ -9,8 +9,9 @@
  *   app.js compute(), lib/custom-kit.js, lib/driver-payload.js,
  *   lib/fuel-payload.js
  *
- * Phase A: Payload only. Power / Water handlers are stubs (Phase B / C).
- * Tyres is HOLD — caution message only, no pressures.
+ * Phase A: Payload estimates. Phase Gas: cooking-line bottle-days from
+ * mhwater gas-calc.js (no invented outdoor BBQ kg/h). Power / Water
+ * stay later stubs. Tyres is HOLD — caution message only, no pressures.
  *
  * Labelled Payload defaults (bike 14 kg, rack 12 kg, water 1 kg/L, gas
  * full-bottle) are applied when the visitor does not type a kg. Answer
@@ -49,6 +50,39 @@
   var ASSUMED_DRIVER_KG = 75;
   var FUEL_DENSITY = 0.84;
   var CTA_NOTE = "Ask is a quick guide. The calculator is where you enter accurate data.";
+  var GAS_CTA_LABEL = "Open Gas to fine-tune";
+  var GAS_FOLLOW_UP = "Tell me bottle kg / minutes and I’ll recalculate.";
+  var GAS_BBQ_PROXY_NOTE =
+    "Treating each BBQ use as a Gas-calculator heavy cook meal (oven/grill/long simmer rate) — not a separate outdoor BBQ kg/h.";
+
+  /**
+   * Cooking-line constants from warobbo/mhwater assets/gas-calc.js.
+   * Do not drift. Ask uses this cooking line only — no invented BBQ kg/h.
+   */
+  var GAS_CHILD_FACTOR = 0.7;
+  var GAS_MAX_PEOPLE = 20;
+  var GAS_MAX_MEALS_PER_DAY = 6;
+  var GAS_MIN_BOTTLE_KG = 1;
+  var GAS_MAX_BOTTLE_KG = 47;
+  var GAS_COOK_STYLES = {
+    light: { id: "light", label: "Light", kgPerPersonPerMeal: 0.025 },
+    normal: { id: "normal", label: "Normal", kgPerPersonPerMeal: 0.04 },
+    heavy: { id: "heavy", label: "Heavy", kgPerPersonPerMeal: 0.07 }
+  };
+  var GAS_BOTTLES = {
+    butane45: { id: "butane45", gasType: "butane", kg: 4.5, label: "4.5 kg Calor butane" },
+    butane7: { id: "butane7", gasType: "butane", kg: 7, label: "7 kg Calor butane" },
+    butane15: { id: "butane15", gasType: "butane", kg: 15, label: "15 kg Calor butane" },
+    propane39: { id: "propane39", gasType: "propane", kg: 3.9, label: "3.9 kg Calor propane" },
+    propane6: { id: "propane6", gasType: "propane", kg: 6, label: "6 kg Calor propane" },
+    propane13: { id: "propane13", gasType: "propane", kg: 13, label: "13 kg Calor propane" }
+  };
+  var GAS_DEFAULT_BOTTLE = GAS_BOTTLES.butane7;
+  var TIMES_WORDS = {
+    once: 1,
+    twice: 2,
+    thrice: 3
+  };
 
   var PAYLOAD_SOURCE = {
     repo: "warobbo/motorhome-payload-calculator",
@@ -58,6 +92,15 @@
     bikeDefaultKg: BIKE_DEFAULT_KG,
     rackDefaultKg: RACK_DEFAULT_KG,
     note: "Ask applies labelled Payload defaults when kg is omitted (pedal bike 14 kg, rack 12 kg if bikes > 0, water 1 kg/L, gas full-bottle). It does not copy first-paint kit defaults (passengers, spare gas, toolbox, 90 L tank)."
+  };
+
+  var GAS_SOURCE = {
+    repo: "warobbo/mhwater",
+    file: "assets/gas-calc.js",
+    cookKgPerPersonPerMeal: { light: 0.025, normal: 0.04, heavy: 0.07 },
+    childFactor: GAS_CHILD_FACTOR,
+    defaultBottle: { id: "butane7", gasType: "butane", kg: 7 },
+    note: "Ask uses the Gas-calculator cooking line only. Heating, fridge-on-gas and boiler stay off for BBQ / outdoor-cook longevity unless the visitor said otherwise. No invented outdoor BBQ kg/h."
   };
 
   var TYRES_HOLD_MESSAGE =
@@ -110,6 +153,39 @@
     var rounded = Math.round(n * 10) / 10;
     var digits = Math.abs(rounded % 1) < 0.05 ? 0 : 1;
     return rounded.toLocaleString("en-GB", { maximumFractionDigits: digits });
+  }
+
+  /** Gas kg display: whole bottles as 7 / 13; cooking rates keep two decimals (0.28). */
+  function formatGasKg(value) {
+    var n = Number(value);
+    if (!Number.isFinite(n)) return "—";
+    if (Math.abs(n - Math.round(n)) < 1e-9) {
+      return Math.round(n).toLocaleString("en-GB");
+    }
+    var digits = n >= 100 ? 0 : n >= 10 ? 1 : 2;
+    return n.toLocaleString("en-GB", {
+      maximumFractionDigits: digits,
+      minimumFractionDigits: n < 1 ? 2 : 0
+    });
+  }
+
+  function formatGasDays(value) {
+    var n = Number(value);
+    if (!Number.isFinite(n)) return "—";
+    var digits = n >= 10 ? 0 : 1;
+    return n.toLocaleString("en-GB", { maximumFractionDigits: digits });
+  }
+
+  function clampGas(value, min, max) {
+    return Math.min(max, Math.max(min, value));
+  }
+
+  function parseTimesQty(token) {
+    if (token == null || token === "") return null;
+    if (Object.prototype.hasOwnProperty.call(TIMES_WORDS, token)) {
+      return TIMES_WORDS[token];
+    }
+    return parseQty(token);
   }
 
   /* ----- Payload maths (sibling compute / custom-kit / driver / fuel) ----- */
@@ -309,6 +385,214 @@
     return PAYLOAD_HREF + (qs ? "?" + qs : "");
   }
 
+  /* ----- Gas cooking-line maths (mhwater gas-calc.js calcGas cook row) ----- */
+
+  function emptyGasUsage() {
+    return {
+      adults: 2,
+      children: 0,
+      tripDays: null,
+      mealsPerDay: 2,
+      cookingStyle: "normal",
+      heatingLevel: "off",
+      heatingHours: 0,
+      fridgeGasEnabled: 0,
+      boilerEnabled: 0,
+      boilerLevel: null,
+      boilerHours: null,
+      gasType: GAS_DEFAULT_BOTTLE.gasType,
+      bottleId: GAS_DEFAULT_BOTTLE.id,
+      bottleKg: GAS_DEFAULT_BOTTLE.kg,
+      isBbq: false,
+      bottleNamed: false,
+      peopleNamed: false,
+      childrenNamed: false
+    };
+  }
+
+  function sanitiseCookingStyle(value) {
+    return GAS_COOK_STYLES[value] ? value : "normal";
+  }
+
+  function matchNamedBottle(kg, typeHint) {
+    var type = typeHint === "propane" || typeHint === "butane" ? typeHint : null;
+    var ids = Object.keys(GAS_BOTTLES);
+    var i;
+    for (i = 0; i < ids.length; i += 1) {
+      var bottle = GAS_BOTTLES[ids[i]];
+      if (Math.abs(bottle.kg - kg) < 0.05 && (!type || bottle.gasType === type)) {
+        return { bottleId: bottle.id, gasType: bottle.gasType, bottleKg: bottle.kg };
+      }
+    }
+    return {
+      bottleId: "custom",
+      gasType: type || "butane",
+      bottleKg: clampGas(kg, GAS_MIN_BOTTLE_KG, GAS_MAX_BOTTLE_KG)
+    };
+  }
+
+  /**
+   * Cooking line only: peopleUnits × mealsPerDay × cook rate.
+   * Heating / fridge / boiler stay 0 — same as calcGas with those off.
+   */
+  function calcGasCooking(raw) {
+    var source = raw && typeof raw === "object" ? raw : {};
+    var adults = clampGas(Math.round(num(source.adults) || 0), 0, GAS_MAX_PEOPLE);
+    var children = clampGas(Math.round(num(source.children) || 0), 0, GAS_MAX_PEOPLE);
+    var mealsPerDay = clampGas(num(source.mealsPerDay), 0, GAS_MAX_MEALS_PER_DAY);
+    var cookingStyle = sanitiseCookingStyle(source.cookingStyle);
+    var rate = GAS_COOK_STYLES[cookingStyle].kgPerPersonPerMeal;
+    var peopleUnits = adults + children * GAS_CHILD_FACTOR;
+    var dailyKg = peopleUnits * mealsPerDay * rate;
+    var bottleKg = clampGas(num(source.bottleKg) || GAS_DEFAULT_BOTTLE.kg, GAS_MIN_BOTTLE_KG, GAS_MAX_BOTTLE_KG);
+    var bottleId = source.bottleId || GAS_DEFAULT_BOTTLE.id;
+    var gasType = source.gasType === "propane" ? "propane" : "butane";
+    if (GAS_BOTTLES[bottleId] && Math.abs(GAS_BOTTLES[bottleId].kg - bottleKg) >= 0.05) {
+      bottleId = "custom";
+    }
+    return {
+      adults: adults,
+      children: children,
+      tripDays: source.tripDays != null && source.tripDays !== "" ? num(source.tripDays) : null,
+      peopleUnits: peopleUnits,
+      mealsPerDay: mealsPerDay,
+      cookingStyle: cookingStyle,
+      cookRate: rate,
+      dailyKg: dailyKg,
+      bottleKg: bottleKg,
+      bottleId: bottleId,
+      gasType: gasType,
+      bottleDays: dailyKg > 0 ? bottleKg / dailyKg : 0,
+      heatingLevel: "off",
+      heatingHours: 0,
+      fridgeGasEnabled: 0,
+      boilerEnabled: 0,
+      boilerLevel: null,
+      boilerHours: null
+    };
+  }
+
+  /**
+   * Mirrored from warobbo/mhwater GasCalc.buildGasPrefillQuery / Href
+   * (PR #18, now on main). Unknown keys stay off the URL. bottleKg is
+   * only sent for custom bottles; heatingHours only when heatingLevel
+   * is omitted; boilerHours only when boilerLevel is omitted.
+   */
+  var GAS_PREFILL_KEYS = [
+    "adults",
+    "children",
+    "tripDays",
+    "mealsPerDay",
+    "cookingStyle",
+    "heatingLevel",
+    "heatingHours",
+    "fridgeGasEnabled",
+    "boilerEnabled",
+    "boilerLevel",
+    "boilerHours",
+    "gasType",
+    "bottleId",
+    "bottleKg"
+  ];
+  var GAS_HEATING_LEVELS = { off: 1, low: 1, medium: 1, high: 1 };
+  var GAS_BOILER_LEVELS = { light: 1, normal: 1, heavy: 1 };
+  var GAS_TYPES = { butane: 1, propane: 1 };
+
+  function parsePrefillNumber(value) {
+    if (value == null) return undefined;
+    var trimmed = String(value).trim();
+    if (trimmed === "") return undefined;
+    var n = Number(trimmed);
+    return Number.isFinite(n) ? n : undefined;
+  }
+
+  function parsePrefillBool(value) {
+    if (value == null) return undefined;
+    if (typeof value === "boolean") return value;
+    var s = String(value).trim().toLowerCase();
+    if (s === "1" || s === "true") return true;
+    if (s === "0" || s === "false") return false;
+    return undefined;
+  }
+
+  function addPrefillParam(parts, key, value) {
+    parts.push(encodeURIComponent(key) + "=" + encodeURIComponent(String(value)));
+  }
+
+  function buildGasPrefillQuery(usage) {
+    var u = usage && typeof usage === "object" ? usage : {};
+    var parts = [];
+
+    if (parsePrefillNumber(u.adults) != null) {
+      addPrefillParam(parts, "adults", Math.round(parsePrefillNumber(u.adults)));
+    }
+    if (parsePrefillNumber(u.children) != null) {
+      addPrefillParam(parts, "children", Math.round(parsePrefillNumber(u.children)));
+    }
+    if (parsePrefillNumber(u.tripDays) != null) {
+      addPrefillParam(parts, "tripDays", parsePrefillNumber(u.tripDays));
+    }
+    if (parsePrefillNumber(u.mealsPerDay) != null) {
+      addPrefillParam(parts, "mealsPerDay", parsePrefillNumber(u.mealsPerDay));
+    }
+    if (GAS_COOK_STYLES[u.cookingStyle]) addPrefillParam(parts, "cookingStyle", u.cookingStyle);
+    if (GAS_HEATING_LEVELS[u.heatingLevel]) {
+      addPrefillParam(parts, "heatingLevel", u.heatingLevel);
+    } else if (parsePrefillNumber(u.heatingHours) != null) {
+      addPrefillParam(parts, "heatingHours", parsePrefillNumber(u.heatingHours));
+    }
+    if (parsePrefillBool(u.fridgeGasEnabled) != null) {
+      addPrefillParam(parts, "fridgeGasEnabled", parsePrefillBool(u.fridgeGasEnabled) ? "1" : "0");
+    }
+    if (parsePrefillBool(u.boilerEnabled) != null) {
+      addPrefillParam(parts, "boilerEnabled", parsePrefillBool(u.boilerEnabled) ? "1" : "0");
+    }
+    if (GAS_BOILER_LEVELS[u.boilerLevel]) {
+      addPrefillParam(parts, "boilerLevel", u.boilerLevel);
+    } else if (parsePrefillNumber(u.boilerHours) != null) {
+      addPrefillParam(parts, "boilerHours", parsePrefillNumber(u.boilerHours));
+    }
+    if (GAS_TYPES[u.gasType]) addPrefillParam(parts, "gasType", u.gasType);
+    if (u.bottleId === "custom" || GAS_BOTTLES[u.bottleId]) {
+      addPrefillParam(parts, "bottleId", u.bottleId);
+    }
+    if (u.bottleId === "custom" && parsePrefillNumber(u.bottleKg) != null) {
+      addPrefillParam(parts, "bottleKg", parsePrefillNumber(u.bottleKg));
+    } else if (!u.bottleId && parsePrefillNumber(u.bottleKg) != null) {
+      addPrefillParam(parts, "bottleKg", parsePrefillNumber(u.bottleKg));
+    }
+
+    return parts.join("&");
+  }
+
+  function buildGasPrefillHref(usage, base) {
+    var query = buildGasPrefillQuery(usage);
+    var path = base == null || base === "" ? "gas.html" : String(base);
+    return query ? path + "?" + query : path;
+  }
+
+  function gasPrefillHref(usage) {
+    var computed = calcGasCooking(usage);
+    var prefill = {
+      adults: computed.adults,
+      children: computed.children,
+      mealsPerDay: computed.mealsPerDay,
+      cookingStyle: computed.cookingStyle,
+      heatingLevel: "off",
+      fridgeGasEnabled: 0,
+      boilerEnabled: 0,
+      gasType: computed.gasType,
+      bottleId: computed.bottleId
+    };
+    if (computed.tripDays != null && computed.tripDays > 0) {
+      prefill.tripDays = computed.tripDays;
+    }
+    if (computed.bottleId === "custom") {
+      prefill.bottleKg = computed.bottleKg;
+    }
+    return buildGasPrefillHref(prefill, GAS_HREF);
+  }
+
   /* ----- Deterministic NL parse (LLM may only refine slots) ----- */
 
   function blankIntent() {
@@ -340,6 +624,110 @@
   function isGasLater(query) {
     if (/\bpayload|mam|miro|weighbridge\b/.test(query)) return false;
     return /\b(?:gas|lpg|calor|propane|butane|bbqs?|barbecues?|barbeques?)\b/.test(query);
+  }
+
+  function isBbqQuery(query) {
+    return /\b(?:bbqs?|barbecues?|barbeques?)\b/.test(query);
+  }
+
+  /**
+   * BBQ / outdoor-cook / bottle-days questions can use the Gas cooking line.
+   * Heating, winter, boiler, or fridge-on-gas as the topic stay on the later stub.
+   */
+  function isGasEstimate(query) {
+    var bbq = isBbqQuery(query);
+    var longevity = /\b(?:how\s+long|last(?:s|ing)?|days?\s+(?:left|will)|bottle\s+days)\b/.test(query);
+    var cooking = /\b(?:cook(?:ing|s|er)?|meals?)\b/.test(query);
+    var heatingFocus = /\b(?:heating|space\s+heat|winter|boiler|hot\s+water)\b/.test(query);
+    var fridgeFocus = /\b(?:gas\s+fridge|absorption|3-way\s+fridge|three[\s-]?way\s+fridge)\b/.test(query);
+    if ((heatingFocus || fridgeFocus) && !bbq && !cooking) return false;
+    return bbq || longevity || cooking;
+  }
+
+  function parseGasUsage(query) {
+    var usage = emptyGasUsage();
+    usage.isBbq = isBbqQuery(query);
+
+    var adults = query.match(/\b(\d+|one|two|three|four|five|six)\s+adults?\b/);
+    var people = query.match(/\b(\d+|one|two|three|four|five|six)\s+(?:people|persons?)\b/);
+    var justMe = /\b(?:just me|on my own|myself|alone)\b/.test(query);
+    if (adults) {
+      usage.adults = parseQty(adults[1]) || 2;
+      usage.peopleNamed = true;
+    } else if (people) {
+      usage.adults = parseQty(people[1]) || 2;
+      usage.peopleNamed = true;
+    } else if (justMe) {
+      usage.adults = 1;
+      usage.peopleNamed = true;
+    }
+
+    var children = query.match(/\b(\d+|a|an|one|two|three|four|five|six)\s+child(?:ren)?\b/) ||
+      query.match(/\b(\d+|a|an|one|two|three|four|five|six)\s+kids?\b/);
+    if (children) {
+      usage.children = parseQty(children[1]) || 1;
+      usage.childrenNamed = true;
+    } else if (/\b(?:kids?|children)\b/.test(query)) {
+      usage.children = 1;
+      usage.childrenNamed = true;
+    }
+
+    var times = query.match(/\b(once|twice|thrice)\s+(?:a|per)\s+day\b/) ||
+      query.match(/\b(\d+|one|two|three|four|five|six)\s+times?\s+(?:a|per)\s+day\b/) ||
+      query.match(/\b(\d+|one|two|three|four|five|six)\s+meals?\s+(?:a|per)\s+day\b/);
+    if (times) {
+      var meals = parseTimesQty(times[1]);
+      if (meals != null) usage.mealsPerDay = meals;
+    } else if (usage.isBbq) {
+      usage.mealsPerDay = 2;
+    }
+
+    if (usage.isBbq) {
+      usage.cookingStyle = "heavy";
+    } else if (/\bheavy\b/.test(query) || /\b(?:oven|grill|long simmer)\b/.test(query)) {
+      usage.cookingStyle = "heavy";
+    } else if (/\blight\b/.test(query)) {
+      usage.cookingStyle = "light";
+    } else if (/\bnormal\b/.test(query)) {
+      usage.cookingStyle = "normal";
+    }
+
+    var typed = query.match(/\b(\d+(?:\.\d+)?)\s*kg\s+(propane|butane)\b/) ||
+      query.match(/\b(propane|butane)\s+(\d+(?:\.\d+)?)\s*kg\b/) ||
+      query.match(/\bcalor\s+(\d+(?:\.\d+)?)\s*kg\b/) ||
+      query.match(/\b(\d+(?:\.\d+)?)\s*kg\s+(?:calor\s+)?(?:gas\s+)?bottles?\b/) ||
+      query.match(/\b(\d+(?:\.\d+)?)\s*kg\s+(?:bottle|cylinder)\b/);
+    if (typed) {
+      var kg;
+      var typeHint = null;
+      if (typed[2] === "propane" || typed[2] === "butane") {
+        kg = num(typed[1]);
+        typeHint = typed[2];
+      } else if (typed[1] === "propane" || typed[1] === "butane") {
+        kg = num(typed[2]);
+        typeHint = typed[1];
+      } else {
+        kg = num(typed[1]);
+        if (/\bpropane\b/.test(query)) typeHint = "propane";
+        else if (/\bbutane\b/.test(query)) typeHint = "butane";
+      }
+      if (kg > 0) {
+        var matched = matchNamedBottle(kg, typeHint);
+        usage.bottleId = matched.bottleId;
+        usage.gasType = matched.gasType;
+        usage.bottleKg = matched.bottleKg;
+        usage.bottleNamed = true;
+      }
+    } else if (/\bpropane\b/.test(query)) {
+      var propaneAtDefaultKg = matchNamedBottle(GAS_DEFAULT_BOTTLE.kg, "propane");
+      usage.gasType = propaneAtDefaultKg.gasType;
+      usage.bottleId = propaneAtDefaultKg.bottleId;
+      usage.bottleKg = propaneAtDefaultKg.bottleKg;
+    } else if (/\bbutane\b/.test(query)) {
+      usage.gasType = "butane";
+    }
+
+    return usage;
   }
 
   function isWaterLater(query) {
@@ -723,7 +1111,9 @@
       hrefLabel: guide.hrefLabel,
       ctaNote: CTA_NOTE,
       usedKg: null,
-      remainingKg: null
+      remainingKg: null,
+      dailyKg: null,
+      bottleDays: null
     };
   }
 
@@ -731,6 +1121,107 @@
     var result = laterGuide(domain);
     if (phase) result.phase = phase;
     return result;
+  }
+
+  function gasCta(usage) {
+    return {
+      href: gasPrefillHref(usage),
+      hrefLabel: GAS_CTA_LABEL,
+      ctaNote: CTA_NOTE
+    };
+  }
+
+  function peoplePhrase(computed) {
+    var bits = [];
+    bits.push(computed.adults + (computed.adults === 1 ? " adult" : " adults"));
+    if (computed.children > 0) {
+      bits.push(
+        computed.children +
+        (computed.children === 1 ? " child" : " children") +
+        " (× " + GAS_CHILD_FACTOR + ")"
+      );
+    }
+    return bits.join(" + ");
+  }
+
+  function buildGasAnswer(computed, usage) {
+    var daily = formatGasKg(computed.dailyKg);
+    var days = formatGasDays(computed.bottleDays);
+    var rate = String(computed.cookRate);
+    var meals = computed.mealsPerDay;
+    var bottle = formatGasKg(computed.bottleKg);
+    return peoplePhrase(computed) +
+      " × " + meals + (meals === 1 ? " meal" : " meals") +
+      " × " + rate + " kg = " + daily + " kg/day. A " +
+      bottle + " kg " + computed.gasType +
+      " bottle lasts about " + days + " days (planning estimate).";
+  }
+
+  function handleGas(intent, text) {
+    var query = normalise(text);
+    if (!isGasEstimate(query)) {
+      return laterGuide("gas");
+    }
+
+    var usage = parseGasUsage(query);
+    var computed = calcGasCooking(usage);
+    var assumptions = [];
+    var followUps = [GAS_FOLLOW_UP];
+
+    if (usage.isBbq) {
+      assumptions.push(GAS_BBQ_PROXY_NOTE);
+    } else {
+      assumptions.push(
+        "Cooking style is Gas-calculator " + computed.cookingStyle +
+        " (" + computed.cookRate + " kg per person-unit per meal)."
+      );
+    }
+
+    if (!usage.peopleNamed) {
+      assumptions.push("2 adults — Gas-calculator default, used because you didn’t say how many people.");
+    }
+    if (usage.childrenNamed) {
+      assumptions.push(
+        "Children count as " + GAS_CHILD_FACTOR +
+        " of an adult (Gas-calculator child factor)."
+      );
+    }
+    if (!usage.bottleNamed) {
+      assumptions.push(
+        formatGasKg(computed.bottleKg) + " kg " + computed.gasType +
+        " bottle (Gas-calculator default 7 kg butane unless you named a bottle kg / Calor size)."
+      );
+    } else {
+      assumptions.push(
+        formatGasKg(computed.bottleKg) + " kg " + computed.gasType +
+        " bottle, as typed."
+      );
+    }
+    assumptions.push("Heating off, fridge on gas off, and boiler off — outdoor-cook / BBQ longevity unless you said otherwise.");
+    assumptions.push("Planning estimate from the Gas calculator cooking line only. Not a manufacturer rating.");
+
+    var cta = gasCta(Object.assign({}, usage, computed));
+
+    return {
+      handled: true,
+      domain: "gas",
+      phase: "Gas",
+      kind: "answer",
+      answer: buildGasAnswer(computed, usage),
+      assumptions: unique(assumptions),
+      gaps: [],
+      followUps: unique(followUps),
+      items: [],
+      href: cta.href,
+      hrefLabel: cta.hrefLabel,
+      ctaNote: cta.ctaNote,
+      usedKg: null,
+      remainingKg: null,
+      dailyKg: computed.dailyKg,
+      bottleDays: computed.bottleDays,
+      gasUsage: usage,
+      computed: computed
+    };
   }
 
   function applyRouteHref(result, match) {
@@ -1114,7 +1605,7 @@
     payload: handlePayload,
     tyres: handleTyresHold,
     power: function () { return handleLaterDomain("power", "B"); },
-    gas: function () { return handleLaterDomain("gas", "C"); },
+    gas: handleGas,
     water: function () { return handleLaterDomain("water", "C"); }
   };
 
@@ -1134,7 +1625,7 @@
       return Object.assign(DOMAINS.power(), { intent: intent });
     }
     if (intent.domain === "gas") {
-      return Object.assign(DOMAINS.gas(), { intent: intent });
+      return Object.assign(handleGas(intent, question), { intent: intent });
     }
     if (intent.domain === "water") {
       return Object.assign(DOMAINS.water(), { intent: intent });
@@ -1170,7 +1661,9 @@
       hrefLabel: result.hrefLabel || null,
       ctaNote: result.ctaNote || null,
       followUps: result.followUps || [],
-      phase: result.phase || null
+      phase: result.phase || null,
+      dailyKg: result.dailyKg == null ? null : result.dailyKg,
+      bottleDays: result.bottleDays == null ? null : result.bottleDays
     };
   }
 
@@ -1179,7 +1672,15 @@
     PAYLOAD_HREF: PAYLOAD_HREF,
     TYRES_HREF: TYRES_HREF,
     TYRES_HOLD_MESSAGE: TYRES_HOLD_MESSAGE,
+    GAS_HREF: GAS_HREF,
+    GAS_SOURCE: GAS_SOURCE,
     GAS_FULL_KG: GAS_FULL_KG,
+    GAS_COOK_STYLES: GAS_COOK_STYLES,
+    GAS_CHILD_FACTOR: GAS_CHILD_FACTOR,
+    GAS_DEFAULT_BOTTLE: GAS_DEFAULT_BOTTLE,
+    GAS_BBQ_PROXY_NOTE: GAS_BBQ_PROXY_NOTE,
+    GAS_CTA_LABEL: GAS_CTA_LABEL,
+    GAS_FOLLOW_UP: GAS_FOLLOW_UP,
     WATER_KG_PER_L: WATER_KG_PER_L,
     BIKE_DEFAULT_KG: BIKE_DEFAULT_KG,
     RACK_DEFAULT_KG: RACK_DEFAULT_KG,
@@ -1194,6 +1695,13 @@
     driverPayloadKg: driverPayloadKg,
     fuelPayloadKg: fuelPayloadKg,
     payloadPrefillHref: payloadPrefillHref,
+    emptyGasUsage: emptyGasUsage,
+    calcGasCooking: calcGasCooking,
+    GAS_PREFILL_KEYS: GAS_PREFILL_KEYS,
+    buildGasPrefillQuery: buildGasPrefillQuery,
+    buildGasPrefillHref: buildGasPrefillHref,
+    gasPrefillHref: gasPrefillHref,
+    parseGasUsage: parseGasUsage,
     parseIntent: parseIntent,
     handleAsk: handleAsk,
     resolveAsk: resolveAsk,

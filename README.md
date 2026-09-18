@@ -18,7 +18,7 @@ The Ask box routes **topic synonym lists** per hub, seeded from the live hub def
 
 **Process:** hub defaults are the floor. Layer 2 is free UK search / People-also-ask phrasing (no paid Keyword Planner). Seen twice in Ask logs → add a synonym in `assets/router.js`. Wayne must not discover misses by typing. Ask opens a page; it never invents a pressure, weight or legal number.
 
-**Co-pilot (Phase A):** multi-factor **Payload** questions (remaining kg + water / gas / bikes) are parsed, then answered from the Payload calculator maths — **result first**, then labelled assumptions (bike 14 kg, rack 12 kg, water 1 kg/L, gas full-bottle) and a Payload CTA. Tyres questions get a HOLD / caution message only. Power and Water still open those hubs (Phases B and C). See **[COPILOT-ASK.md](COPILOT-ASK.md)**.
+**Co-pilot (Phase A + Phase Gas):** multi-factor **Payload** questions (remaining kg + water / gas / bikes) are parsed, then answered from the Payload calculator maths — **result first**, then labelled assumptions (bike 14 kg, rack 12 kg, water 1 kg/L, gas full-bottle) and a Payload CTA. **Gas BBQ / bottle-days** questions get a cooking-line estimate from the Gas calculator (heavy 0.07 kg per person-unit per meal for BBQ; default 7 kg butane) and a prefilled Gas CTA — still in Ask, no auto-navigate. Tyres questions get a HOLD / caution message only. Power and Water stay later stubs (Phases B and C). See **[COPILOT-ASK.md](COPILOT-ASK.md)**.
 
 If nothing matches, the question (and optional email) is passed to the site owner via `POST /api/ask`. It does **not** invent tyre pressures, weights or legal advice. Replies are not automated.
 

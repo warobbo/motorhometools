@@ -1,10 +1,12 @@
 "use strict";
 
 /**
- * Golden tests for Phase A Payload-first co-pilot Ask.
- * Maths must match warobbo/motorhome-payload-calculator compute() /
- * custom-kit for the same inputs. Pedal bikes without kg use the labelled
- * 14 kg + 12 kg rack defaults. Never invent MAM, tyre pressures, or e-bike kg.
+ * Golden tests for Phase A Payload-first co-pilot Ask and Phase Gas
+ * cooking-line estimates. Payload maths must match
+ * warobbo/motorhome-payload-calculator compute() / custom-kit.
+ * Gas maths must match warobbo/mhwater gas-calc.js cooking line only
+ * (light 0.025 / normal 0.04 / heavy 0.07, child 0.7). Never invent
+ * MAM, tyre pressures, e-bike kg, or an outdoor BBQ kg/h.
  */
 
 const { test } = require("node:test");
@@ -340,18 +342,196 @@ test("coolbox + portable aircon + battery stays in Ask with a soft Power CTA", f
   assert.doesNotMatch(decision.view.answer, /\b\d+\s*hours?\b/i);
 });
 
-test("gas BBQ twice a day stays in Ask with a soft Gas CTA — no invented days", function () {
+function siblingGasCooking(state) {
+  const adults = state.adults;
+  const children = state.children || 0;
+  const meals = state.mealsPerDay;
+  const rate = copilot.GAS_COOK_STYLES[state.cookingStyle].kgPerPersonPerMeal;
+  const dailyKg = (adults + children * copilot.GAS_CHILD_FACTOR) * meals * rate;
+  const bottleKg = state.bottleKg;
+  return {
+    dailyKg: dailyKg,
+    bottleDays: dailyKg > 0 ? bottleKg / dailyKg : 0
+  };
+}
+
+test("Gas cooking-line maths matches mhwater calcGas cook row", function () {
+  const ours = copilot.calcGasCooking({
+    adults: 2,
+    children: 0,
+    mealsPerDay: 2,
+    cookingStyle: "heavy",
+    bottleKg: 7
+  });
+  const sibling = siblingGasCooking({
+    adults: 2,
+    children: 0,
+    mealsPerDay: 2,
+    cookingStyle: "heavy",
+    bottleKg: 7
+  });
+  assert.equal(ours.dailyKg, 0.28);
+  assert.equal(ours.dailyKg, sibling.dailyKg);
+  assert.ok(Math.abs(ours.bottleDays - 25) < 1e-9);
+  assert.equal(ours.bottleDays, sibling.bottleDays);
+  assert.equal(ours.cookRate, 0.07);
+});
+
+test("golden: gas BBQ twice a day estimates 0.28 kg/day and ~25 days, stays in Ask", function () {
   const question = "i have bought a gas bbq, if i use it twice a day, how long will my gas last";
+  const result = copilot.handleAsk(question);
+  assert.equal(result.handled, true);
+  assert.equal(result.domain, "gas");
+  assert.equal(result.kind, "answer");
+  assert.equal(result.dailyKg, 0.28);
+  assert.ok(Math.abs(result.bottleDays - 25) < 1e-9);
+  assert.match(result.answer, /0\.28/);
+  assert.match(result.answer, /25/);
+  assert.match(result.answer, /planning estimate/i);
+  assert.ok(result.assumptions.some(function (line) {
+    return /heavy cook meal/i.test(line) && /not a separate outdoor BBQ/i.test(line);
+  }));
+  assert.ok(result.assumptions.some(function (line) {
+    return /7 kg/.test(line) && /butane/i.test(line);
+  }));
+  assert.ok(result.assumptions.some(function (line) {
+    return /2 adults/i.test(line);
+  }));
+  assert.ok(result.assumptions.some(function (line) {
+    return /heating off/i.test(line) && /fridge/i.test(line) && /boiler/i.test(line);
+  }));
+  assert.ok(result.followUps.some(function (line) {
+    return /bottle kg \/ minutes/i.test(line);
+  }));
+  assert.match(result.href, /^https:\/\/motorhomewater\.co\.uk\/gas\.html\?/);
+  assert.match(result.href, /adults=2/);
+  assert.match(result.href, /children=0/);
+  assert.match(result.href, /mealsPerDay=2/);
+  assert.match(result.href, /cookingStyle=heavy/);
+  assert.match(result.href, /heatingLevel=off/);
+  assert.match(result.href, /fridgeGasEnabled=0/);
+  assert.match(result.href, /boilerEnabled=0/);
+  assert.match(result.href, /gasType=butane/);
+  assert.match(result.href, /bottleId=butane7/);
+  assert.doesNotMatch(result.href, /bottleKg=/);
+  assert.doesNotMatch(result.href, /heatingHours=/);
+  assert.doesNotMatch(result.href, /boilerLevel=/);
+  assert.doesNotMatch(result.href, /boilerHours=/);
+  assert.match(result.hrefLabel, /Open Gas to fine-tune/i);
+  assert.equal(result.ctaNote, copilot.CTA_NOTE);
+
   const decision = copilot.resolveAsk(question, { routeAsk: routeAsk });
   assert.equal(decision.navigate, false);
   assert.equal(decision.unmatched, false);
   assert.equal(decision.view.handled, true);
-  assert.equal(decision.view.kind, "later");
+  assert.equal(decision.view.kind, "answer");
   assert.equal(decision.view.domain, "gas");
-  assert.match(decision.view.href, /gas\.html/);
-  assert.match(decision.view.hrefLabel, /Open Gas/i);
-  assert.doesNotMatch(decision.view.answer, /\b\d+\s*days?\b/i);
-  assert.doesNotMatch(decision.view.answer, /\b\d+\s*(?:hours?|kg)\b/i);
+  assert.match(decision.view.href, /cookingStyle=heavy/);
+  assert.equal(decision.view.dailyKg, 0.28);
+  assert.ok(Math.abs(decision.view.bottleDays - 25) < 1e-9);
+
+  const sibling = siblingGasCooking({
+    adults: 2,
+    children: 0,
+    mealsPerDay: 2,
+    cookingStyle: "heavy",
+    bottleKg: 7
+  });
+  assert.equal(result.dailyKg, sibling.dailyKg);
+  assert.equal(result.bottleDays, sibling.bottleDays);
+});
+
+test("golden: named 13 kg propane BBQ uses that bottle, not the 7 kg default", function () {
+  const question = "gas BBQ twice a day, how long will a 13 kg propane last";
+  const result = copilot.handleAsk(question);
+  assert.equal(result.handled, true);
+  assert.equal(result.domain, "gas");
+  assert.equal(result.kind, "answer");
+  const sibling = siblingGasCooking({
+    adults: 2,
+    children: 0,
+    mealsPerDay: 2,
+    cookingStyle: "heavy",
+    bottleKg: 13
+  });
+  assert.equal(result.dailyKg, 0.28);
+  assert.equal(result.bottleDays, sibling.bottleDays);
+  assert.equal(result.bottleDays, 13 / 0.28);
+  assert.match(result.answer, /0\.28/);
+  assert.match(result.answer, /13/);
+  assert.match(result.answer, /propane/i);
+  assert.ok(result.assumptions.some(function (line) {
+    return /13/.test(line) && /propane/i.test(line);
+  }));
+  assert.ok(!result.assumptions.some(function (line) {
+    return /7 kg/.test(line) && /default/i.test(line);
+  }));
+  assert.match(result.href, /gasType=propane/);
+  assert.match(result.href, /bottleId=propane13/);
+  assert.doesNotMatch(result.href, /bottleKg=/);
+  assert.match(result.href, /cookingStyle=heavy/);
+  assert.match(result.href, /heatingLevel=off/);
+  assert.match(result.href, /fridgeGasEnabled=0/);
+  assert.match(result.href, /boilerEnabled=0/);
+  assert.equal(copilot.resolveAsk(question, { routeAsk: routeAsk }).navigate, false);
+});
+
+test("Gas CTA href matches mhwater buildGasPrefillHref contract for BBQ twice a day", function () {
+  const href = copilot.buildGasPrefillHref({
+    adults: 2,
+    children: 0,
+    mealsPerDay: 2,
+    cookingStyle: "heavy",
+    heatingLevel: "off",
+    fridgeGasEnabled: 0,
+    boilerEnabled: 0,
+    gasType: "butane",
+    bottleId: "butane7"
+  }, "https://motorhomewater.co.uk/gas.html");
+  const qs = href.slice(href.indexOf("?") + 1);
+  const params = new URLSearchParams(qs);
+  assert.equal(href.startsWith("https://motorhomewater.co.uk/gas.html?"), true);
+  assert.equal(params.get("adults"), "2");
+  assert.equal(params.get("children"), "0");
+  assert.equal(params.get("mealsPerDay"), "2");
+  assert.equal(params.get("cookingStyle"), "heavy");
+  assert.equal(params.get("heatingLevel"), "off");
+  assert.equal(params.get("fridgeGasEnabled"), "0");
+  assert.equal(params.get("boilerEnabled"), "0");
+  assert.equal(params.get("gasType"), "butane");
+  assert.equal(params.get("bottleId"), "butane7");
+  assert.equal(params.get("bottleKg"), null);
+  assert.equal(params.get("heatingHours"), null);
+  assert.equal(params.get("tripDays"), null);
+  copilot.GAS_PREFILL_KEYS.forEach(function (key) {
+    assert.ok(typeof key === "string");
+  });
+});
+
+test("custom bottle kg is sent only when bottleId is custom", function () {
+  const href = copilot.gasPrefillHref({
+    adults: 2,
+    children: 0,
+    mealsPerDay: 2,
+    cookingStyle: "heavy",
+    bottleId: "custom",
+    bottleKg: 10,
+    gasType: "propane"
+  });
+  assert.match(href, /bottleId=custom/);
+  assert.match(href, /bottleKg=10/);
+  assert.match(href, /gasType=propane/);
+});
+
+test("gas fridge stays a later stub — cooking estimate is not invented for absorption fridges", function () {
+  const result = copilot.handleAsk("gas fridge how much does it use");
+  assert.equal(result.handled, true);
+  assert.equal(result.domain, "gas");
+  assert.equal(result.kind, "later");
+  assert.equal(result.dailyKg, null);
+  assert.match(result.hrefLabel, /Open Gas/i);
+  assert.doesNotMatch(result.answer, /0\.28/);
+  assert.doesNotMatch(result.answer, /\b25\s*days?\b/i);
 });
 
 test("Ask front door never auto-navigates away from a router match", function () {

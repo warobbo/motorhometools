@@ -24,8 +24,8 @@ When a hub adds a starter appliance or default label, update `assets/router.js` 
 - Radio / stereo / bluetooth / speaker / charger / USB → **Power** (12 V leisure kit, same bucket as lights, TV, phone charge).
 - Diesel heater / heater fan / 12 V pump → **Power** (electrical draw). Gas heater / heating / BBQ / grill stay **Gas**.
 - Toilet / loo / cassette → **Cassette**.
-- Ask stays on the thread and offers a soft calculator CTA. It never auto-navigates away, and it never invents a pressure, plated weight, burn rate or legal number.
-- Co-pilot Ask (Phase A) runs before this list for multi-factor Payload questions and Tyres HOLD. Font still owns hub keywords here. Ask may apply **labelled** Payload defaults (pedal bike 14 kg, rack 12 kg, water 1 kg/L, gas full-bottle). It still must not invent plated MAM / MIRO, e-bike kg, tank litres, or tyre pressures.
+- Ask stays on the thread and offers a soft calculator CTA. It never auto-navigates away, and it never invents a pressure, plated weight, outdoor BBQ kg/h, or legal number.
+- Co-pilot Ask (Phase A + Phase Gas) runs before this list for multi-factor Payload questions, Tyres HOLD, and BBQ / bottle-days estimates from the Gas-calculator **cooking line** only. Font still owns hub keywords here. Ask may apply **labelled** Payload defaults (pedal bike 14 kg, rack 12 kg, water 1 kg/L, gas full-bottle) and **labelled** GasCalc cook rates (light 0.025 / normal 0.04 / heavy 0.07, child 0.7, default 7 kg butane). It still must not invent plated MAM / MIRO, e-bike kg, tank litres, tyre pressures, or a made-up burn rate.
 
 ## How to add a word
 
