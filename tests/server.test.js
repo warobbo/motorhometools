@@ -129,8 +129,8 @@ test("GET /guides/ and Wave 2 pages return Payload, Power and Water", async func
     assert.match(homeHtml, /href="\/ask\/">shareable Ask page</);
     assert.match(homeHtml, /<h2 id="ask-title">Not sure\? Ask in plain English<\/h2>/);
     assert.match(homeHtml, /id="ask-answer"/);
-    assert.match(homeHtml, /assets\/copilot\.js\?v=20260918payload/);
-    assert.match(homeHtml, /assets\/app\.js\?v=20260918payload/);
+    assert.match(homeHtml, /assets\/copilot\.js\?v=20260918cassette2/);
+    assert.match(homeHtml, /assets\/app\.js\?v=20260918cassette2/);
 
     const askPage = await fetch("http://127.0.0.1:" + port + "/ask/");
     const askHtml = await askPage.text();
@@ -141,8 +141,8 @@ test("GET /guides/ and Wave 2 pages return Payload, Power and Water", async func
     assert.match(askHtml, /id="ask-form"/);
     assert.match(askHtml, /id="ask-question"/);
     assert.match(askHtml, /assets\/router\.js/);
-    assert.match(askHtml, /assets\/copilot\.js\?v=20260918payload/);
-    assert.match(askHtml, /assets\/app\.js\?v=20260918payload/);
+    assert.match(askHtml, /assets\/copilot\.js\?v=20260918cassette2/);
+    assert.match(askHtml, /assets\/app\.js\?v=20260918cassette2/);
     assert.match(askHtml, /id="ask-answer"/);
     assert.doesNotMatch(askHtml, /best campsite|campsites near|directory of sites/i);
 

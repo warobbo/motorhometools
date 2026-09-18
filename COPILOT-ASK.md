@@ -1,4 +1,4 @@
-# Co-pilot Ask (Phase A Payload + Phase Gas estimate)
+# Co-pilot Ask (Phase A Payload + Phase Gas + Phase Cassette estimate)
 
 Wayne lock, 18 Sep 2026: natural-language Ask may call **only** existing calculator maths. Answer first, labelled assumptions second. Never invent plated MAM / MIRO, tyre pressures, or legal limits. Tyres is HOLD. No homepage Ask resize. No campsite / trip planner.
 
@@ -61,6 +61,7 @@ Electrical presets (`BATT_KG`, `SOLAR_KG`), axle check, DVLA plate lookup, and t
 - Tyres / PSI / bar / pressure → HOLD message only. Do not open a calculated pressure.
 - Power / Water duration questions → stay in Ask with an honest “not calculated yet” card and a soft calculator CTA. Do not auto-open a tab. Do not invent Ah, watts, or tank litres-per-day. **Phase B Power, Phase C Water.**
 - Gas BBQ / outdoor-cook / bottle-days → **Phase Gas estimate**: cooking-line only from mhwater `gas-calc.js` (`light` 0.025 / `normal` 0.04 / `heavy` 0.07 kg per person-unit per meal; child factor 0.7). BBQ / barbecue N times a day → `mealsPerDay = N` (default 2), `cookingStyle = heavy`, labelled as a heavy-cook proxy — **not** a separate outdoor BBQ kg/h. Default bottle **7 kg butane** (`butane7`) if none named. Heating / fridge-on-gas / boiler stay **off** for these longevity questions unless the visitor said otherwise. Soft CTA uses the mhwater `buildGasPrefillHref` contract on `https://motorhomewater.co.uk/gas.html` (landed [mhwater#18](https://github.com/warobbo/mhwater/pull/18)): `adults`, `children`, `tripDays` (only if named), `mealsPerDay`, `cookingStyle`, `heatingLevel`, `heatingHours` (only if level omitted), `fridgeGasEnabled` (0|1), `boilerEnabled` (0|1), `boilerLevel` / `boilerHours` (only if boiler on), `gasType`, `bottleId`, `bottleKg` (custom bottles only). BBQ twice/day example: `mealsPerDay=2&cookingStyle=heavy&adults=2&heatingLevel=off&fridgeGasEnabled=0&boilerEnabled=0&gasType=butane&bottleId=butane7` → 0.28 kg/day, ~25 days on 7 kg. Stay in Ask — no `window.open`.
+- Cassette empties / days / 2nd cassette → **Phase Cassette estimate**: flush-litre empty-days from mhwater `cassette-calc.js` labelled defaults only (`blackTankLitres` **18**, `flushesPerPersonPerDay` **5**, `litresPerFlush` **0.25**, `startPercent` **0**, `blackKind` **cassette**). Adults default **2** when “for 2” / couple / unspecified. Children **0** unless said (full person, no Gas child factor). `wasteDaily = (adults + children) × flushes × litresPerFlush`. `daysOne = usable / wasteDaily` where `usable = blackTankLitres × (1 − startPercent/100)`. For 2nd / second / spare / extra cassette: `daysTwo = (2 × usable) / wasteDaily`, `extraDays = daysTwo − daysOne` (≈ `daysOne` when start is empty). Soft CTA uses the mhwater cassette URL-prefill contract (landed [mhwater#19](https://github.com/warobbo/mhwater/pull/19)) on `https://motorhomewater.co.uk/cassette.html`: `adults`, `children`, `tripDays` (only if named), `blackKind` (`cassette` \| `fixed`; aliases `fixedBlack`, `fixed-black`, `fixed_black`), `blackTankLitres` (one cassette), optional `cassetteCount` (page multiplies into `blackTankLitres`), `flushesPerPersonPerDay`, `litresPerFlush`, `startPercent`. 2nd-cassette example: `adults=2&blackTankLitres=18&flushesPerPersonPerDay=5&litresPerFlush=0.25&startPercent=0&cassetteCount=2` → 2.5 L/day, **7.2 days** one cassette, **~7 extra / ~14 total**. Stay in Ask — no `window.open`. Bare “cassette” / “toilet” / “open cassette” keep the later soft CTA.
 - Gas fridge / heating / winter / boiler as the topic (no BBQ / cook meals) → later stub. Do not invent those burn hours in Ask.
 - Campsite / route / trip planner → unmatched capture. Hard stop.
 
@@ -68,9 +69,9 @@ Tone: guidance / solutions. Gaps are secondary notes, not the headline. Strong p
 
 ## Extension point
 
-`assets/copilot.js` `DOMAINS`: `payload` (live), `gas` (Phase Gas cooking-line estimate), `tyres` (hold), `power` (Phase B stub), `water` (Phase C stub). Later stubs and Gas fridge / heating questions answer in Ask and hand off with a soft CTA.
+`assets/copilot.js` `DOMAINS`: `payload` (live), `gas` (Phase Gas cooking-line estimate), `cassette` (Phase Cassette empty-days estimate), `tyres` (hold), `power` (Phase B stub), `water` (Phase C stub). Later stubs and Gas fridge / heating questions answer in Ask and hand off with a soft CTA.
 
-Parse is deterministic. `handleAsk(text, { llmParse })` may refine **slots only**; maths stay in `computePayload()` or `calcGasCooking()`. No paid LLM API is wired. Leave it off.
+Parse is deterministic. `handleAsk(text, { llmParse })` may refine **slots only**; maths stay in `computePayload()`, `calcGasCooking()`, or `calcCassetteDays()`. No paid LLM API is wired. Leave it off.
 
 ## Phase Gas — cooking-line inventory
 
@@ -87,10 +88,26 @@ Source: [warobbo/mhwater](https://github.com/warobbo/mhwater) `assets/gas-calc.j
 
 `dailyKg = (adults + children × 0.7) × mealsPerDay × cookRate`. Example: 2 adults × 2 BBQ uses × 0.07 = **0.28 kg/day**; 7 kg bottle → **~25 days**.
 
+## Phase Cassette — empty-days inventory
+
+Source: [warobbo/mhwater](https://github.com/warobbo/mhwater) `assets/cassette-defaults.js` labelled defaults and `cassette-calc.js` `calcCassette()` days-until-empty row.
+
+| Slot | Default if omitted | Maths |
+| --- | --- | --- |
+| Adults | **2** (“for 2” / couple / unspecified) | heads = adults + children |
+| Children | 0 unless said | full person — no Gas child factor |
+| Cassette litres | **18 L** | labelled Cassette default |
+| Flushes / person / day | **5** | labelled Cassette default |
+| Litres per flush | **0.25 L** | labelled Cassette default |
+| Start percent | **0** (empty) | `usable = litres × (1 − start/100)` |
+| 2nd / spare cassette | `cassetteCount=2` on the CTA | `daysTwo = (2 × usable) / wasteDaily` |
+
+`wasteDaily = heads × 5 × 0.25`. Example: 2 adults → **2.5 L/day**; empty 18 L → **7.2 days**; a 2nd empty cassette → **7.2 extra / 14.4 total** (shown as ~7 extra / ~14 total). CTA keeps `blackTankLitres=18` and sends `cassetteCount=2` (mhwater multiplies to 36 L on the page).
+
 ## Flow
 
-1. Co-pilot (`handleAsk` / `resolveAsk`) — Payload estimates, Phase Gas cooking-line estimates, and Tyres HOLD in Ask
-2. Later domains (Power / Water / Gas fridge or heating / …) stay **in Ask** with a soft calculator CTA. The synonym router still chooses the page; it must not `window.open` / wipe the thread
+1. Co-pilot (`handleAsk` / `resolveAsk`) — Payload estimates, Phase Gas cooking-line estimates, Phase Cassette empty-days estimates, and Tyres HOLD in Ask
+2. Later domains (Power / Water / Gas fridge or heating / vague cassette / …) stay **in Ask** with a soft calculator CTA. The synonym router still chooses the page; it must not `window.open` / wipe the thread
 3. Unmatched `POST /api/ask`
 
 Homepage Ask size / heading is unchanged. The answer card only appears after submit.
