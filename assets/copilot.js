@@ -357,7 +357,15 @@
     var s = state || {};
     var params = new URLSearchParams();
     var includeVanLimits = opts && opts.includeVanLimits;
-    if (includeVanLimits) {
+    var remainingKg = opts && opts.remainingPayloadKg;
+    // Remaining-payload questions encode the visitor's kg as mam with miro=0
+    // (same internal trick Ask already uses for maths: remaining treated as
+    // available with an empty base). Payload prefill needs miro=0 explicitly
+    // so it does not invent Mass in Service. Do not invent plated MAM/MIRO.
+    if (remainingKg != null && num(remainingKg) > 0) {
+      params.set("mam", String(remainingKg));
+      params.set("miro", "0");
+    } else if (includeVanLimits) {
       ["mam", "miro", "actualEmpty"].forEach(function (key) {
         if (num(s[key]) > 0) params.set(key, String(s[key]));
       });
@@ -1224,8 +1232,15 @@
     };
   }
 
+  function hasPrefillQuery(href) {
+    return typeof href === "string" && href.indexOf("?") >= 0;
+  }
+
   function applyRouteHref(result, match) {
     if (!result || !match) return result;
+    // Keep a prefilled calculator href (bikes, remaining mam+miro=0, water, gas).
+    // The synonym router only knows the bare hub URL.
+    if (hasPrefillQuery(result.href)) return result;
     if (result.kind === "later") {
       var guided = laterGuide(match.id);
       return Object.assign({}, guided, {
@@ -1445,8 +1460,15 @@
     });
   }
 
+  function payloadCtaOpts(intent) {
+    return {
+      includeVanLimits: intent.mamKg != null || intent.remainingPayloadKg != null,
+      remainingPayloadKg: intent.remainingPayloadKg
+    };
+  }
+
   function handlePayload(intent) {
-    var cta = payloadCta(emptyPayloadState(), { includeVanLimits: false });
+    var cta = payloadCta(emptyPayloadState(), payloadCtaOpts(intent));
 
     if (intent.needsClarify && (!intent.items || !intent.items.length)) {
       return {
@@ -1508,7 +1530,7 @@
     });
 
     assumptions.push("Planning estimate only. Weigh the van. We do not invent plated weights or legal limits.");
-    cta = payloadCta(built.state, { includeVanLimits: intent.mamKg != null });
+    cta = payloadCta(built.state, payloadCtaOpts(intent));
 
     return {
       handled: true,

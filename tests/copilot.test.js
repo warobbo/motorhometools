@@ -113,7 +113,8 @@ test("golden: 720 kg payload + 2×22 kg e-bikes + 100 L water + 2 gas bottles ma
   assert.match(result.href, /^https:\/\/motorhomepayload\.co\.uk\/\?/);
   assert.match(result.href, /freshCap=100/);
   assert.match(result.href, /gas6=2/);
-  assert.doesNotMatch(result.href, /(?:\?|&)mam=/);
+  assert.match(result.href, /(?:\?|&)mam=720(?:&|$)/);
+  assert.match(result.href, /(?:\?|&)miro=0(?:&|$)/);
   assert.doesNotMatch(result.href, /gas9Full/);
   assert.match(result.hrefLabel, /Open Payload to fine-tune/i);
   assert.equal(result.ctaNote, copilot.CTA_NOTE);
@@ -175,6 +176,8 @@ test("golden: 500 kg payload + 3 bikes (no kg) uses 14 kg + 12 kg rack defaults"
   assert.match(result.href, /bikes=3/);
   assert.match(result.href, /bikeKg=14/);
   assert.match(result.href, /rackKg=12/);
+  assert.match(result.href, /(?:\?|&)mam=500(?:&|$)/);
+  assert.match(result.href, /(?:\?|&)miro=0(?:&|$)/);
   assert.match(result.hrefLabel, /Open Payload to fine-tune/i);
   assert.equal(result.ctaNote, copilot.CTA_NOTE);
 
@@ -186,6 +189,37 @@ test("golden: 500 kg payload + 3 bikes (no kg) uses 14 kg + 12 kg rack defaults"
   });
   assert.equal(result.usedKg, sibling.added);
   assert.equal(result.remainingKg, sibling.remaining);
+});
+
+test("golden: remaining 500 kg + 3 bikes CTA carries kit + mam=500&miro=0; stay in Ask", function () {
+  const question = "i have 500kg payload what happens when i add 3 bikes";
+  const result = copilot.handleAsk(question);
+  assert.equal(result.handled, true);
+  assert.equal(result.domain, "payload");
+  assert.equal(result.kind, "answer");
+  assert.equal(result.usedKg, 54);
+  assert.equal(result.remainingKg, 446);
+  assert.match(result.href, /^https:\/\/motorhomepayload\.co\.uk\/\?/);
+  assert.notEqual(result.href, copilot.PAYLOAD_HREF);
+
+  const params = new URLSearchParams(result.href.slice(result.href.indexOf("?") + 1));
+  assert.equal(params.get("bikes"), "3");
+  assert.equal(params.get("bikeKg"), "14");
+  assert.equal(params.get("rackKg"), "12");
+  assert.equal(params.get("mam"), "500");
+  assert.equal(params.get("miro"), "0");
+
+  const card = copilot.publicResult(result);
+  assert.equal(card.href, result.href);
+  assert.match(card.hrefLabel, /Open Payload to fine-tune/i);
+
+  const decision = copilot.resolveAsk(question, { routeAsk: routeAsk });
+  assert.equal(decision.navigate, false);
+  assert.equal(decision.unmatched, false);
+  assert.equal(decision.view.handled, true);
+  assert.equal(decision.view.kind, "answer");
+  assert.equal(decision.view.href, result.href);
+  assert.notEqual(decision.view.href, "https://motorhomepayload.co.uk/");
 });
 
 test("golden: 500 kg payload + 3 bikes + 100ltrs water uses 154 kg / 346 kg left", function () {
@@ -229,6 +263,9 @@ test("golden: 500 kg payload + 3 bikes + 100ltrs water uses 154 kg / 346 kg left
     }), question);
     assert.equal(result.gaps.length, 0, question);
     assert.match(result.href, /freshCap=100/, question);
+    assert.match(result.href, /bikes=3/, question);
+    assert.match(result.href, /(?:\?|&)mam=500(?:&|$)/, question);
+    assert.match(result.href, /(?:\?|&)miro=0(?:&|$)/, question);
   });
 });
 
@@ -538,6 +575,20 @@ test("Ask front door never auto-navigates away from a router match", function ()
   const appJs = fs.readFileSync(path.join(__dirname, "../assets/app.js"), "utf8");
   assert.doesNotMatch(appJs, /window\.open/);
   assert.doesNotMatch(appJs, /Opening /);
+  assert.match(appJs, /link\.href = result\.href/);
+});
+
+test("plated MAM + Mass in Service CTA passes those limits, not remaining-as-mam", function () {
+  const result = copilot.handleAsk("MAM 3500 kg Mass in Service 3000 can I take 3 bikes?");
+  assert.equal(result.handled, true);
+  assert.equal(result.domain, "payload");
+  assert.equal(result.kind, "answer");
+  const params = new URLSearchParams(result.href.slice(result.href.indexOf("?") + 1));
+  assert.equal(params.get("mam"), "3500");
+  assert.equal(params.get("miro"), "3000");
+  assert.equal(params.get("bikes"), "3");
+  assert.equal(params.get("bikeKg"), "14");
+  assert.equal(params.get("rackKg"), "12");
 });
 
 test("optional LLM parse may refine slots only — maths stay deterministic", function () {

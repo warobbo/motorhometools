@@ -13,7 +13,7 @@ This hub still talks to Payload as a signpost (`https://motorhomepayload.co.uk/`
 | Co-pilot (this phase) | Multi-factor NL → intent schema → `computePayload()` → **rough answer first**, then assumptions + calculator CTA (query-string prefill) |
 | Unmatched Ask | `POST /api/ask` JSONL / stdout — no invented answer |
 
-The live Payload page does **not** yet read query-string prefill (only Tyres uses `?front=` / `?rear=`). Ask still appends Payload field keys (`freshCap`, `gas6`, `bikes`, `bikeKg`, `rackKg`, …) so a later sibling change can apply them. The CTA says Ask is a quick guide; Payload is where you enter accurate data.
+The live Payload page does **not** yet read query-string prefill (only Tyres uses `?front=` / `?rear=`). Ask still appends Payload field keys (`freshCap`, `gas6`, `bikes`, `bikeKg`, `rackKg`, …) so a later sibling change can apply them. Remaining-payload questions also encode the visitor’s kg as `mam=<remaining>&miro=0` (same empty-base trick as the Ask maths) — that handoff depends on the sibling Payload URL-prefill PR. The CTA says Ask is a quick guide; Payload is where you enter accurate data. The answer-card link must keep that query string; Ask stays on the thread (`navigate: false`).
 
 There is no Payload HTTP maths API. Registration lookup (`/api/vehicle-lookup`) stays on the sibling host and is **not** called from Ask (no plated-weight invention, no DVLA key here).
 

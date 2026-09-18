@@ -94,6 +94,8 @@
       cta.className = "ask-cta";
       var link = document.createElement("a");
       link.className = "ask-cta-link";
+      // Copilot href already includes Payload prefill (?bikes=, mam + miro=0, …).
+      // Do not replace this with the bare hub URL.
       link.href = result.href;
       link.target = "_blank";
       link.rel = "noopener noreferrer";
