@@ -2,14 +2,17 @@
 
 /**
  * Golden tests for Phase A Payload-first co-pilot Ask, Phase Gas
- * cooking-line estimates, and Phase Cassette empty-days estimates.
+ * cooking-line estimates, Phase Cassette empty-days, and Wave 3
+ * portable air-con (640 W DC only; hours never defaulted).
  * Payload maths must match
  * warobbo/motorhome-payload-calculator compute() / custom-kit.
  * Gas maths must match warobbo/mhwater gas-calc.js cooking line only
  * (light 0.025 / normal 0.04 / heavy 0.07, child 0.7). Cassette maths
  * must match mhwater cassette-calc.js labelled defaults (18 L, 5
- * flushes, 0.25 L/flush, start 0%). Never invent MAM, tyre pressures,
- * e-bike kg, an outdoor BBQ kg/h, or cassette flush rates.
+ * flushes, 0.25 L/flush, start 0%). Wave 3 uses EcoFlow UK rated
+ * cooling 640 W DC — never 6100 BTU / 1800 W as electrical draw.
+ * Never invent MAM, tyre pressures, e-bike kg, an outdoor BBQ kg/h,
+ * cassette flush rates, or air-con hours.
  */
 
 const { test } = require("node:test");
@@ -368,18 +371,127 @@ test("bare payload keywords stay in Ask with a Payload CTA — no invented plate
   assert.doesNotMatch(result.answer, /\b\d+\s*kg\b/);
 });
 
-test("coolbox + portable aircon + battery stays in Ask with a soft Power CTA", function () {
-  const question = "what happens to my battery if I add a coolbox and a portable aircon";
+test("golden: portable aircon with no hours asks for hours / soft CTA — no invented daily Wh", function () {
+  const variants = [
+    "if i bring a portable aircon unit what will do to my ba",
+    "what happens to my battery if I add a coolbox and a portable aircon",
+    "what will aircon do to my battery"
+  ];
+  variants.forEach(function (question) {
+    const result = copilot.handleAsk(question);
+    assert.equal(result.handled, true, question);
+    assert.equal(result.domain, "power", question);
+    assert.equal(result.kind, "answer", question);
+    assert.equal(result.hours, null, question);
+    assert.equal(result.dailyWh, null, question);
+    assert.equal(result.ah12, null, question);
+    assert.match(result.answer, /640\s*W/i, question);
+    assert.match(result.answer, /640\s*Wh/i, question);
+    assert.match(result.answer, /53/, question);
+    assert.match(result.answer, /hours a day/i, question);
+    assert.doesNotMatch(result.answer, /2,?560/, question);
+    assert.doesNotMatch(result.answer, /5,?120/, question);
+    assert.doesNotMatch(result.answer, /\b(?:4|8)\s*h(?:ours?)?\b/i, question);
+    assert.doesNotMatch(result.answer, /6100|1800/, question);
+    assert.ok(result.assumptions.some(function (line) {
+      return /640/.test(line) && /EcoFlow UK/i.test(line);
+    }), question);
+    assert.ok(result.assumptions.some(function (line) {
+      return /not assumed/i.test(line) && /4 h/i.test(line);
+    }), question);
+    assert.ok(result.gaps.some(function (line) {
+      return /hours a day/i.test(line);
+    }), question);
+    assert.match(result.href, /^https:\/\/motorhomepower\.co\.uk\/\?/, question);
+    assert.match(result.href, /wave3=1/, question);
+    assert.doesNotMatch(result.href, /hours=/, question);
+    assert.doesNotMatch(result.href, /watts=/, question);
+    assert.match(result.hrefLabel, /Open Power to set hours/i, question);
+    assert.equal(result.ctaNote, copilot.CTA_NOTE, question);
+
+    const decision = copilot.resolveAsk(question, { routeAsk: routeAsk });
+    assert.equal(decision.navigate, false, question);
+    assert.equal(decision.unmatched, false, question);
+    assert.equal(decision.view.kind, "answer", question);
+    assert.equal(decision.view.dailyWh, null, question);
+    assert.match(decision.view.href, /wave3=1/, question);
+    assert.doesNotMatch(decision.view.href, /hours=/, question);
+  });
+});
+
+test("golden: portable aircon 4 hours a day is 2560 Wh/day and ~213 Ah at 12 V", function () {
+  const question = "portable aircon 4 hours a day";
+  const result = copilot.handleAsk(question);
+  assert.equal(result.handled, true);
+  assert.equal(result.domain, "power");
+  assert.equal(result.kind, "answer");
+  assert.equal(result.hours, 4);
+  assert.equal(result.dailyWh, 2560);
+  assert.equal(result.ah12, 2560 / 12);
+  assert.equal(result.ah24, 2560 / 24);
+  assert.match(result.answer, /2,?560/);
+  assert.match(result.answer, /213/);
+  assert.match(result.answer, /640\s*W/i);
+  assert.match(result.answer, /planning estimate/i);
+  assert.doesNotMatch(result.answer, /6100|1800/);
+  assert.ok(result.assumptions.some(function (line) {
+    return /640/.test(line) && /EcoFlow UK/i.test(line);
+  }));
+  assert.ok(result.assumptions.some(function (line) {
+    return /4/.test(line) && /from the question/i.test(line);
+  }));
+  assert.ok(result.followUps.some(function (line) {
+    return /hours a day/i.test(line);
+  }));
+  assert.equal(result.gaps.length, 0);
+  assert.match(result.href, /^https:\/\/motorhomepower\.co\.uk\/\?/);
+  assert.match(result.href, /wave3=1/);
+  assert.match(result.href, /hours=4/);
+  assert.doesNotMatch(result.href, /watts=/);
+  assert.match(result.hrefLabel, /Open Power to fine-tune/i);
+  assert.equal(result.ctaNote, copilot.CTA_NOTE);
+
   const decision = copilot.resolveAsk(question, { routeAsk: routeAsk });
   assert.equal(decision.navigate, false);
   assert.equal(decision.unmatched, false);
   assert.equal(decision.view.handled, true);
-  assert.equal(decision.view.kind, "later");
+  assert.equal(decision.view.kind, "answer");
   assert.equal(decision.view.domain, "power");
-  assert.match(decision.view.href, /motorhomepower/);
-  assert.match(decision.view.hrefLabel, /Open (?:Power|Battery)/i);
-  assert.doesNotMatch(decision.view.answer, /\d+\s*(?:ah|wh|w|kwh|amp)/i);
-  assert.doesNotMatch(decision.view.answer, /\b\d+\s*hours?\b/i);
+  assert.equal(decision.view.dailyWh, 2560);
+  assert.match(decision.view.href, /hours=4/);
+  assert.equal(copilot.calcWave3({ hours: 4 }).dailyWh, 2560);
+  assert.equal(copilot.WAVE3_WATTS, 640);
+});
+
+test("Wave 3 CTA href matches power-tool PR #26 contract for 4 hours", function () {
+  const href = copilot.buildPowerPrefillHref({
+    wave3: 1,
+    hours: 4
+  }, "https://motorhomepower.co.uk/");
+  const params = new URLSearchParams(href.slice(href.indexOf("?") + 1));
+  assert.equal(href, "https://motorhomepower.co.uk/?wave3=1&hours=4");
+  assert.equal(params.get("wave3"), "1");
+  assert.equal(params.get("hours"), "4");
+  assert.equal(params.get("watts"), null);
+  copilot.POWER_PREFILL_KEYS.forEach(function (key) {
+    assert.ok(typeof key === "string");
+  });
+
+  const noHours = copilot.buildPowerPrefillHref({ wave3: 1 }, "https://motorhomepower.co.uk/");
+  assert.equal(noHours, "https://motorhomepower.co.uk/?wave3=1");
+});
+
+test("overnight 8h names hours; overnight alone does not invent 8 h", function () {
+  const named = copilot.handleAsk("portable aircon overnight 8h");
+  assert.equal(named.hours, 8);
+  assert.equal(named.dailyWh, 5120);
+  assert.match(named.href, /hours=8/);
+
+  const bare = copilot.handleAsk("wave 3 overnight");
+  assert.equal(bare.hours, null);
+  assert.equal(bare.dailyWh, null);
+  assert.doesNotMatch(bare.href, /hours=/);
+  assert.doesNotMatch(bare.answer, /5,?120/);
 });
 
 function siblingGasCooking(state) {
