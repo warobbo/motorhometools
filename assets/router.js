@@ -297,6 +297,7 @@
   // Bare fridge/freezer/oven → Power. Gas/absorption/3-way fridge → Gas.
   // Induction/hob stay Power — do not steal electrical cooking to Gas.
   // Standalone grill → Gas. Electric grill / Wonder Oven stay Power.
+  // Named solar beats “how many watts” Power and Battery (leisure battery + solar).
   // Layer 2 search phrases sit with the hub they belong to.
   var RULES = [
     {
@@ -348,9 +349,22 @@
       ])
     },
     {
+      id: "solar",
+      // Named solar beats the early “how many watts / amp-hours” Power rule
+      // and leisure-battery wording. Do not invent panel watts here.
+      re: compile([
+        words(["solar"]),
+        "\\bwatts?\\s+of\\s+solar\\b",
+        "\\bsolar[\\s\\S]{0,80}\\bwatts?\\b",
+        "\\bwatts?[\\s\\S]{0,80}\\bsolar\\b",
+        "\\bsolar\\s+panels?"
+      ])
+    },
+    {
       id: "power",
       // Electrical phrases that must beat Gas (induction) or Water (pump / heater).
       // Layer 2: “battery for a microwave” is daily load, not the Battery tool.
+      // “how many watts” stays Power only when the query does not name solar.
       re: compile([
         words([
           "induction(?:\\s+hobs?)?",
@@ -365,7 +379,7 @@
         ]),
         "\\bbatter(?:y|ies)\\b[\\s\\S]{0,80}\\b(?:" + POWER_LOAD + ")\\b",
         "\\b(?:" + POWER_LOAD + ")\\b[\\s\\S]{0,80}\\bbatter(?:y|ies)\\b",
-        "\\b(?:how\\s+much|how\\s+many)\\s+(?:daily\\s+)?(?:power|amp-?hours?|watts?)\\b"
+        "^(?!.*\\bsolar\\b).*\\b(?:how\\s+much|how\\s+many)\\s+(?:daily\\s+)?(?:power|amp-?hours?|watts?)\\b"
       ])
     },
     {
@@ -414,10 +428,6 @@
     {
       id: "battery",
       re: compile([words(["batter(?:y|ies)", "lifepo4", "agms?", "leisure\\s+batter(?:y|ies)"])])
-    },
-    {
-      id: "solar",
-      re: compile([words(["solar"])])
     },
     {
       id: "inverter",

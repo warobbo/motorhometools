@@ -125,7 +125,14 @@ SEARCH_PHRASE_ASKS.forEach(function (row) {
 
 expectRoute("leisure battery size", "battery");
 expectRoute("leisure battery", "battery");
+expectRoute("what size leisure battery do I need", "battery");
 expectRoute("solar panels for a week", "solar");
+expectRoute("what size solar panel for motorhome", "solar");
+expectRoute("how many watts of solar do I need", "solar");
+expectRoute("watts of solar for leisure battery", "solar");
+expectRoute("do I need more solar", "solar");
+expectRoute("how much solar for off grid", "solar");
+expectRoute("solar panel size", "solar");
 expectRoute("inverter for a kettle", "inverter");
 expectRoute("electrical cable", "wire");
 expectRoute("wire size", "wire");
@@ -133,7 +140,11 @@ expectRoute("fuse", "wire");
 expectRoute("12V cable", "wire");
 
 assert.equal(routeAsk("leisure battery size").href, "https://motorhomepower.co.uk/battery.html");
+assert.equal(routeAsk("what size leisure battery do I need").href, "https://motorhomepower.co.uk/battery.html");
 assert.equal(routeAsk("solar panels for a week").href, "https://motorhomepower.co.uk/solar.html");
+assert.equal(routeAsk("how many watts of solar do I need").href, "https://motorhomepower.co.uk/solar.html");
+assert.equal(routeAsk("watts of solar for leisure battery").href, "https://motorhomepower.co.uk/solar.html");
+assert.equal(routeAsk("what size solar panel for motorhome").href, "https://motorhomepower.co.uk/solar.html");
 assert.equal(routeAsk("inverter for a kettle").href, "https://motorhomepower.co.uk/inverter.html");
 assert.equal(routeAsk("electrical cable").href, "https://motorhomepower.co.uk/wire.html");
 
@@ -308,7 +319,11 @@ const ASK_REGRESSION = [
   ["holding tanks", "tanks"],
   ["tyre pressure", "tyres"],
   ["leisure battery", "battery"],
+  ["what size leisure battery do I need", "battery"],
   ["solar", "solar"],
+  ["how many watts of solar do I need", "solar"],
+  ["watts of solar for leisure battery", "solar"],
+  ["what size solar panel for motorhome", "solar"],
   ["inverter", "inverter"]
 ];
 
