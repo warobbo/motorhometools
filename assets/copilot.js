@@ -951,7 +951,8 @@
       wantsUsage: false,
       fullTank: false,
       tyresHold: false,
-      needsClarify: null
+      needsClarify: null,
+      peopleNeedKg: false
     };
   }
 
@@ -1187,14 +1188,18 @@
   }
 
   function extractLimit(query, intent) {
+    // Bare “500kg payload” / “i have 500kg payload” is remaining /
+    // available kg — not plated MAM. Do not require “left”.
     var remaining = query.match(
-      /(?:got|have|with|of)\s+(\d+(?:\.\d+)?)\s*kg\s+(?:of\s+)?(?:remaining\s+)?payload/
+      /(?:got|have|'ve|ive|with|of)\s+(\d+(?:\.\d+)?)\s*kgs?\s+(?:of\s+)?(?:remaining\s+|available\s+)?payload/
     ) || query.match(
-      /(?:remaining\s+)?payload(?:\s+(?:of|left|remaining|is))?\s+(\d+(?:\.\d+)?)\s*kg/
+      /(?:remaining\s+|available\s+)?payload(?:\s+(?:of|left|remaining|is))?\s+(\d+(?:\.\d+)?)\s*kgs?\b/
     ) || query.match(
-      /(\d+(?:\.\d+)?)\s*kg\s+(?:of\s+)?(?:remaining\s+)?payload/
+      /(\d+(?:\.\d+)?)\s*kgs?\s+(?:of\s+)?(?:remaining\s+|available\s+)?payload\b/
     ) || query.match(
-      /(\d+(?:\.\d+)?)\s*kg\s+left\b/
+      /(\d+(?:\.\d+)?)\s*kgs?\s+(?:left|remaining|available)\b/
+    ) || query.match(
+      /(?:remaining|available)\s+payload(?:\s+(?:of|is|left))?\s+(\d+(?:\.\d+)?)/
     );
     if (remaining) intent.remainingPayloadKg = num(remaining[1]);
 
@@ -1350,6 +1355,15 @@
     return /\b(?:fresh\s+)?waters?\b/.test(cleaned);
   }
 
+  function extractPeopleNeedKg(query, intent) {
+    var namedKg = /\b(?:\d+|one|two|three|four|five|six)\s+(?:adults?|children|kids?|people|persons?)\s+(?:at|of|weighing)\s+\d+(?:\.\d+)?\s*kgs?(?:\s+each)?\b/.test(query) ||
+      /\b(?:adults?|children|kids?|people|persons?)\s+(?:at|of|weighing)\s+\d+(?:\.\d+)?\s*kgs?\b/.test(query);
+    var mentioned = /\b(?:\d+|one|two|three|four|five|six)\s+(?:adults?|children|kids?|people|persons?)\b/.test(query);
+    if (mentioned && !namedKg) {
+      intent.peopleNeedKg = true;
+    }
+  }
+
   function extractDanglingQty(query, intent) {
     if (intent.items.some(function (item) {
       return item.type === "bike" || item.type === "ebike" || item.type === "gas" || item.type === "water";
@@ -1389,6 +1403,7 @@
 
     extractLimit(query, intent);
     extractItems(query, intent);
+    extractPeopleNeedKg(query, intent);
     extractDanglingQty(query, intent);
 
     intent.wantsFit = /\b(?:can i take|will (?:it|they|this) fit|enough payload|overweight|too heavy|do i have enough|fit in)\b/.test(query);
@@ -1408,7 +1423,9 @@
       return intent;
     }
 
-    if (hasLimit && (intent.wantsFit || intent.wantsRemaining) && !hasItems) {
+    // A remaining-kg (or MAM) figure is enough even with no named kit
+    // and no “left” / “what’s remaining” wording.
+    if (hasLimit) {
       intent.domain = "payload";
       intent.calculable = true;
       return intent;
@@ -1498,7 +1515,7 @@
         phase: "B",
         href: POWER_HREF,
         hrefLabel: "Open Power to enter your figures",
-        answer: "I don’t calculate battery life or coolbox draw in Ask yet — that would mean inventing amp-hours or watts. Open Power and enter your kit there."
+        answer: "I don’t calculate Power figures in Ask yet — I will not invent amp-hours or watts. Open Power and enter your kit there."
       },
       battery: {
         phase: "B",
@@ -1939,6 +1956,12 @@
     var bikeKgTyped = null;
     var rackKgTyped = null;
 
+    if (intent.peopleNeedKg) {
+      gaps.push(
+        "People need a named kg each. I will not invent adult or child weights — tell me the kg and I’ll include them."
+      );
+    }
+
     if (intent.remainingPayloadKg != null) {
       state.mam = intent.remainingPayloadKg;
       state.miro = 0;
@@ -2231,8 +2254,9 @@
     }
 
     if (opts.remainingKg != null && limit) {
-      if (opts.knownKg === 0 && gaps.length) {
-        return "Your " + limit + " kg remaining payload is unused so far." + gapNote;
+      if (opts.knownKg === 0) {
+        return "You have " + left + " kg remaining payload and no named kit yet." +
+          (gaps.length ? gapNote : " Planning estimate only; weigh the van.");
       }
       if (opts.remainingKg < 0) {
         return "Those items use " + known + " kg" + bits + " — " +

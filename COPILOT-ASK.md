@@ -56,6 +56,7 @@ Electrical presets (`BATT_KG`, `SOLAR_KG`), axle check, DVLA plate lookup, and t
 - Incomplete tokens like “3 b” in a payload question → infer bikes, or ask **one** short clarifying question, then compute. Do not dump blockers.
 - Unknown e-bike kg → gap / ask for kg. Do not use the 14 kg pedal default.
 - No remaining payload and no MAM → refuse plated invention, still hand off to Payload.
+- A bare remaining-kg figure (`500kg payload`, `i have 500kg payload`, `500 kg remaining payload`) is enough — treat as remaining / available, not plated MAM. Do not require “left”. People without named kg are a gap; do not invent adult or child weights.
 - Fresh water with litres (including UK `100ltrs` / `100 ltr`) → include at **1 kg per litre**. Do not drop the item.
 - Water mentioned with no litres (and full tank with no litres) → gap. Do not invent a tank size. Do not silently omit.
 - Tyres / PSI / bar / pressure → HOLD message only. Do not open a calculated pressure.

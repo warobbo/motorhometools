@@ -275,6 +275,71 @@ test("golden: 500 kg payload + 3 bikes + 100ltrs water uses 154 kg / 346 kg left
   });
 });
 
+function assertBareRemaining500(question, opts) {
+  const result = copilot.handleAsk(question);
+  assert.equal(result.handled, true, question);
+  assert.equal(result.domain, "payload", question);
+  assert.notEqual(result.kind, "later", question);
+  assert.equal(result.usedKg, 0, question);
+  assert.equal(result.remainingKg, 500, question);
+  assert.match(result.answer, /500/, question);
+  assert.match(result.answer, /remaining payload/i, question);
+  assert.doesNotMatch(result.answer, /need a (?:remaining-payload )?figure/i, question);
+  assert.doesNotMatch(result.answer, /\b(?:75|80|85|90)\s*kg\b/, question);
+  assert.match(result.href, /^https:\/\/motorhomepayload\.co\.uk\/\?/, question);
+  assert.match(result.href, /(?:\?|&)mam=500(?:&|$)/, question);
+  assert.match(result.href, /(?:\?|&)miro=0(?:&|$)/, question);
+  assert.doesNotMatch(result.href, /bikes=/, question);
+
+  const decision = copilot.resolveAsk(question, { routeAsk: routeAsk });
+  assert.equal(decision.navigate, false, question);
+  assert.equal(decision.unmatched, false, question);
+  assert.equal(decision.view.remainingKg, 500, question);
+  assert.match(decision.view.href, /mam=500/, question);
+  assert.match(decision.view.href, /miro=0/, question);
+
+  if (opts && opts.expectPeopleGap) {
+    assert.ok(result.gaps.some(function (line) {
+      return /(?:people|adult|person)/i.test(line) && /kg/i.test(line);
+    }), question);
+    assert.match(result.answer, /named kg/i, question);
+  } else {
+    assert.equal(result.gaps.length, 0, question);
+  }
+  return result;
+}
+
+test("golden: bare 500kg payload is remaining kg — no 'left' required", function () {
+  assertBareRemaining500("500kg payload");
+});
+
+test("golden: 500 kg remaining payload is remaining kg", function () {
+  assertBareRemaining500("500 kg remaining payload");
+});
+
+test("golden: i have 500kg payload is remaining kg without 'left'", function () {
+  assertBareRemaining500("i have 500kg payload");
+});
+
+test("golden: 500kg payload for 2 adults locks 500 and does not invent person kg", function () {
+  assertBareRemaining500("500kg payload for 2 adults", { expectPeopleGap: true });
+});
+
+test("golden: 500kg payload with 100ltrs fresh water and 2 bikes keeps ltrs alias", function () {
+  const question = "500kg payload with 100ltrs fresh water and 2 bikes";
+  const result = copilot.handleAsk(question);
+  assert.equal(result.handled, true);
+  assert.equal(result.domain, "payload");
+  assert.equal(result.kind, "answer");
+  assert.equal(result.usedKg, 140);
+  assert.equal(result.remainingKg, 360);
+  assert.match(result.href, /freshCap=100/);
+  assert.match(result.href, /bikes=2/);
+  assert.match(result.href, /(?:\?|&)mam=500(?:&|$)/);
+  assert.match(result.href, /(?:\?|&)miro=0(?:&|$)/);
+  assert.equal(copilot.resolveAsk(question, { routeAsk: routeAsk }).navigate, false);
+});
+
 test("payload + bikes + water with no litres is a gap, not a silent omit", function () {
   const result = copilot.handleAsk(
     "I have 500kg of payload, what happens when I add 3 bikes and water"
@@ -355,11 +420,36 @@ test("Power and campsite questions are not answered with invented numbers", func
   assert.equal(power.kind, "later");
   assert.equal(power.phase, "B");
   assert.doesNotMatch(power.answer, /\d+\s*(?:ah|wh|kwh|amp)/i);
+  assert.doesNotMatch(power.answer, /coolbox/i);
+  assert.match(power.answer, /will not invent/i);
   assert.match(power.hrefLabel, /Open Power/i);
 
   const campsite = copilot.handleAsk("best campsite near York");
   assert.equal(campsite.handled, false);
   assert.equal(campsite.domain, "unknown");
+});
+
+test("Power later copy stays honest for inverter / coolbox — not always coolbox", function () {
+  const inverter = copilot.handleAsk("what size inverter do I need");
+  assert.equal(inverter.handled, true);
+  assert.equal(inverter.domain, "power");
+  assert.equal(inverter.kind, "later");
+  assert.doesNotMatch(inverter.answer, /coolbox/i);
+  assert.match(inverter.answer, /will not invent/i);
+  assert.match(inverter.answer, /amp-hours|watts/i);
+  assert.match(inverter.hrefLabel, /Open Power/i);
+  assert.doesNotMatch(inverter.answer, /\d+\s*(?:ah|wh|w)\b/i);
+
+  const coolbox = copilot.handleAsk("how much battery for a coolbox");
+  assert.equal(coolbox.kind, "later");
+  assert.equal(coolbox.domain, "power");
+  assert.match(coolbox.answer, /will not invent/i);
+  assert.doesNotMatch(coolbox.answer, /\d+\s*(?:ah|wh|w)\b/i);
+
+  const inverterDecision = copilot.resolveAsk("what size inverter do I need", { routeAsk: routeAsk });
+  assert.equal(inverterDecision.navigate, false);
+  assert.equal(inverterDecision.unmatched, false);
+  assert.doesNotMatch(inverterDecision.view.answer, /coolbox/i);
 });
 
 test("bare payload keywords stay in Ask with a Payload CTA — no invented plated weight", function () {
