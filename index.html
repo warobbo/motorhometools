@@ -35,11 +35,11 @@
     <link rel="icon" href="assets/favicon-32.png?v=20260915logo" type="image/png" sizes="32x32">
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260915logo" sizes="180x180">
     <link rel="icon" href="assets/icon-512.png?v=20260915logo" type="image/png" sizes="512x512">
-    <!-- CSS 20260918ask (Ask card). JS 20260921payload (bare remaining-kg). Icons 20260915logo. Bump the matching query to force-refresh. -->
-    <link rel="stylesheet" href="assets/styles.css?v=20260918ask">
+    <!-- CSS 20260922home (Payload-first homepage). JS 20260921payload (bare remaining-kg). Icons 20260915logo. Bump the matching query to force-refresh. -->
+    <link rel="stylesheet" href="assets/styles.css?v=20260922home">
   </head>
   <body>
-    <a class="skip-link" href="#today">Skip to calculators</a>
+    <a class="skip-link" href="#start">Skip to Payload</a>
 
     <header class="site-header wrap">
       <a class="site-brand" href="/">
@@ -47,64 +47,36 @@
         <span class="eyebrow">Motorhome Tools</span>
       </a>
       <h1>Stop guessing your van’s limits</h1>
-      <p class="lede">Honest calculators for payload, power and water. We don’t invent tyre pressures, weights or legal advice.</p>
+      <p class="lede">Honest calculators for payload, power and water.</p>
+      <p class="trust-line">We don’t invent tyre pressures, weights or legal advice.</p>
     </header>
 
     <main class="site-main wrap">
-      <div class="tile-intro" id="today">
-        <h2>Choose a calculator</h2>
-        <p>Tap one to open it.</p>
-        <p class="tile-start">Most people should start with Payload (weight).</p>
-        <p class="plate-wedge">
-          <a href="https://motorhomepayload.co.uk/" target="_blank" rel="noopener noreferrer">Start with Payload — you can begin from your UK reg plate on that page.</a>
-        </p>
-      </div>
-      <ul class="tiles">
-        <li>
-          <a class="tile" href="https://motorhomepayload.co.uk/" target="_blank" rel="noopener noreferrer">
-            <span class="tile-icon" aria-hidden="true">
-              <img src="assets/payload.svg?v=20260915logo" width="48" height="48" alt="">
+      <section class="start" id="start" aria-labelledby="start-title">
+        <a class="start-card" href="https://motorhomepayload.co.uk/" target="_blank" rel="noopener noreferrer">
+          <span class="start-pill">Most people start here</span>
+          <span class="start-body">
+            <span class="start-icon" aria-hidden="true">
+              <img src="assets/payload.svg?v=20260915logo" width="52" height="52" alt="">
             </span>
-            <span class="tile-copy">
-              <strong>Payload</strong>
-              <span>Start here — weigh your van / remaining payload</span>
+            <span class="start-copy">
+              <h2 id="start-title">Payload</h2>
+              <p>Weigh the van, then see what you can still add. A planning estimate of remaining payload.</p>
+              <p class="start-note">You can start from your UK registration on that page.</p>
             </span>
-          </a>
-        </li>
-        <li>
-          <a class="tile" href="https://motorhomepayload.co.uk/tyres.html" target="_blank" rel="noopener noreferrer">
-            <span class="tile-icon" aria-hidden="true">
-              <img src="assets/tyres.svg?v=20260915logo" width="48" height="48" alt="">
-            </span>
-            <span class="tile-copy">
-              <strong>Tyres</strong>
-              <span>Different wheels or tyres to the originals</span>
-            </span>
-          </a>
-        </li>
-        <li>
-          <a class="tile" href="https://motorhomepower.co.uk/" target="_blank" rel="noopener noreferrer">
-            <span class="tile-icon" aria-hidden="true">
-              <img src="assets/power.svg?v=20260915logo" width="48" height="48" alt="">
-            </span>
-            <span class="tile-copy">
-              <strong>Power</strong>
-              <span>Daily power, battery, solar</span>
-            </span>
-          </a>
-        </li>
-        <li>
-          <a class="tile" href="https://motorhomewater.co.uk/" target="_blank" rel="noopener noreferrer">
-            <span class="tile-icon" aria-hidden="true">
-              <img src="assets/water.svg?v=20260915logo" width="48" height="48" alt="">
-            </span>
-            <span class="tile-copy">
-              <strong>Water</strong>
-              <span>Includes gas, tanks and cassette</span>
-            </span>
-          </a>
-        </li>
-      </ul>
+          </span>
+          <span class="start-go">Start with Payload</span>
+        </a>
+        <a class="weigh-badge" href="guides/weighbridge-how-to.html">
+          <span class="weigh-kicker">Weigh first</span>
+          <span>UK weighbridge how-to</span>
+        </a>
+      </section>
+
+      <section class="why" aria-labelledby="why-title">
+        <h2 id="why-title">Why this exists</h2>
+        <p>Plain UK calculators for planning a trip. You enter your own figures and we estimate from those. We do not invent safety numbers, tyre pressures, weights or legal advice.</p>
+      </section>
 
       <section class="ask" id="ask" aria-labelledby="ask-title">
         <h2 id="ask-title">Not sure? Ask in plain English</h2>
@@ -132,9 +104,41 @@
         <p class="ask-honesty">We don’t invent tyre pressures, weights or legal advice. We open the right page or pass the question to the site owner.</p>
       </section>
 
-      <section class="soon-block" aria-labelledby="guides-title">
+      <section class="support" aria-labelledby="support-title">
+        <h2 id="support-title">Power and water</h2>
+        <ul class="support-list">
+          <li>
+            <a class="support-card" href="https://motorhomepower.co.uk/" target="_blank" rel="noopener noreferrer">
+              <span class="tile-icon" aria-hidden="true">
+                <img src="assets/power.svg?v=20260915logo" width="40" height="40" alt="">
+              </span>
+              <span class="tile-copy">
+                <strong>Power</strong>
+                <span>Daily power, battery and solar.</span>
+              </span>
+            </a>
+          </li>
+          <li>
+            <a class="support-card" href="https://motorhomewater.co.uk/" target="_blank" rel="noopener noreferrer">
+              <span class="tile-icon" aria-hidden="true">
+                <img src="assets/water.svg?v=20260915logo" width="40" height="40" alt="">
+              </span>
+              <span class="tile-copy">
+                <strong>Water</strong>
+                <span>Tanks, gas and the cassette.</span>
+              </span>
+            </a>
+          </li>
+        </ul>
+        <p class="tyres-quiet">
+          <img src="assets/tyres.svg?v=20260915logo" width="28" height="28" alt="">
+          <span><strong>Tyres is limited.</strong> Not the main path, and we don’t invent pressures. <a href="https://motorhomepayload.co.uk/tyres.html" target="_blank" rel="noopener noreferrer">Open the Tyres page</a> only if your wheels differ from the originals.</span>
+        </p>
+      </section>
+
+      <section class="guides-home" aria-labelledby="guides-title">
         <h2 id="guides-title">Guides</h2>
-        <ul class="guide-list">
+        <ul class="guide-list guide-list--quiet">
           <li>
             <a class="guide-card" href="guides/weighbridge-how-to.html">
               <strong>How to weigh a motorhome</strong>
@@ -156,17 +160,10 @@
         </ul>
         <a class="panel-more" href="guides/">All guides</a>
       </section>
-
-      <section class="soon-block" aria-labelledby="route-title">
-        <h2 id="route-title">Route</h2>
-        <p class="soon-card">
-          <strong>Route planner — coming soon</strong>
-          <span>Motorhome-aware routes. Not live yet.</span>
-        </p>
-      </section>
     </main>
 
     <footer class="site-footer wrap">
+      <p class="route-note"><strong>Route planner — coming soon.</strong> Not live yet.</p>
       <section class="footer-hubs" aria-labelledby="footer-hubs-title">
         <h2 id="footer-hubs-title">More calculators</h2>
         <nav class="footer-links" aria-label="More calculators">
