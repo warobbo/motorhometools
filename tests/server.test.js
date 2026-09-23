@@ -322,6 +322,7 @@ test("homepage JSON-LD is an honest WebSite hub and Wave B OG tags stay", functi
   assert.equal(website.inLanguage, "en-GB");
   assert.equal(website.isAccessibleForFree, true);
   assert.equal(website.author && website.author.name, "Wayne Robinson");
+  assert.equal(website.author["@id"], "https://motorhometools.co.uk/#person");
   assert.equal(website.publisher && website.publisher["@id"], "https://motorhometools.co.uk/#organization");
   assert.equal(website.aggregateRating, undefined);
   assert.equal(website.review, undefined);
@@ -450,6 +451,87 @@ test("live water calculators expose a light WebApplication without ratings or pr
     assert.equal(data.aggregateRating, undefined, name);
     assert.equal(data.offers, undefined, name);
     assert.equal(data.review, undefined, name);
+    assert.equal(data.author && data.author.name, "Wayne Robinson", name);
+    assert.equal(data.author["@id"], "https://motorhometools.co.uk/#person", name);
     assert.doesNotMatch(html, /FAQPage|aggregateRating|priceCurrency/);
+  }
+});
+
+const IDENTITY_TYPES = ["Person", "Organization", "LocalBusiness", "WebSite"];
+
+function collectIdentityNodes(node, out) {
+  if (!node || typeof node !== "object") return;
+  if (Array.isArray(node)) {
+    node.forEach(function (item) { collectIdentityNodes(item, out); });
+    return;
+  }
+  const type = node["@type"];
+  const types = Array.isArray(type) ? type : type ? [type] : [];
+  if (types.some(function (item) { return IDENTITY_TYPES.indexOf(item) !== -1; }) && node.name) {
+    out.push(node);
+  }
+  Object.keys(node).forEach(function (key) {
+    if (key === "@context") return;
+    const value = node[key];
+    if (value && typeof value === "object") collectIdentityNodes(value, out);
+  });
+}
+
+test("repeated Person, Organization, and WebSite entities share one absolute @id", function () {
+  const root = path.join(__dirname, "..");
+  const groups = new Map();
+  for (const filePath of walkHtmlFiles(root, [])) {
+    const rel = path.relative(root, filePath);
+    const nodes = [];
+    jsonLdBlocks(fs.readFileSync(filePath, "utf8")).forEach(function (block) {
+      collectIdentityNodes(block, nodes);
+    });
+    for (const node of nodes) {
+      const types = Array.isArray(node["@type"]) ? node["@type"] : [node["@type"]];
+      for (const type of types) {
+        if (IDENTITY_TYPES.indexOf(type) === -1) continue;
+        const key = type + "\n" + node.name;
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push({ rel: rel, id: node["@id"] || "" });
+      }
+    }
+  }
+
+  let sawPerson = false;
+  for (const [key, entries] of groups) {
+    const pages = new Set(entries.map(function (entry) { return entry.rel; }));
+    if (pages.size < 2) continue;
+    const ids = new Set(entries.map(function (entry) { return entry.id; }));
+    assert.equal(ids.size, 1, key);
+    const id = [...ids][0];
+    assert.match(id, /^https:\/\/motorhometools\.co\.uk\/#/, key);
+    if (key === "Person\nWayne Robinson") {
+      sawPerson = true;
+      assert.equal(id, "https://motorhometools.co.uk/#person");
+      assert.ok(pages.has("index.html"));
+      assert.ok(pages.has("power/index.html"));
+      assert.ok(pages.has("water/index.html"));
+      assert.ok(pages.has(path.join("water", "gas.html")));
+      assert.ok(pages.has(path.join("water", "cassette.html")));
+      assert.ok(pages.has(path.join("water", "tanks.html")));
+    }
+  }
+  assert.equal(sawPerson, true);
+});
+
+test("ask honeypot is not a focusable control inside aria-hidden", function () {
+  const root = path.join(__dirname, "..");
+  for (const rel of ["index.html", path.join("ask", "index.html")]) {
+    const html = fs.readFileSync(path.join(root, rel), "utf8");
+    const block = html.match(/<div class="hp"[^>]*>[\s\S]*?<\/div>/);
+    assert.ok(block, rel);
+    assert.match(block[0], /\binert\b/, rel);
+    assert.doesNotMatch(block[0], /aria-hidden/, rel);
+    assert.match(block[0], /id="ask-website"/, rel);
+    assert.match(block[0], /type="text"/, rel);
+    assert.match(block[0], /name="website"/, rel);
+    assert.match(block[0], /tabindex="-1"/, rel);
+    assert.match(block[0], /autocomplete="off"/, rel);
+    assert.doesNotMatch(block[0], /\bdisabled\b/, rel);
   }
 });
