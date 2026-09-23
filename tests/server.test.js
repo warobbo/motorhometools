@@ -126,7 +126,7 @@ test("GET /guides/ and Wave 2 pages return Payload, Power and Water", async func
     assert.equal(home.headers.get("strict-transport-security"), "max-age=31536000; includeSubDomains");
     assert.equal(home.headers.get("x-content-type-options"), "nosniff");
     assert.equal(home.headers.get("referrer-policy"), "strict-origin-when-cross-origin");
-    assert.equal(home.headers.get("x-frame-options"), null);
+    assert.equal(home.headers.get("x-frame-options"), "SAMEORIGIN");
     assert.equal(home.headers.get("content-security-policy"), server.SECURITY_HEADERS["Content-Security-Policy"]);
     assert.match(home.headers.get("content-security-policy"), /frame-ancestors 'self'/);
     assert.match(home.headers.get("content-security-policy"), /script-src 'self'/);
@@ -139,14 +139,17 @@ test("GET /guides/ and Wave 2 pages return Payload, Power and Water", async func
     assert.equal(powerPage.status, 200);
     assert.match(await powerPage.text(), /assets\/app\.js\?v=/);
     assert.equal(powerPage.headers.get("content-security-policy"), server.SECURITY_HEADERS["Content-Security-Policy"]);
+    assert.equal(powerPage.headers.get("x-frame-options"), "SAMEORIGIN");
 
     const askApi = await fetch("http://127.0.0.1:" + port + "/api/ask");
     assert.equal(askApi.headers.get("x-content-type-options"), "nosniff");
     assert.equal(askApi.headers.get("strict-transport-security"), "max-age=31536000; includeSubDomains");
+    assert.equal(askApi.headers.get("x-frame-options"), "SAMEORIGIN");
 
     const missing = await fetch("http://127.0.0.1:" + port + "/no-such-page");
     assert.equal(missing.status, 404);
     assert.equal(missing.headers.get("referrer-policy"), "strict-origin-when-cross-origin");
+    assert.equal(missing.headers.get("x-frame-options"), "SAMEORIGIN");
     assert.match(homeHtml, /<link rel="canonical" href="https:\/\/motorhometools\.co\.uk\/">/);
     assert.match(homeHtml, /<meta property="og:url" content="https:\/\/motorhometools\.co\.uk\/">/);
     assert.match(homeHtml, /<meta property="og:image" content="https:\/\/motorhometools\.co\.uk\/assets\/icon-512\.png">/);
