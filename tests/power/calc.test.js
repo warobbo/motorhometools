@@ -1298,6 +1298,81 @@ test("applyDailyPowerPrefill watts override only when valid", function () {
   );
 });
 
+test("oversized daily-power watts are capped at 20000 and the cap is reported", function () {
+  assert.strictEqual(calc.MAX_APPLIANCE_WATTS, 20000);
+  assert.strictEqual(calc.MAX_APPLIANCE_HOURS, 24);
+  assert.strictEqual(calc.MAX_APPLIANCE_QTY, 99);
+
+  var watts = calc.readApplianceField("watts", "100000");
+  assert.strictEqual(watts.limited, true);
+  assert.strictEqual(watts.bound, "max");
+  assert.strictEqual(watts.value, 20000);
+  assert.strictEqual(
+    calc.applianceFieldLimitMessage("watts", watts),
+    "Maximum is 20,000 W. This row uses 20,000 W."
+  );
+
+  // 100000 W × 24 h × qty 2 would be 4,800,000 Wh. The row uses the 20,000 W cap.
+  assert.strictEqual(
+    calc.applianceWh({ watts: 100000, hours: 24, qty: 2, enabled: true }),
+    960000
+  );
+  var totals = calc.calcTotals({
+    appliances: [{ id: "big", name: "Big load", watts: 100000, hours: 24, qty: 2, enabled: true }],
+    inverterLossEnabled: false,
+  });
+  assert.strictEqual(totals.items[0].watts, 20000);
+  assert.strictEqual(totals.totalWh, 960000);
+
+  var atCap = calc.readApplianceField("watts", "20000");
+  assert.strictEqual(atCap.limited, false);
+  assert.strictEqual(atCap.value, 20000);
+  assert.strictEqual(calc.applianceFieldLimitMessage("watts", atCap), "");
+
+  var empty = calc.readApplianceField("watts", "");
+  assert.strictEqual(empty.limited, false);
+  assert.strictEqual(empty.value, 0);
+
+  var below = calc.readApplianceField("watts", "-5");
+  assert.strictEqual(below.limited, true);
+  assert.strictEqual(below.bound, "min");
+  assert.strictEqual(below.value, 0);
+  assert.strictEqual(
+    calc.applianceFieldLimitMessage("watts", below),
+    "Minimum is 0 W. This row uses 0 W."
+  );
+});
+
+test("hours and quantity limits are reported the same way as watts", function () {
+  var hours = calc.readApplianceField("hours", "30");
+  assert.strictEqual(hours.value, 24);
+  assert.strictEqual(hours.limited, true);
+  assert.strictEqual(
+    calc.applianceFieldLimitMessage("hours", hours),
+    "Maximum is 24 hours a day. This row uses 24 h."
+  );
+
+  var qty = calc.readApplianceField("qty", "150");
+  assert.strictEqual(qty.value, 99);
+  assert.strictEqual(qty.limited, true);
+  assert.strictEqual(
+    calc.applianceFieldLimitMessage("qty", qty),
+    "Maximum quantity is 99. This row uses 99."
+  );
+
+  var lowQty = calc.readApplianceField("qty", "0");
+  assert.strictEqual(lowQty.value, 1);
+  assert.strictEqual(
+    calc.applianceFieldLimitMessage("qty", lowQty),
+    "Minimum quantity is 1. This row uses 1."
+  );
+
+  assert.match(calc.applianceLimitSummary(), /20,000 W/);
+  assert.match(calc.applianceLimitSummary(), /24 hours a day/);
+  assert.match(calc.applianceLimitSummary(), /quantity 1–99/);
+  assert.match(calc.applianceLimitSummary(), /with a message/);
+});
+
 test("old profiles merge Wave 3 at 640 W with hours 0 and off", function () {
   var clean = storage.sanitiseProfile({
     version: 1,
