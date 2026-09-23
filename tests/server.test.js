@@ -27,6 +27,16 @@ test("serves /ask as ask/index.html", function () {
   assert.equal(filePath, path.join(__dirname, "..", "ask", "index.html"));
 });
 
+test("serves /about/ as about/index.html", function () {
+  const filePath = resolvePublicFile("/about/");
+  assert.equal(filePath, path.join(__dirname, "..", "about", "index.html"));
+});
+
+test("serves /about as about/index.html", function () {
+  const filePath = resolvePublicFile("/about");
+  assert.equal(filePath, path.join(__dirname, "..", "about", "index.html"));
+});
+
 test("does not expose server internals", function () {
   assert.equal(resolvePublicFile("/server.js"), null);
   assert.equal(resolvePublicFile("/lib/ask.js"), null);
@@ -230,11 +240,29 @@ test("GET /guides/ and Wave 2 pages return Payload, Power and Water", async func
     assert.match(askHtml, /id="ask-answer"/);
     assert.doesNotMatch(askHtml, /best campsite|campsites near|directory of sites/i);
 
+    const aboutPage = await fetch("http://127.0.0.1:" + port + "/about/");
+    const aboutHtml = await aboutPage.text();
+    assert.equal(aboutPage.status, 200);
+    assert.match(aboutHtml, /<title>About \| Motorhome Tools<\/title>/);
+    assert.match(aboutHtml, /<link rel="canonical" href="https:\/\/motorhometools\.co\.uk\/about\/">/);
+    assert.match(aboutHtml, /<meta property="og:url" content="https:\/\/motorhometools\.co\.uk\/about\/">/);
+    assert.match(aboutHtml, /Wayne Robinson/);
+    assert.match(aboutHtml, /motorhomepayload\.co\.uk/);
+    assert.match(aboutHtml, /free guidance tools/);
+    assert.match(aboutHtml, /don.t invent tyre pressures, weights or legal advice/);
+    assert.doesNotMatch(aboutHtml, /"sameAs"/);
+    assert.match(aboutHtml, /href="\/about\/"/);
+    assert.equal(aboutPage.headers.get("x-content-type-options"), "nosniff");
+
+    const aboutBare = await fetch("http://127.0.0.1:" + port + "/about");
+    assert.equal(aboutBare.status, 200);
+
     const sitemap = await fetch("http://127.0.0.1:" + port + "/sitemap.xml");
     const sitemapXml = await sitemap.text();
     assert.equal(sitemap.status, 200);
     assert.equal(sitemap.headers.get("cache-control"), "public, max-age=300");
     assert.match(sitemapXml, /<loc>https:\/\/motorhometools\.co\.uk\/ask\/<\/loc>/);
+    assert.match(sitemapXml, /<loc>https:\/\/motorhometools\.co\.uk\/about\/<\/loc>/);
   } finally {
     await new Promise(function (resolve) { server.close(resolve); });
   }
@@ -376,7 +404,7 @@ test("homepage JSON-LD is an honest WebSite hub and Wave B OG tags stay", functi
   assert.equal(website.isAccessibleForFree, true);
   assert.equal(website.author && website.author.name, "Wayne Robinson");
   assert.equal(website.author["@id"], "https://motorhometools.co.uk/#person");
-  assert.equal(website.author.url, "https://motorhometools.co.uk/");
+  assert.equal(website.author.url, "https://motorhometools.co.uk/about/");
   assert.equal(website.author.sameAs, undefined);
   assert.equal(website.publisher && website.publisher["@id"], "https://motorhometools.co.uk/#organization");
   assert.equal(website.aggregateRating, undefined);
@@ -508,7 +536,7 @@ test("live water calculators expose a light WebApplication without ratings or pr
     assert.equal(data.review, undefined, name);
     assert.equal(data.author && data.author.name, "Wayne Robinson", name);
     assert.equal(data.author["@id"], "https://motorhometools.co.uk/#person", name);
-    assert.equal(data.author.url, "https://motorhometools.co.uk/", name);
+    assert.equal(data.author.url, "https://motorhometools.co.uk/about/", name);
     assert.equal(data.author.sameAs, undefined, name);
     assert.doesNotMatch(html, /FAQPage|aggregateRating|priceCurrency/);
   }
@@ -689,11 +717,12 @@ test("repeated Person, Organization, and WebSite entities share one absolute @id
       sawPerson = true;
       assert.equal(id, "https://motorhometools.co.uk/#person");
       const urls = new Set(entries.map(function (entry) { return entry.url; }));
-      assert.deepEqual([...urls], ["https://motorhometools.co.uk/"]);
+      assert.deepEqual([...urls], ["https://motorhometools.co.uk/about/"]);
       entries.forEach(function (entry) {
-        assert.equal(entry.url, "https://motorhometools.co.uk/", entry.rel);
+        assert.equal(entry.url, "https://motorhometools.co.uk/about/", entry.rel);
       });
       assert.ok(pages.has("index.html"));
+      assert.ok(pages.has(path.join("about", "index.html")));
       assert.ok(pages.has("power/index.html"));
       assert.ok(pages.has("water/index.html"));
       assert.ok(pages.has(path.join("water", "gas.html")));
@@ -702,6 +731,54 @@ test("repeated Person, Organization, and WebSite entities share one absolute @id
     }
   }
   assert.equal(sawPerson, true);
+});
+
+test("About page links Person @id to /about/ and every public page can reach it", function () {
+  const root = path.join(__dirname, "..");
+  const html = fs.readFileSync(path.join(root, "about", "index.html"), "utf8");
+  const blocks = jsonLdBlocks(html);
+  assert.equal(blocks.length, 1);
+  const graph = blocks[0]["@graph"];
+  assert.ok(Array.isArray(graph));
+  const about = graph.find(function (node) { return node["@type"] === "AboutPage"; });
+  const person = graph.find(function (node) { return node["@type"] === "Person"; });
+  const org = graph.find(function (node) { return node["@type"] === "Organization"; });
+  assert.ok(about);
+  assert.ok(person);
+  assert.equal(about.url, "https://motorhometools.co.uk/about/");
+  assert.equal(about.author["@id"], "https://motorhometools.co.uk/#person");
+  assert.equal(about.mainEntity["@id"], "https://motorhometools.co.uk/#person");
+  assert.equal(person["@id"], "https://motorhometools.co.uk/#person");
+  assert.equal(person.name, "Wayne Robinson");
+  assert.equal(person.url, "https://motorhometools.co.uk/about/");
+  assert.equal(person.sameAs, undefined);
+  assert.equal(person.image, undefined);
+  assert.equal(person.jobTitle, undefined);
+  assert.equal(org.logo, "https://motorhometools.co.uk/assets/icon-512.png");
+  assert.equal(typeof org.logo, "string");
+  assert.match(html, /id="author-title">Wayne Robinson</);
+  assert.match(html, /free guidance tools/);
+  assert.match(html, /motorhomepayload\.co\.uk/);
+  assert.match(html, /don.t invent tyre pressures/);
+  assert.doesNotMatch(html, /"sameAs"|jobTitle|alumniOf/);
+  const labels = crumbLabels(html);
+  assert.deepEqual(labels, ["Home", "About"]);
+
+  const sitemap = fs.readFileSync(path.join(root, "sitemap.xml"), "utf8");
+  assert.match(sitemap, /<loc>https:\/\/motorhometools\.co\.uk\/about\/<\/loc>/);
+  const robots = fs.readFileSync(path.join(root, "robots.txt"), "utf8");
+  assert.match(robots, /Sitemap: https:\/\/motorhometools\.co\.uk\/sitemap\.xml/);
+  assert.doesNotMatch(robots, /Disallow:\s*\/about/i);
+
+  for (const filePath of walkHtmlFiles(root, [])) {
+    const page = fs.readFileSync(filePath, "utf8");
+    const rel = path.relative(root, filePath);
+    assert.match(
+      page,
+      /href="(?:\/about\/|https:\/\/motorhometools\.co\.uk\/about\/)"/,
+      rel + " missing About link"
+    );
+  }
 });
 
 test("ask honeypot is not a focusable control inside aria-hidden", function () {

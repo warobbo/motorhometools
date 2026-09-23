@@ -306,6 +306,7 @@ if (require.main === module) {
     console.log("  Power:  http://localhost:" + PORT + "/power/");
     console.log("  Water:  http://localhost:" + PORT + "/water/");
     console.log("  Ask:    http://localhost:" + PORT + "/ask/");
+    console.log("  About:  http://localhost:" + PORT + "/about/");
     console.log("  Ask API: POST /api/ask");
     console.log("  Notify: " + (process.env.ASK_NOTIFY_EMAIL ? "mailto fallback set" : "logs only"));
   });

@@ -118,7 +118,7 @@ In the domain registrar DNS (unchanged pattern):
 
 Then in Render → the **Node** web service → **Custom Domains** add `motorhometools.co.uk` and `www.motorhometools.co.uk`. Render issues TLS.
 
-`robots.txt` and `sitemap.xml` already point at `https://motorhometools.co.uk/`. Privacy, cookies and disclaimer pages live at `privacy.html`, `cookies.html` and `disclaimer.html`.
+`robots.txt` and `sitemap.xml` already point at `https://motorhometools.co.uk/`. About lives at `/about/`. Privacy, cookies and disclaimer pages live at `privacy.html`, `cookies.html` and `disclaimer.html`.
 
 ## Ask box notes (no invented advice)
 
