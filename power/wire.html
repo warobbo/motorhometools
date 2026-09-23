@@ -19,6 +19,7 @@
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260916glyphs" sizes="180x180">
     <link rel="icon" href="assets/icon-512.png?v=20260916glyphs" type="image/png" sizes="512x512">
     <!-- ASSET_VERSION=20260916glyphs — bump this query on CSS/JS below to force-refresh cached assets. -->
+    <link rel="preload" as="image" href="assets/logo.svg?v=20260916glyphs">
     <link rel="stylesheet" href="assets/styles.css?v=20260916glyphs">
     <script type="application/ld+json">
     {
@@ -124,15 +125,15 @@
         <a href="https://motorhometools.co.uk/">Home</a>
       </nav>
       <a class="site-brand no-print" href="/power/">
-        <img src="assets/logo.svg?v=20260916glyphs" width="40" height="40" alt="Power — motorhome tools">
+        <img src="assets/logo.svg?v=20260916glyphs" width="40" height="40" alt="Power — motorhome tools" fetchpriority="high">
         <span class="eyebrow">Power Tools</span>
       </a>
       <nav class="tool-nav no-print" aria-label="Power Tools">
-        <a href="/power/"><img class="tool-glyph" src="assets/glyph-daily.svg?v=20260916glyphs" width="24" height="24" alt="Daily Power" aria-hidden="true">Daily Power</a>
-        <a href="battery.html"><img class="tool-glyph" src="assets/glyph-battery.svg?v=20260916glyphs" width="24" height="24" alt="Battery" aria-hidden="true">Battery</a>
-        <a href="solar.html"><img class="tool-glyph" src="assets/glyph-solar.svg?v=20260916glyphs" width="24" height="24" alt="Solar" aria-hidden="true">Solar</a>
-        <a href="inverter.html"><img class="tool-glyph" src="assets/glyph-inverter.svg?v=20260916glyphs" width="24" height="24" alt="Inverter" aria-hidden="true">Inverter</a>
-        <a href="wire.html" aria-current="page"><img class="tool-glyph" src="assets/glyph-wire.svg?v=20260916glyphs" width="24" height="24" alt="Wire &amp; fuse" aria-hidden="true">Wire &amp; fuse</a>
+        <a href="/power/"><img class="tool-glyph" src="assets/glyph-daily.svg?v=20260916glyphs" width="24" height="24" alt="Daily Power" aria-hidden="true" loading="lazy">Daily Power</a>
+        <a href="battery.html"><img class="tool-glyph" src="assets/glyph-battery.svg?v=20260916glyphs" width="24" height="24" alt="Battery" aria-hidden="true" loading="lazy">Battery</a>
+        <a href="solar.html"><img class="tool-glyph" src="assets/glyph-solar.svg?v=20260916glyphs" width="24" height="24" alt="Solar" aria-hidden="true" loading="lazy">Solar</a>
+        <a href="inverter.html"><img class="tool-glyph" src="assets/glyph-inverter.svg?v=20260916glyphs" width="24" height="24" alt="Inverter" aria-hidden="true" loading="lazy">Inverter</a>
+        <a href="wire.html" aria-current="page"><img class="tool-glyph" src="assets/glyph-wire.svg?v=20260916glyphs" width="24" height="24" alt="Wire &amp; fuse" aria-hidden="true" loading="lazy">Wire &amp; fuse</a>
       </nav>
       <h1>Wire &amp; fuse size calculator</h1>
       <p class="lede no-print">
@@ -354,9 +355,9 @@
           Cable is only one run. Open Inverter for continuous watts, Battery for a 12&nbsp;V Ah size
           to buy, and Solar for panel watts. Your figures stay on this device.
         </p>
-        <a class="add-btn next-tool-link" href="inverter.html"><img class="tool-glyph" src="assets/glyph-inverter.svg?v=20260916glyphs" width="28" height="28" alt="Open Inverter" aria-hidden="true">Open Inverter</a>
-        <a class="add-btn next-tool-link" href="battery.html"><img class="tool-glyph" src="assets/glyph-battery.svg?v=20260916glyphs" width="28" height="28" alt="Open Battery" aria-hidden="true">Open Battery</a>
-        <a class="add-btn next-tool-link" href="solar.html"><img class="tool-glyph" src="assets/glyph-solar.svg?v=20260916glyphs" width="28" height="28" alt="Open Solar" aria-hidden="true">Open Solar</a>
+        <a class="add-btn next-tool-link" href="inverter.html"><img class="tool-glyph" src="assets/glyph-inverter.svg?v=20260916glyphs" width="28" height="28" alt="Open Inverter" aria-hidden="true" loading="lazy">Open Inverter</a>
+        <a class="add-btn next-tool-link" href="battery.html"><img class="tool-glyph" src="assets/glyph-battery.svg?v=20260916glyphs" width="28" height="28" alt="Open Battery" aria-hidden="true" loading="lazy">Open Battery</a>
+        <a class="add-btn next-tool-link" href="solar.html"><img class="tool-glyph" src="assets/glyph-solar.svg?v=20260916glyphs" width="28" height="28" alt="Open Solar" aria-hidden="true" loading="lazy">Open Solar</a>
       </section>
 
       <section class="help-card guides-strip no-print" id="guides" aria-labelledby="guides-title">

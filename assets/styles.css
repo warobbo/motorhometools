@@ -747,6 +747,10 @@ input:focus-visible {
   box-shadow: none;
 }
 
+.guide-figure--diagram picture {
+  display: block;
+}
+
 .guide-figure--diagram img {
   display: block;
   width: 100%;

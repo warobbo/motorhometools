@@ -31,7 +31,13 @@ const MIME = {
   ".js": "text/javascript; charset=utf-8",
   ".svg": "image/svg+xml",
   ".png": "image/png",
+  ".webp": "image/webp",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".gif": "image/gif",
   ".ico": "image/x-icon",
+  ".woff": "font/woff",
+  ".woff2": "font/woff2",
   ".json": "application/json; charset=utf-8",
   ".txt": "text/plain; charset=utf-8",
   ".xml": "application/xml; charset=utf-8"
@@ -60,12 +66,28 @@ const CONTENT_SECURITY_POLICY = [
   "upgrade-insecure-requests"
 ].join("; ");
 
+// Calculators and Ask do not use camera, microphone, location, payment,
+// USB or motion sensors. An empty allowlist disables the feature for every
+// origin, including this one. Forms, fetch and ordinary browsing stay allowed.
+const PERMISSIONS_POLICY = [
+  "accelerometer=()",
+  "ambient-light-sensor=()",
+  "camera=()",
+  "geolocation=()",
+  "gyroscope=()",
+  "magnetometer=()",
+  "microphone=()",
+  "payment=()",
+  "usb=()"
+].join(", ");
+
 const SECURITY_HEADERS = {
   "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
   "X-Content-Type-Options": "nosniff",
   "X-Frame-Options": "SAMEORIGIN",
   "Referrer-Policy": "strict-origin-when-cross-origin",
-  "Content-Security-Policy": CONTENT_SECURITY_POLICY
+  "Content-Security-Policy": CONTENT_SECURITY_POLICY,
+  "Permissions-Policy": PERMISSIONS_POLICY
 };
 
 function applySecurityHeaders(res) {
@@ -80,8 +102,70 @@ const HIDDEN_PREFIXES = [
   "api/",
   "tests/",
   "scripts/",
-  "data/"
+  "data/",
+  "dist/"
 ];
+
+// CSS, JS, images, icons, fonts and SVG are fingerprinted with a ?v= query
+// in the HTML (ASSET_VERSION). Browsers cache the full URL, including that
+// query, so a year-long immutable cache is safe: bump ?v= when the file
+// changes. The query is stripped before the file is read. HTML stays
+// no-cache with an ETag so a page is revalidated instead of kept for a year.
+const LONG_CACHE_EXTENSIONS = new Set([
+  ".css",
+  ".js",
+  ".mjs",
+  ".svg",
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".webp",
+  ".gif",
+  ".ico",
+  ".avif",
+  ".woff",
+  ".woff2",
+  ".ttf",
+  ".otf",
+  ".eot"
+]);
+
+const LONG_CACHE = "public, max-age=31536000, immutable";
+const HTML_CACHE = "no-cache";
+const SHORT_CACHE = "public, max-age=300";
+
+function cacheControlFor(filePath) {
+  const ext = path.extname(filePath).toLowerCase();
+  if (LONG_CACHE_EXTENSIONS.has(ext)) return LONG_CACHE;
+  if (ext === ".txt" || ext === ".xml" || ext === ".json") return SHORT_CACHE;
+  return HTML_CACHE;
+}
+
+function etagFor(stat) {
+  return "W/\"" + stat.size.toString(16) + "-" + Math.floor(stat.mtimeMs).toString(16) + "\"";
+}
+
+function isNotModified(req, etag) {
+  const header = req.headers["if-none-match"];
+  if (!header) return false;
+  if (header.trim() === "*") return true;
+  return header.split(",").some(function (part) {
+    return part.trim() === etag;
+  });
+}
+
+function preferMinifiedJs(filePath) {
+  if (path.extname(filePath).toLowerCase() !== ".js") return filePath;
+  const relative = path.relative(ROOT, filePath);
+  if (!relative || relative.startsWith("..")) return filePath;
+  const built = path.join(ROOT, "dist", relative);
+  try {
+    if (fs.statSync(built).isFile()) return built;
+  } catch (err) {
+    /* dist/ is written by npm run build and by production startup */
+  }
+  return filePath;
+}
 
 const HIDDEN_FILES = new Set([
   "server.js",
@@ -126,7 +210,7 @@ function resolvePublicFile(urlPath) {
 
   const relative = path.relative(ROOT, filePath);
   if (isHidden(relative)) return null;
-  return filePath;
+  return preferMinifiedJs(filePath);
 }
 
 const DIRECTORY_REDIRECTS = {
@@ -179,29 +263,43 @@ const server = http.createServer(function (req, res) {
     return;
   }
 
-  fs.readFile(filePath, function (err, data) {
-    if (err) {
+  fs.stat(filePath, function (statErr, stat) {
+    if (statErr || !stat.isFile()) {
       res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
       res.end("Not found");
       return;
     }
-    const ext = path.extname(filePath);
+
+    const ext = path.extname(filePath).toLowerCase();
+    const etag = etagFor(stat);
     const headers = {
-      "Content-Type": MIME[ext] || "application/octet-stream"
+      "Content-Type": MIME[ext] || "application/octet-stream",
+      "Cache-Control": cacheControlFor(filePath),
+      "ETag": etag
     };
-    if (ext === ".txt" || ext === ".xml") {
-      headers["Cache-Control"] = "public, max-age=300";
-    } else if (ext === ".png" || ext === ".svg") {
-      headers["Cache-Control"] = "public, max-age=86400";
-    } else {
-      headers["Cache-Control"] = "no-cache";
+
+    if (isNotModified(req, etag)) {
+      res.writeHead(304, headers);
+      res.end();
+      return;
     }
-    res.writeHead(200, headers);
-    res.end(req.method === "HEAD" ? undefined : data);
+
+    fs.readFile(filePath, function (err, data) {
+      if (err) {
+        res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+        res.end("Not found");
+        return;
+      }
+      res.writeHead(200, headers);
+      res.end(req.method === "HEAD" ? undefined : data);
+    });
   });
 });
 
 if (require.main === module) {
+  if (process.env.NODE_ENV === "production") {
+    require("./scripts/minify-client-js").build();
+  }
   server.listen(PORT, "0.0.0.0", function () {
     console.log("Motorhome Tools ready");
     console.log("  Local:  http://localhost:" + PORT + "/");
@@ -216,3 +314,6 @@ if (require.main === module) {
 module.exports = server;
 module.exports.resolvePublicFile = resolvePublicFile;
 module.exports.SECURITY_HEADERS = SECURITY_HEADERS;
+module.exports.cacheControlFor = cacheControlFor;
+module.exports.LONG_CACHE = LONG_CACHE;
+module.exports.HTML_CACHE = HTML_CACHE;

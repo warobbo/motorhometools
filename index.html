@@ -53,6 +53,7 @@
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260915logo" sizes="180x180">
     <link rel="icon" href="assets/icon-512.png?v=20260915logo" type="image/png" sizes="512x512">
     <!-- CSS 20260922home (Payload-first homepage). JS 20260923hub (same-origin Power and Water). Icons 20260915logo. Bump the matching query to force-refresh. -->
+    <link rel="preload" as="image" href="assets/payload.svg?v=20260915logo">
     <link rel="stylesheet" href="assets/styles.css?v=20260922home">
   </head>
   <body>
@@ -74,7 +75,7 @@
           <span class="start-pill">Most people start here</span>
           <span class="start-body">
             <span class="start-icon" aria-hidden="true">
-              <img src="assets/payload.svg?v=20260915logo" width="52" height="52" alt="Payload calculator" aria-hidden="true">
+              <img src="assets/payload.svg?v=20260915logo" width="52" height="52" alt="Payload calculator" aria-hidden="true" fetchpriority="high">
             </span>
             <span class="start-copy">
               <h2 id="start-title">Payload</h2>
@@ -127,7 +128,7 @@
           <li>
             <a class="support-card" href="/power/">
               <span class="tile-icon" aria-hidden="true">
-                <img src="assets/power.svg?v=20260915logo" width="40" height="40" alt="Power calculator" aria-hidden="true">
+                <img src="assets/power.svg?v=20260915logo" width="40" height="40" alt="Power calculator" aria-hidden="true" loading="lazy">
               </span>
               <span class="tile-copy">
                 <strong>Power</strong>
@@ -138,7 +139,7 @@
           <li>
             <a class="support-card" href="/water/">
               <span class="tile-icon" aria-hidden="true">
-                <img src="assets/water.svg?v=20260915logo" width="40" height="40" alt="Water calculator" aria-hidden="true">
+                <img src="assets/water.svg?v=20260915logo" width="40" height="40" alt="Water calculator" aria-hidden="true" loading="lazy">
               </span>
               <span class="tile-copy">
                 <strong>Water</strong>
@@ -148,7 +149,7 @@
           </li>
         </ul>
         <p class="tyres-quiet">
-          <img src="assets/tyres.svg?v=20260915logo" width="28" height="28" alt="Tyres calculator" aria-hidden="true">
+          <img src="assets/tyres.svg?v=20260915logo" width="28" height="28" alt="Tyres calculator" aria-hidden="true" loading="lazy">
           <span><strong>Tyres is limited.</strong> Not the main path, and we don’t invent pressures. <a href="https://motorhomepayload.co.uk/tyres.html" target="_blank" rel="noopener noreferrer">Open the Tyres page</a> only if your wheels differ from the originals.</span>
         </p>
       </section>

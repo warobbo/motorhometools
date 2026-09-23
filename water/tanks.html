@@ -19,6 +19,7 @@
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260915logos" sizes="180x180">
     <link rel="icon" href="assets/icon-512.png?v=20260915logos" type="image/png" sizes="512x512">
     <!-- ASSET_VERSION=20260915logos — bump this query on CSS/JS below to force-refresh cached assets. -->
+    <link rel="preload" as="image" href="assets/logo.svg?v=20260915logos">
     <link rel="stylesheet" href="assets/styles.css?v=20260915logos">
     <script type="application/ld+json">
     {
@@ -47,14 +48,14 @@
         <a href="https://motorhometools.co.uk/">Home</a>
       </nav>
       <a class="site-brand no-print" href="/water/">
-        <img class="site-logo" src="assets/logo.svg?v=20260915logos" width="40" height="40" alt="Water — motorhome tools">
+        <img class="site-logo" src="assets/logo.svg?v=20260915logos" width="40" height="40" alt="Water — motorhome tools" fetchpriority="high">
         <span class="eyebrow">Water Tools</span>
       </a>
       <nav class="tool-nav no-print" aria-label="Main tools">
         <a href="/water/">Water</a>
-        <a href="gas.html"><img class="tool-glyph" src="assets/glyph-gas.svg?v=20260915logos" width="24" height="24" alt="Gas" aria-hidden="true">Gas</a>
-        <a href="tanks.html" aria-current="page"><img class="tool-glyph" src="assets/glyph-tanks.svg?v=20260915logos" width="24" height="24" alt="Tanks" aria-hidden="true">Tanks</a>
-        <a href="cassette.html"><img class="tool-glyph" src="assets/glyph-cassette.svg?v=20260915logos" width="24" height="24" alt="Cassette" aria-hidden="true">Cassette</a>
+        <a href="gas.html"><img class="tool-glyph" src="assets/glyph-gas.svg?v=20260915logos" width="24" height="24" alt="Gas" aria-hidden="true" loading="lazy">Gas</a>
+        <a href="tanks.html" aria-current="page"><img class="tool-glyph" src="assets/glyph-tanks.svg?v=20260915logos" width="24" height="24" alt="Tanks" aria-hidden="true" loading="lazy">Tanks</a>
+        <a href="cassette.html"><img class="tool-glyph" src="assets/glyph-cassette.svg?v=20260915logos" width="24" height="24" alt="Cassette" aria-hidden="true" loading="lazy">Cassette</a>
       </nav>
       <details class="more-tools no-print">
         <summary>More tools</summary>
@@ -347,8 +348,8 @@
           The cassette empty planner focuses on toilet empty stops.
         </p>
         <a class="add-btn next-tool-link" href="/water/">Water usage</a>
-        <a class="add-btn next-tool-link" href="gas.html"><img class="tool-glyph" src="assets/glyph-gas.svg?v=20260915logos" width="28" height="28" alt="Gas / LPG usage" aria-hidden="true">Gas / LPG usage</a>
-        <a class="add-btn next-tool-link" href="cassette.html"><img class="tool-glyph" src="assets/glyph-cassette.svg?v=20260915logos" width="28" height="28" alt="Cassette empties" aria-hidden="true">Cassette empties</a>
+        <a class="add-btn next-tool-link" href="gas.html"><img class="tool-glyph" src="assets/glyph-gas.svg?v=20260915logos" width="28" height="28" alt="Gas / LPG usage" aria-hidden="true" loading="lazy">Gas / LPG usage</a>
+        <a class="add-btn next-tool-link" href="cassette.html"><img class="tool-glyph" src="assets/glyph-cassette.svg?v=20260915logos" width="28" height="28" alt="Cassette empties" aria-hidden="true" loading="lazy">Cassette empties</a>
       </section>
 
       <section class="help-card guides-strip no-print" aria-labelledby="guides-title">
