@@ -147,6 +147,16 @@ test("GET /guides/ and Wave 2 pages return Payload, Power and Water", async func
     assert.equal(home.headers.get("referrer-policy"), "strict-origin-when-cross-origin");
     assert.equal(home.headers.get("x-frame-options"), "SAMEORIGIN");
     assert.equal(home.headers.get("content-security-policy"), server.SECURITY_HEADERS["Content-Security-Policy"]);
+    assert.equal(home.headers.get("permissions-policy"), server.SECURITY_HEADERS["Permissions-Policy"]);
+    assert.match(home.headers.get("permissions-policy"), /camera=\(\)/);
+    assert.match(home.headers.get("permissions-policy"), /microphone=\(\)/);
+    assert.match(home.headers.get("permissions-policy"), /geolocation=\(\)/);
+    assert.match(home.headers.get("permissions-policy"), /payment=\(\)/);
+    assert.match(home.headers.get("permissions-policy"), /usb=\(\)/);
+    assert.match(home.headers.get("permissions-policy"), /accelerometer=\(\)/);
+    assert.match(home.headers.get("permissions-policy"), /gyroscope=\(\)/);
+    assert.match(home.headers.get("permissions-policy"), /magnetometer=\(\)/);
+    assert.match(home.headers.get("permissions-policy"), /ambient-light-sensor=\(\)/);
     assert.match(home.headers.get("content-security-policy"), /frame-ancestors 'self'/);
     assert.match(home.headers.get("content-security-policy"), /script-src 'self'/);
     assert.match(home.headers.get("content-security-policy"), /connect-src 'self'/);
@@ -185,11 +195,13 @@ test("GET /guides/ and Wave 2 pages return Payload, Power and Water", async func
     assert.equal(askApi.headers.get("x-content-type-options"), "nosniff");
     assert.equal(askApi.headers.get("strict-transport-security"), "max-age=31536000; includeSubDomains");
     assert.equal(askApi.headers.get("x-frame-options"), "SAMEORIGIN");
+    assert.equal(askApi.headers.get("permissions-policy"), server.SECURITY_HEADERS["Permissions-Policy"]);
 
     const missing = await fetch("http://127.0.0.1:" + port + "/no-such-page");
     assert.equal(missing.status, 404);
     assert.equal(missing.headers.get("referrer-policy"), "strict-origin-when-cross-origin");
     assert.equal(missing.headers.get("x-frame-options"), "SAMEORIGIN");
+    assert.equal(missing.headers.get("permissions-policy"), server.SECURITY_HEADERS["Permissions-Policy"]);
     assert.match(homeHtml, /<link rel="canonical" href="https:\/\/motorhometools\.co\.uk\/">/);
     assert.match(homeHtml, /<meta property="og:url" content="https:\/\/motorhometools\.co\.uk\/">/);
     assert.match(homeHtml, /<meta property="og:image" content="https:\/\/motorhometools\.co\.uk\/assets\/icon-512\.png">/);

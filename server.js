@@ -66,12 +66,28 @@ const CONTENT_SECURITY_POLICY = [
   "upgrade-insecure-requests"
 ].join("; ");
 
+// Calculators and Ask do not use camera, microphone, location, payment,
+// USB or motion sensors. An empty allowlist disables the feature for every
+// origin, including this one. Forms, fetch and ordinary browsing stay allowed.
+const PERMISSIONS_POLICY = [
+  "accelerometer=()",
+  "ambient-light-sensor=()",
+  "camera=()",
+  "geolocation=()",
+  "gyroscope=()",
+  "magnetometer=()",
+  "microphone=()",
+  "payment=()",
+  "usb=()"
+].join(", ");
+
 const SECURITY_HEADERS = {
   "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
   "X-Content-Type-Options": "nosniff",
   "X-Frame-Options": "SAMEORIGIN",
   "Referrer-Policy": "strict-origin-when-cross-origin",
-  "Content-Security-Policy": CONTENT_SECURITY_POLICY
+  "Content-Security-Policy": CONTENT_SECURITY_POLICY,
+  "Permissions-Policy": PERMISSIONS_POLICY
 };
 
 function applySecurityHeaders(res) {

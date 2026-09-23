@@ -160,6 +160,7 @@ Cache-bust assets by bumping the `?v=` query in the HTML (see the `ASSET_VERSION
 - `Referrer-Policy: strict-origin-when-cross-origin`
 - `X-Frame-Options: SAMEORIGIN` — classic clickjacking header for older scanners (Screaming Frog). CSP `frame-ancestors 'self'` stays in place.
 - `Content-Security-Policy` with `frame-ancestors 'self'`
+- `Permissions-Policy` disables camera, microphone, geolocation, payment, USB and motion/light sensors for every origin, including this one. Ask, forms and normal browsing do not use those features.
 
 Scripts, stylesheets, images and fonts are same-origin files. The font stack is system UI, not Google Fonts. Ask uses `fetch` to `/api/ask`. The policy is `script-src 'self'` and `connect-src 'self'`. `style-src-attr 'unsafe-inline'` is there because calculator breakdown bars set a width with a `style` attribute. Script sources do not allow `unsafe-inline`.
 
