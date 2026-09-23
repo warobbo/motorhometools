@@ -375,6 +375,9 @@ test("homepage JSON-LD is an honest WebSite hub and Wave B OG tags stay", functi
   assert.equal(website.inLanguage, "en-GB");
   assert.equal(website.isAccessibleForFree, true);
   assert.equal(website.author && website.author.name, "Wayne Robinson");
+  assert.equal(website.author["@id"], "https://motorhometools.co.uk/#person");
+  assert.equal(website.author.url, "https://motorhometools.co.uk/");
+  assert.equal(website.author.sameAs, undefined);
   assert.equal(website.publisher && website.publisher["@id"], "https://motorhometools.co.uk/#organization");
   assert.equal(website.aggregateRating, undefined);
   assert.equal(website.review, undefined);
@@ -382,7 +385,7 @@ test("homepage JSON-LD is an honest WebSite hub and Wave B OG tags stay", functi
   assert.equal(org["@id"], "https://motorhometools.co.uk/#organization");
   assert.equal(org.name, "Motorhome Tools");
   assert.equal(org.url, "https://motorhometools.co.uk/");
-  assert.equal(org.logo && org.logo.url, "https://motorhometools.co.uk/assets/icon-512.png");
+  assert.equal(org.logo, "https://motorhometools.co.uk/assets/icon-512.png");
   assert.equal(org.sameAs, undefined);
   assert.equal(org.aggregateRating, undefined);
   assert.doesNotMatch(html, /"sameAs"/);
@@ -422,7 +425,21 @@ test("guide pages have BreadcrumbList that matches the visible crumbs", function
   }
 });
 
-test("decorative SVG icons keep an empty alt and are hidden; logos stay labelled", function () {
+function decodeAttr(value) {
+  return value
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">");
+}
+
+function isHomePowerWater(rel) {
+  const norm = rel.split(path.sep).join("/");
+  return norm === "index.html" || norm.startsWith("power/") || norm.startsWith("water/");
+}
+
+test("home, power and water images have no empty alt", function () {
   const root = path.join(__dirname, "..");
   const htmlFiles = walkHtmlFiles(root, []);
   for (const filePath of htmlFiles) {
@@ -430,19 +447,43 @@ test("decorative SVG icons keep an empty alt and are hidden; logos stay labelled
     const rel = path.relative(root, filePath);
     const imgs = html.match(/<img\b[^>]*>/g) || [];
     assert.ok(imgs.length > 0, rel);
+    const onSurface = isHomePowerWater(rel);
     for (const tag of imgs) {
       const altMatch = tag.match(/\balt="([^"]*)"/);
       assert.ok(altMatch, rel + " image missing alt: " + tag);
       const alt = altMatch[1];
-      if (alt === "") {
-        assert.match(tag, /aria-hidden="true"/, rel + " decorative icon: " + tag);
+      const hidden = /aria-hidden="true"/.test(tag);
+      if (alt.trim() === "") {
+        assert.equal(onSurface, false, rel + " empty alt: " + tag);
+        assert.equal(hidden, true, rel + " decorative icon: " + tag);
         assert.match(tag, /\.svg/, rel + " " + tag);
+      } else if (hidden) {
+        assert.doesNotMatch(alt.trim(), /^icon$/i, rel + " generic icon alt: " + tag);
       } else {
-        assert.doesNotMatch(tag, /aria-hidden="true"/, rel + " labelled image: " + tag);
         assert.ok(!/^(power|water|payload|tyres)$/i.test(alt), rel + " keyword-only alt: " + alt);
       }
     }
+
+    if (!onSurface) continue;
+    assert.doesNotMatch(html, /<img\b[^>]*\balt="\s*"/, rel + " whitespace alt");
+    const glyphs = html.matchAll(
+      /<a\b[^>]*>\s*(<img\b[^>]*class="tool-glyph"[^>]*>)\s*([^<]+)/g
+    );
+    for (const match of glyphs) {
+      const tag = match[1];
+      const altMatch = tag.match(/\balt="([^"]*)"/);
+      const adjacent = decodeAttr(match[2]).replace(/\s+/g, " ").trim();
+      const alt = decodeAttr(altMatch[1]).replace(/\s+/g, " ").trim();
+      assert.equal(alt, adjacent, rel + " glyph alt: " + tag);
+      assert.match(tag, /aria-hidden="true"/, rel + " glyph stays hidden: " + tag);
+    }
   }
+
+  const home = fs.readFileSync(path.join(root, "index.html"), "utf8");
+  assert.match(home, /src="assets\/payload\.svg[^"]*"[^>]*\balt="Payload calculator"/);
+  assert.match(home, /src="assets\/power\.svg[^"]*"[^>]*\balt="Power calculator"/);
+  assert.match(home, /src="assets\/water\.svg[^"]*"[^>]*\balt="Water calculator"/);
+  assert.match(home, /src="assets\/tyres\.svg[^"]*"[^>]*\balt="Tyres calculator"/);
 });
 
 test("live water calculators expose a light WebApplication without ratings or prices", function () {
@@ -465,6 +506,10 @@ test("live water calculators expose a light WebApplication without ratings or pr
     assert.equal(data.aggregateRating, undefined, name);
     assert.equal(data.offers, undefined, name);
     assert.equal(data.review, undefined, name);
+    assert.equal(data.author && data.author.name, "Wayne Robinson", name);
+    assert.equal(data.author["@id"], "https://motorhometools.co.uk/#person", name);
+    assert.equal(data.author.url, "https://motorhometools.co.uk/", name);
+    assert.equal(data.author.sameAs, undefined, name);
     assert.doesNotMatch(html, /FAQPage|aggregateRating|priceCurrency/);
   }
 });
@@ -586,4 +631,92 @@ test("production build minifies client JS and the server serves that file", func
     resolvePublicFile("/assets/copilot.js"),
     path.join(root, "dist", "assets", "copilot.js")
   );
+});
+
+const IDENTITY_TYPES = ["Person", "Organization", "LocalBusiness", "WebSite"];
+
+function collectIdentityNodes(node, out) {
+  if (!node || typeof node !== "object") return;
+  if (Array.isArray(node)) {
+    node.forEach(function (item) { collectIdentityNodes(item, out); });
+    return;
+  }
+  const type = node["@type"];
+  const types = Array.isArray(type) ? type : type ? [type] : [];
+  if (types.some(function (item) { return IDENTITY_TYPES.indexOf(item) !== -1; }) && node.name) {
+    out.push(node);
+  }
+  Object.keys(node).forEach(function (key) {
+    if (key === "@context") return;
+    const value = node[key];
+    if (value && typeof value === "object") collectIdentityNodes(value, out);
+  });
+}
+
+test("repeated Person, Organization, and WebSite entities share one absolute @id", function () {
+  const root = path.join(__dirname, "..");
+  const groups = new Map();
+  for (const filePath of walkHtmlFiles(root, [])) {
+    const rel = path.relative(root, filePath);
+    const nodes = [];
+    jsonLdBlocks(fs.readFileSync(filePath, "utf8")).forEach(function (block) {
+      collectIdentityNodes(block, nodes);
+    });
+    for (const node of nodes) {
+      const types = Array.isArray(node["@type"]) ? node["@type"] : [node["@type"]];
+      for (const type of types) {
+        if (IDENTITY_TYPES.indexOf(type) === -1) continue;
+        const key = type + "\n" + node.name;
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push({
+          rel: rel,
+          id: node["@id"] || "",
+          url: node.url || ""
+        });
+      }
+    }
+  }
+
+  let sawPerson = false;
+  for (const [key, entries] of groups) {
+    const pages = new Set(entries.map(function (entry) { return entry.rel; }));
+    if (pages.size < 2) continue;
+    const ids = new Set(entries.map(function (entry) { return entry.id; }));
+    assert.equal(ids.size, 1, key);
+    const id = [...ids][0];
+    assert.match(id, /^https:\/\/motorhometools\.co\.uk\/#/, key);
+    if (key === "Person\nWayne Robinson") {
+      sawPerson = true;
+      assert.equal(id, "https://motorhometools.co.uk/#person");
+      const urls = new Set(entries.map(function (entry) { return entry.url; }));
+      assert.deepEqual([...urls], ["https://motorhometools.co.uk/"]);
+      entries.forEach(function (entry) {
+        assert.equal(entry.url, "https://motorhometools.co.uk/", entry.rel);
+      });
+      assert.ok(pages.has("index.html"));
+      assert.ok(pages.has("power/index.html"));
+      assert.ok(pages.has("water/index.html"));
+      assert.ok(pages.has(path.join("water", "gas.html")));
+      assert.ok(pages.has(path.join("water", "cassette.html")));
+      assert.ok(pages.has(path.join("water", "tanks.html")));
+    }
+  }
+  assert.equal(sawPerson, true);
+});
+
+test("ask honeypot is not a focusable control inside aria-hidden", function () {
+  const root = path.join(__dirname, "..");
+  for (const rel of ["index.html", path.join("ask", "index.html")]) {
+    const html = fs.readFileSync(path.join(root, rel), "utf8");
+    const block = html.match(/<div class="hp"[^>]*>[\s\S]*?<\/div>/);
+    assert.ok(block, rel);
+    assert.match(block[0], /\binert\b/, rel);
+    assert.doesNotMatch(block[0], /aria-hidden/, rel);
+    assert.match(block[0], /id="ask-website"/, rel);
+    assert.match(block[0], /type="text"/, rel);
+    assert.match(block[0], /name="website"/, rel);
+    assert.match(block[0], /tabindex="-1"/, rel);
+    assert.match(block[0], /autocomplete="off"/, rel);
+    assert.doesNotMatch(block[0], /\bdisabled\b/, rel);
+  }
 });
