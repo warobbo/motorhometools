@@ -37,6 +37,42 @@ const MIME = {
   ".xml": "application/xml; charset=utf-8"
 };
 
+// Served by this Node process (Render origin). Cloudflare proxies the response
+// and does not add these itself. HSTS has no `preload` — the host is not on
+// the preload list. Frame control is CSP frame-ancestors only, so it is not
+// also sent as X-Frame-Options.
+// Scripts, images and fonts are same-origin files (system font stack, no
+// Google Fonts, no inline scripts). Ask posts to /api/ask on this host.
+// Calculator breakdown bars set width with a style attribute, so attributes
+// allow unsafe-inline. Stylesheets stay same-origin only.
+const CONTENT_SECURITY_POLICY = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "object-src 'none'",
+  "frame-ancestors 'self'",
+  "form-action 'self'",
+  "script-src 'self'",
+  "style-src 'self'",
+  "style-src-attr 'unsafe-inline'",
+  "img-src 'self'",
+  "font-src 'self'",
+  "connect-src 'self'",
+  "upgrade-insecure-requests"
+].join("; ");
+
+const SECURITY_HEADERS = {
+  "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+  "X-Content-Type-Options": "nosniff",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Content-Security-Policy": CONTENT_SECURITY_POLICY
+};
+
+function applySecurityHeaders(res) {
+  Object.keys(SECURITY_HEADERS).forEach(function (name) {
+    res.setHeader(name, SECURITY_HEADERS[name]);
+  });
+}
+
 const HIDDEN_PREFIXES = [
   "node_modules/",
   "lib/",
@@ -100,6 +136,8 @@ const DIRECTORY_REDIRECTS = {
 };
 
 const server = http.createServer(function (req, res) {
+  applySecurityHeaders(res);
+
   const rawUrl = req.url || "/";
   const queryIndex = rawUrl.indexOf("?");
   const urlPath = decodeURIComponent(queryIndex === -1 ? rawUrl : rawUrl.slice(0, queryIndex));
@@ -176,3 +214,4 @@ if (require.main === module) {
 
 module.exports = server;
 module.exports.resolvePublicFile = resolvePublicFile;
+module.exports.SECURITY_HEADERS = SECURITY_HEADERS;

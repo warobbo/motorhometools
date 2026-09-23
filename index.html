@@ -19,16 +19,34 @@
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "WebSite",
-      "name": "Motorhome Tools",
-      "url": "https://motorhometools.co.uk/",
-      "description": "A hub of free UK calculators for payload, power and water. We don’t invent tyre pressures, weights or legal advice.",
-      "inLanguage": "en-GB",
-      "isAccessibleForFree": true,
-      "author": {
-        "@type": "Person",
-        "name": "Wayne Robinson"
-      }
+      "@graph": [
+        {
+          "@type": "WebSite",
+          "@id": "https://motorhometools.co.uk/#website",
+          "name": "Motorhome Tools",
+          "url": "https://motorhometools.co.uk/",
+          "description": "A hub of free UK calculators for payload, power and water. We don’t invent tyre pressures, weights or legal advice.",
+          "inLanguage": "en-GB",
+          "isAccessibleForFree": true,
+          "publisher": {
+            "@id": "https://motorhometools.co.uk/#organization"
+          },
+          "author": {
+            "@type": "Person",
+            "name": "Wayne Robinson"
+          }
+        },
+        {
+          "@type": "Organization",
+          "@id": "https://motorhometools.co.uk/#organization",
+          "name": "Motorhome Tools",
+          "url": "https://motorhometools.co.uk/",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://motorhometools.co.uk/assets/icon-512.png"
+          }
+        }
+      ]
     }
     </script>
     <link rel="icon" href="assets/favicon.svg?v=20260915logo" type="image/svg+xml">
@@ -57,7 +75,7 @@
           <span class="start-pill">Most people start here</span>
           <span class="start-body">
             <span class="start-icon" aria-hidden="true">
-              <img src="assets/payload.svg?v=20260915logo" width="52" height="52" alt="">
+              <img src="assets/payload.svg?v=20260915logo" width="52" height="52" alt="" aria-hidden="true">
             </span>
             <span class="start-copy">
               <h2 id="start-title">Payload</h2>
@@ -110,7 +128,7 @@
           <li>
             <a class="support-card" href="/power/">
               <span class="tile-icon" aria-hidden="true">
-                <img src="assets/power.svg?v=20260915logo" width="40" height="40" alt="">
+                <img src="assets/power.svg?v=20260915logo" width="40" height="40" alt="" aria-hidden="true">
               </span>
               <span class="tile-copy">
                 <strong>Power</strong>
@@ -121,7 +139,7 @@
           <li>
             <a class="support-card" href="/water/">
               <span class="tile-icon" aria-hidden="true">
-                <img src="assets/water.svg?v=20260915logo" width="40" height="40" alt="">
+                <img src="assets/water.svg?v=20260915logo" width="40" height="40" alt="" aria-hidden="true">
               </span>
               <span class="tile-copy">
                 <strong>Water</strong>
@@ -131,7 +149,7 @@
           </li>
         </ul>
         <p class="tyres-quiet">
-          <img src="assets/tyres.svg?v=20260915logo" width="28" height="28" alt="">
+          <img src="assets/tyres.svg?v=20260915logo" width="28" height="28" alt="" aria-hidden="true">
           <span><strong>Tyres is limited.</strong> Not the main path, and we don’t invent pressures. <a href="https://motorhomepayload.co.uk/tyres.html" target="_blank" rel="noopener noreferrer">Open the Tyres page</a> only if your wheels differ from the originals.</span>
         </p>
       </section>

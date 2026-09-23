@@ -149,6 +149,27 @@ Each page has a unique title, meta description, one H1, canonical, and Open Grap
 
 Cache-bust assets by bumping the `?v=` query in `index.html` and `guides/*.html` (see the `ASSET_VERSION` comment).
 
+## Security headers
+
+`server.js` sets these on every response (HTML, assets, redirects, 404s, and `/api/ask`). Render is the origin. Cloudflare proxies the response and does not add this pack itself. There is no `_headers` file.
+
+- `Strict-Transport-Security: max-age=31536000; includeSubDomains` — no `preload` (the site is not on the HSTS preload list)
+- `X-Content-Type-Options: nosniff`
+- `Referrer-Policy: strict-origin-when-cross-origin`
+- `Content-Security-Policy` with `frame-ancestors 'self'` (no separate `X-Frame-Options`)
+
+Scripts, stylesheets, images and fonts are same-origin files. The font stack is system UI, not Google Fonts. Ask uses `fetch` to `/api/ask`. The policy is `script-src 'self'` and `connect-src 'self'`. `style-src-attr 'unsafe-inline'` is there because calculator breakdown bars set a width with a `style` attribute. Script sources do not allow `unsafe-inline`.
+
+After a production deploy:
+
+```bash
+curl -sI https://motorhometools.co.uk/
+```
+
+The homepage source should include `WebSite` and `Organization` JSON-LD. `/power/` and `/water/` should still load their calculator scripts.
+
+If Cloudflare Rocket Loader, Email Obfuscation, or Web Analytics is turned on later, those injected scripts will be blocked until the policy lists them.
+
 ## Out of scope
 
 Campsite planner, routing engine, Money tile, Mission Control, inventing pressures, and spending on APIs.
