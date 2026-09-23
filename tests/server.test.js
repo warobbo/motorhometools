@@ -129,8 +129,12 @@ test("GET /guides/ and Wave 2 pages return Payload, Power and Water", async func
     assert.match(homeHtml, /href="\/ask\/">shareable Ask page</);
     assert.match(homeHtml, /<h2 id="ask-title">Not sure\? Ask in plain English<\/h2>/);
     assert.match(homeHtml, /id="ask-answer"/);
-    assert.match(homeHtml, /assets\/copilot\.js\?v=20260921payload/);
-    assert.match(homeHtml, /assets\/app\.js\?v=20260921payload/);
+    assert.match(homeHtml, /assets\/copilot\.js\?v=20260923hub/);
+    assert.match(homeHtml, /assets\/app\.js\?v=20260923hub/);
+    assert.match(homeHtml, /href="\/power\/"/);
+    assert.match(homeHtml, /href="\/water\/"/);
+    assert.doesNotMatch(homeHtml, /motorhomepower\.co\.uk|motorhomewater\.co\.uk/);
+    assert.match(homeHtml, /motorhomepayload\.co\.uk/);
 
     const askPage = await fetch("http://127.0.0.1:" + port + "/ask/");
     const askHtml = await askPage.text();
@@ -141,8 +145,9 @@ test("GET /guides/ and Wave 2 pages return Payload, Power and Water", async func
     assert.match(askHtml, /id="ask-form"/);
     assert.match(askHtml, /id="ask-question"/);
     assert.match(askHtml, /assets\/router\.js/);
-    assert.match(askHtml, /assets\/copilot\.js\?v=20260921payload/);
-    assert.match(askHtml, /assets\/app\.js\?v=20260921payload/);
+    assert.match(askHtml, /assets\/copilot\.js\?v=20260923hub/);
+    assert.match(askHtml, /assets\/app\.js\?v=20260923hub/);
+    assert.doesNotMatch(askHtml, /motorhomepower\.co\.uk|motorhomewater\.co\.uk/);
     assert.match(askHtml, /id="ask-answer"/);
     assert.doesNotMatch(askHtml, /best campsite|campsites near|directory of sites/i);
 
@@ -189,7 +194,10 @@ test("family logos and favicons ship pine marks with a sitewide cache-bust", fun
     assert.match(svg, /#1e4f43/, name);
   }
 
-  const htmlFiles = walkHtmlFiles(root, []);
+  const htmlFiles = walkHtmlFiles(root, []).filter(function (filePath) {
+    const rel = path.relative(root, filePath);
+    return !rel.startsWith("power" + path.sep) && !rel.startsWith("water" + path.sep);
+  });
   for (const filePath of htmlFiles) {
     const html = fs.readFileSync(filePath, "utf8");
     const iconRefs = html.match(

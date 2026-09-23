@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Motorhome Gas / LPG Usage Calculator | kg and bottle days | UK</title>
+    <meta name="description" content="Estimate motorhome LPG use in kilograms for heating, cooking, fridge and hot water. Butane or propane, with UK Calor bottle sizes.">
+    <meta name="robots" content="index,follow">
+    <meta name="author" content="Wayne Robinson">
+    <link rel="canonical" href="https://motorhometools.co.uk/water/gas.html">
+    <meta property="og:title" content="Motorhome Gas / LPG Usage Calculator | kg and bottle days">
+    <meta property="og:description" content="Pick butane or propane, trip length and a UK Calor bottle size to see kilograms of gas and how many days a bottle lasts.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://motorhometools.co.uk/water/gas.html">
+    <meta property="og:image" content="https://motorhometools.co.uk/water/assets/icon-512.png">
+    <meta name="theme-color" content="#1e5f74">
+    <link rel="icon" href="assets/favicon.svg?v=20260915logos" type="image/svg+xml">
+    <link rel="icon" href="assets/favicon-32.png?v=20260915logos" type="image/png" sizes="32x32">
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260915logos" sizes="180x180">
+    <link rel="icon" href="assets/icon-512.png?v=20260915logos" type="image/png" sizes="512x512">
+    <!-- ASSET_VERSION=20260915logos — bump this query on CSS/JS below to force-refresh cached assets. -->
+    <link rel="stylesheet" href="assets/styles.css?v=20260915logos">
+  </head>
+  <body>
+    <a class="skip-link no-print" href="#calculator">Skip to calculator</a>
+    <header class="site-header">
+      <nav class="hub-home no-print" aria-label="Home">
+        <a href="https://motorhometools.co.uk/">Home</a>
+      </nav>
+      <a class="site-brand no-print" href="/water/">
+        <img class="site-logo" src="assets/logo.svg?v=20260915logos" width="40" height="40" alt="Water — motorhome tools">
+        <span class="eyebrow">Water Tools</span>
+      </a>
+      <nav class="tool-nav no-print" aria-label="Main tools">
+        <a href="/water/">Water</a>
+        <a href="gas.html" aria-current="page"><img class="tool-glyph" src="assets/glyph-gas.svg?v=20260915logos" width="24" height="24" alt="">Gas</a>
+        <a href="tanks.html"><img class="tool-glyph" src="assets/glyph-tanks.svg?v=20260915logos" width="24" height="24" alt="">Tanks</a>
+        <a href="cassette.html"><img class="tool-glyph" src="assets/glyph-cassette.svg?v=20260915logos" width="24" height="24" alt="">Cassette</a>
+      </nav>
+      <details class="more-tools no-print">
+        <summary>More tools</summary>
+        <ul class="more-tools-list">
+          <li><a href="/water/#weight">Water weight</a> <span class="now">on Water</span></li>
+          <li><a href="bottles.html">Gas bottle / cylinder picker</a> <span class="soon">soon</span></li>
+          <li><a href="hotwater.html">Hot water (gas vs electric)</a> <span class="soon">soon</span></li>
+          <li><a href="winterising.html">Winterising volume</a> <span class="soon">soon</span></li>
+          <li><a href="topup.html">Top-up / Aquaroll planner</a> <span class="soon">soon</span></li>
+        </ul>
+      </details>
+      <h1>Gas / LPG usage calculator</h1>
+      <p class="lede no-print">
+        For UK motorhome and campervan trips. Set days, cooking, heating and a
+        bottle size, then see kilograms of gas for the trip, kilograms per day,
+        and how long that bottle lasts. Butane is the usual UK leisure choice;
+        propane is better when it is freezing.
+      </p>
+      <p class="print-only print-meta">Planning estimate · LPG / gas in kilograms</p>
+    </header>
+
+    <main id="calculator" class="site-main">
+      <div class="layout">
+        <div class="summary-stack">
+          <div class="totals-wrap">
+            <section class="totals" aria-live="polite">
+              <article class="total-card primary">
+                <p class="label">Whole trip</p>
+                <p class="value"><strong id="total-trip">0</strong><span>kg</span></p>
+                <p class="hint"><span id="total-daily">0</span> kg / day</p>
+              </article>
+              <div class="ah-grid">
+                <article class="total-card">
+                  <p class="label">Bottle lasts</p>
+                  <p class="value"><strong id="bottle-days">0</strong><span>days</span></p>
+                  <p class="hint" id="bottle-hint">Pick a bottle size to see days.</p>
+                </article>
+                <article class="total-card">
+                  <p class="label">Bottles for the trip</p>
+                  <p class="value"><strong id="bottles-needed">0</strong><span id="bottles-unit">bottles</span></p>
+                  <p class="hint" id="bottles-hint">Rounded up.</p>
+                </article>
+              </div>
+            </section>
+          </div>
+
+          <section class="breakdown panel" aria-labelledby="breakdown-title">
+            <h2 id="breakdown-title">Breakdown by use</h2>
+            <p class="field-hint">Heating usually dwarfs cooking in winter. Summer trips are often cooking only.</p>
+            <ol id="breakdown-list"></ol>
+          </section>
+        </div>
+
+        <div class="controls">
+          <section class="panel no-print" aria-labelledby="preset-title">
+            <div class="panel-head">
+              <div>
+                <h2 id="preset-title">Start from a preset</h2>
+                <p class="save-state" id="save-state">Saved on this device</p>
+              </div>
+              <button type="button" class="print-btn" id="print-sheet">Print / save PDF</button>
+            </div>
+            <div id="presets" class="preset-row" role="group" aria-label="Gas usage presets"></div>
+          </section>
+
+          <form id="usage-form" class="panel habits-panel no-print" aria-labelledby="habits-title">
+            <h2 id="habits-title">People and trip</h2>
+            <p class="lede tight">Trip days start from the Water page if you have already used it. Cooking scales with people; heating is for the whole van.</p>
+            <div class="field-grid">
+              <label class="field" for="adults">
+                <span>Adults</span>
+                <span class="field-control">
+                  <input id="adults" type="number" inputmode="numeric" min="0" max="20" step="1" value="2">
+                  <em>people</em>
+                </span>
+              </label>
+              <label class="field" for="children">
+                <span>Children <span class="sr-only">(optional)</span></span>
+                <span class="field-control">
+                  <input id="children" type="number" inputmode="numeric" min="0" max="20" step="1" value="0">
+                  <em>people</em>
+                </span>
+              </label>
+              <label class="field" for="tripDays">
+                <span>Trip length</span>
+                <span class="field-control">
+                  <input id="tripDays" type="number" inputmode="decimal" min="0.5" max="90" step="0.5" value="2">
+                  <em>days</em>
+                </span>
+              </label>
+              <div class="field">
+                <span>Season <span class="sr-only">(optional)</span></span>
+                <div id="seasons" class="choice-row" role="group" aria-label="Season">
+                  <button type="button" data-season="summer" aria-pressed="false">Summer</button>
+                  <button type="button" data-season="mild" aria-pressed="false">Mild</button>
+                  <button type="button" data-season="winter" aria-pressed="false">Winter</button>
+                </div>
+              </div>
+            </div>
+            <p class="field-hint">Mild is a cool spring or autumn evening. Tapping a season also sets heating to a typical level. Winter switches to propane (13 kg Calor); summer and mild stay on butane. You can still change the hours or gas type.</p>
+
+            <h2 class="field-heading">Cooking</h2>
+            <p class="field-hint">Light is a kettle and one pan. Normal is everyday hob meals. Heavy is oven, grill or a long simmer.</p>
+            <div class="field-grid">
+              <label class="field" for="mealsPerDay">
+                <span>Meals per day</span>
+                <span class="field-control">
+                  <input id="mealsPerDay" type="number" inputmode="decimal" min="0" max="6" step="0.5" value="2">
+                  <em class="unit-wide">meals</em>
+                </span>
+              </label>
+              <div class="field">
+                <span>How much cooking</span>
+                <div id="cooking-styles" class="choice-row" role="group" aria-label="Cooking style">
+                  <button type="button" data-cooking="light" aria-pressed="false">Light</button>
+                  <button type="button" data-cooking="normal" aria-pressed="false">Normal</button>
+                  <button type="button" data-cooking="heavy" aria-pressed="false">Heavy</button>
+                </div>
+              </div>
+            </div>
+
+            <h2 class="field-heading">Heating</h2>
+            <p class="field-hint">Hours the space heater is actually burning. Off / Low / Medium / High set 0, 2, 6 or 12 hours. Winter heating is usually the biggest use.</p>
+            <div class="field-grid">
+              <div class="field">
+                <span>Heater use</span>
+                <div id="heating-levels" class="choice-row" role="group" aria-label="Heating level">
+                  <button type="button" data-heating="off" aria-pressed="false">Off</button>
+                  <button type="button" data-heating="low" aria-pressed="false">Low</button>
+                  <button type="button" data-heating="medium" aria-pressed="false">Medium</button>
+                  <button type="button" data-heating="high" aria-pressed="false">High</button>
+                </div>
+              </div>
+              <label class="field" for="heatingHours">
+                <span>Heating hours per day</span>
+                <span class="field-control">
+                  <input id="heatingHours" type="number" inputmode="decimal" min="0" max="24" step="0.5" value="0">
+                  <em class="unit-wide">hours</em>
+                </span>
+              </label>
+            </div>
+
+            <h2 class="field-heading">Fridge on gas</h2>
+            <label class="loss-toggle">
+              <input id="fridgeGasEnabled" type="checkbox">
+              <span>
+                <strong>Fridge running on gas</strong>
+                <span>Leave this off if the fridge is on 12 V or mains. A typical 3-way fridge uses about 0.4 kg a day if it stays on gas.</span>
+              </span>
+            </label>
+            <div id="fridge-fields" class="field-grid" hidden>
+              <label class="field" for="fridgeHoursPerDay">
+                <span>Hours on gas per day</span>
+                <span class="field-control">
+                  <input id="fridgeHoursPerDay" type="number" inputmode="decimal" min="0" max="24" step="1" value="24">
+                  <em class="unit-wide">hours</em>
+                </span>
+              </label>
+            </div>
+
+            <h2 class="field-heading">Hot water</h2>
+            <label class="loss-toggle">
+              <input id="boilerEnabled" type="checkbox">
+              <span>
+                <strong>Include gas hot water</strong>
+                <span>Optional. Tick this if a boiler or Combi heats water on gas. Skip it if you use an electric immersion or site hook-up.</span>
+              </span>
+            </label>
+            <div id="boiler-fields" hidden>
+              <div class="field-grid">
+                <div class="field">
+                  <span>Hot water use</span>
+                  <div id="boiler-levels" class="choice-row" role="group" aria-label="Hot water level">
+                    <button type="button" data-boiler="light" aria-pressed="false">Light</button>
+                    <button type="button" data-boiler="normal" aria-pressed="false">Normal</button>
+                    <button type="button" data-boiler="heavy" aria-pressed="false">Heavy</button>
+                  </div>
+                </div>
+                <label class="field" for="boilerHours">
+                  <span>Burner hours per day</span>
+                  <span class="field-control">
+                    <input id="boilerHours" type="number" inputmode="decimal" min="0" max="12" step="0.5" value="1.5">
+                    <em class="unit-wide">hours</em>
+                  </span>
+                </label>
+              </div>
+              <p class="field-hint">Light is about one heat-up (half an hour). Normal is 1½ hours. Heavy is 3 hours.</p>
+            </div>
+
+            <h2 class="field-heading">Bottle size</h2>
+            <p class="field-hint">Butane (blue bottles) is the usual UK leisure gas in mild weather. Propane (red bottles) keeps working better in the cold and frost. The sizes below are Calor leisure bottles. The number is the gas inside, not the empty metal weight.</p>
+            <div class="field">
+              <span>Which gas</span>
+              <div id="gas-types" class="choice-row" role="group" aria-label="Gas type">
+                <button type="button" data-gas="butane" aria-pressed="false">Butane</button>
+                <button type="button" data-gas="propane" aria-pressed="false">Propane</button>
+              </div>
+            </div>
+            <div class="field">
+              <span>Common UK sizes</span>
+              <div id="bottles" class="preset-row" role="group" aria-label="Bottle size"></div>
+            </div>
+            <div class="field-grid">
+              <label class="field" for="bottleKg">
+                <span>Gas in the bottle</span>
+                <span class="field-control">
+                  <input id="bottleKg" type="number" inputmode="decimal" min="1" max="47" step="0.1" value="7">
+                  <em>kg</em>
+                </span>
+              </label>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <section class="help-grid no-print" aria-labelledby="help-title">
+        <article class="help-card">
+          <h2 id="help-title">How to use</h2>
+          <ol>
+            <li>Choose a preset if you want a head start, or keep the defaults.</li>
+            <li>Set people and how many days you are away.</li>
+            <li>Edit cooking, heating, and whether the fridge or hot water run on gas.</li>
+            <li>Choose butane or propane, then a bottle size. Totals update as you type. Refresh the page: your numbers stay on this device.</li>
+          </ol>
+        </article>
+      </section>
+
+      <section class="help-card faq-card no-print" aria-labelledby="faq-title">
+        <h2 id="faq-title">FAQ</h2>
+        <div class="faq-list">
+          <details>
+            <summary>Why butane rather than propane in the UK?</summary>
+            <p>
+              Most UK leisure trips are in mild weather, so <strong>butane</strong> (blue Calor bottles)
+              is the usual choice. <strong>Propane</strong> (red bottles) is better when it is cold or
+              freezing — butane does not vaporise well in a hard frost. This page defaults to butane
+              and lets you switch. The Winter week preset and the Winter season chip both switch to
+              propane (13 kg Calor). Summer and mild stay on butane.
+            </p>
+          </details>
+          <details>
+            <summary>What bottle sizes do UK motorhomes use?</summary>
+            <p>
+              Calor leisure <strong>butane</strong> bottles are <strong>4.5 kg</strong>, <strong>7 kg</strong>
+              and <strong>15 kg</strong>. Calor leisure <strong>propane</strong> bottles are
+              <strong>3.9 kg</strong>, <strong>6 kg</strong> and <strong>13 kg</strong>. The number is
+              the gas inside, not the weight of the empty cylinder. Type another size if yours is different.
+            </p>
+          </details>
+          <details>
+            <summary>Why does winter use so much more gas than summer?</summary>
+            <p>
+              Space heating. A blown-air heater can use around 0.2 kg an hour. Twelve hours a day
+              is more than 2 kg, every day. Summer is often just cooking — a 4.5 kg or 7 kg butane
+              bottle can then last weeks. Use the Winter week and Weekend summer presets to see the gap.
+            </p>
+          </details>
+          <details>
+            <summary>Should the fridge run on gas or 12 V?</summary>
+            <p>
+              A 3-way absorption fridge on gas uses about 0.3–0.4 kg a day if it stays on.
+              That adds up on a long trip. A 12 V compressor fridge uses battery or solar
+              instead, so you can leave “Fridge on gas” unticked. Many people use gas when
+              driving or off-grid without much solar, and 12 V or mains on site.
+            </p>
+          </details>
+          <details>
+            <summary>How long does a 7 kg or 13 kg bottle last?</summary>
+            <p>
+              It depends on heating. Cooking-only for two people might be 0.1–0.2 kg a day,
+              so a 7 kg butane bottle can last a month or more. A winter week with the heater
+              on is often 2–3 kg a day, so a 13 kg propane bottle may last around 4–7 days.
+              The “Bottle lasts” figure above is for your numbers, not a rule of thumb.
+            </p>
+          </details>
+          <details>
+            <summary>What if my bottle is a different size?</summary>
+            <p>
+              Type the kilograms of gas your bottle holds. Refillable bottles (Gaslow, Alugas
+              and similar) are still measured by the gas inside. This page does not tell you
+              where to fill, or whether Autogas is available on your route.
+            </p>
+          </details>
+          <details>
+            <summary>Is cooking or heating the bigger user?</summary>
+            <p>
+              Heating, whenever it is on. Cooking for two is often a small fraction of a
+              kilogram a day. One cold night of heating can use more than a day’s cooking.
+            </p>
+          </details>
+          <details>
+            <summary>Do I need to ventilate, and is this a safety check?</summary>
+            <p>
+              Use gas only with proper ventilation, and never check for leaks with a flame.
+              Have installation and repairs done by a qualified fitter (for example Gas Safe
+              or an NCC workshop). This calculator is a planning estimate only. It is
+              <strong>not</strong> a safety certificate, a leak test, or advice that your
+              system is safe to use.
+            </p>
+          </details>
+          <details>
+            <summary>Is this accurate enough for shopping?</summary>
+            <p>
+              It is good enough to decide between a 4.5 kg and a 7 kg, or a 13 kg in winter,
+              and whether to take a spare. Real use changes with how cold it is, how well
+              the van is insulated, and how long the heater runs. Leave a margin, especially
+              off-grid in winter.
+            </p>
+          </details>
+        </div>
+      </section>
+
+      <aside class="disclaimer" aria-label="Disclaimer">
+        <h2>Disclaimer</h2>
+        <p>
+          This calculator is a planning estimate only. It is not a safety certificate,
+          a leak test, a design, or a guarantee that a bottle will last. Use gas only with
+          ventilation. Have work done by a qualified fitter. Check your van’s bottle fittings
+          and payload.
+        </p>
+      </aside>
+
+      <section class="help-card next-tool no-print" aria-labelledby="next-tool-title">
+        <h2 id="next-tool-title">Also on this hub</h2>
+        <p>
+          Your gas figures stay on this device, next to the Water usage numbers.
+          The holding-tank planner and cassette empty planner are ready.
+        </p>
+        <a class="add-btn next-tool-link" href="/water/">Water usage</a>
+        <a class="add-btn next-tool-link" href="tanks.html"><img class="tool-glyph" src="assets/glyph-tanks.svg?v=20260915logos" width="28" height="28" alt="">Holding tanks</a>
+        <a class="add-btn next-tool-link" href="cassette.html"><img class="tool-glyph" src="assets/glyph-cassette.svg?v=20260915logos" width="28" height="28" alt="">Cassette empties</a>
+      </section>
+
+      <section class="help-card guides-strip no-print" aria-labelledby="guides-title">
+        <h2 id="guides-title">Guides</h2>
+        <p>
+          Short reads on Motorhome Tools. They open in a new tab. They do not
+          change the numbers on this calculator.
+        </p>
+        <ul class="guides-list">
+          <li>
+            <a href="https://motorhometools.co.uk/guides/fresh-waste-tanks.html" target="_blank" rel="noopener noreferrer">
+              <span>Fresh and waste tanks</span>
+              <span class="hint">Fill, weight, empty</span>
+            </a>
+          </li>
+          <li>
+            <a href="https://motorhometools.co.uk/guides/gas-lpg-basics.html" target="_blank" rel="noopener noreferrer">
+              <span>Gas / LPG basics</span>
+              <span class="hint">Bottles and a winter note</span>
+            </a>
+          </li>
+          <li>
+            <a href="https://motorhometools.co.uk/guides/cassette-toilet-empty.html" target="_blank" rel="noopener noreferrer">
+              <span>Cassette toilet empty</span>
+              <span class="hint">When and where</span>
+            </a>
+          </li>
+          <li>
+            <a href="https://motorhometools.co.uk/guides/" target="_blank" rel="noopener noreferrer">
+              <span>All guides</span>
+              <span class="hint">Motorhome Tools</span>
+            </a>
+          </li>
+        </ul>
+      </section>
+    </main>
+
+    <footer class="site-footer no-print">
+      <p class="hub-home">
+        <a href="https://motorhometools.co.uk/">Home</a>
+      </p>
+      <nav class="footer-guides" aria-label="Guides">
+        <a href="https://motorhometools.co.uk/guides/fresh-waste-tanks.html">Tanks guide</a>
+        <a href="https://motorhometools.co.uk/guides/gas-lpg-basics.html">Gas guide</a>
+        <a href="https://motorhometools.co.uk/guides/cassette-toilet-empty.html">Cassette guide</a>
+        <a href="https://motorhometools.co.uk/guides/">All guides</a>
+      </nav>
+      <p>Water Tools for Wayne Robinson. Water, gas, tanks and cassette now; more to follow. No accounts and no server-side data. These calculators live on Motorhome Tools.</p>
+      <nav class="legal-links" aria-label="Legal">
+        <a href="https://motorhometools.co.uk/privacy.html">Privacy</a>
+        <span class="legal-sep" aria-hidden="true">·</span>
+        <a href="https://motorhometools.co.uk/cookies.html">Cookies</a>
+        <span class="legal-sep" aria-hidden="true">·</span>
+        <a href="https://motorhometools.co.uk/disclaimer.html">Disclaimer</a>
+      </nav>
+    </footer>
+
+    <div
+      class="rotate-gate no-print"
+      id="rotate-gate"
+      role="alertdialog"
+      aria-modal="true"
+      aria-hidden="true"
+      aria-labelledby="rotate-gate-title"
+      aria-describedby="rotate-gate-text"
+    >
+      <div class="rotate-gate-card">
+        <svg class="rotate-gate-icon" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+          <rect x="18" y="8" width="28" height="48" rx="5" fill="none" stroke="currentColor" stroke-width="3"></rect>
+          <circle cx="32" cy="48" r="2.2" fill="currentColor"></circle>
+          <path d="M50 28a18 18 0 0 1-28 15" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path>
+          <path d="M46 22v8h8" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+        </svg>
+        <h2 id="rotate-gate-title" tabindex="-1">Turn your phone upright</h2>
+        <p id="rotate-gate-text">This calculator is made for portrait. Rotate your phone back to keep using it.</p>
+      </div>
+    </div>
+
+    <script src="assets/calc.js?v=20260912home"></script>
+    <script src="assets/gas-calc.js?v=20260918prefill"></script>
+    <script src="assets/defaults.js?v=20260912home"></script>
+    <script src="assets/gas-defaults.js?v=20260912home"></script>
+    <script src="assets/storage.js?v=20260912home"></script>
+    <script src="assets/ui.js?v=20260912home"></script>
+    <script src="assets/gas-app.js?v=20260918prefill"></script>
+  </body>
+</html>

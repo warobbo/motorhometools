@@ -4,7 +4,7 @@
   "description": "Phone-first front door for the UK leisure hubs, plus unmatched Ask capture.",
   "scripts": {
     "start": "node server.js",
-    "test": "node tests/router.test.js && node --test tests/ask.test.js tests/server.test.js tests/copilot.test.js"
+    "test": "node tests/router.test.js && node tests/power/calc.test.js && node tests/water/calc.test.js && node tests/water/gas-calc.test.js && node tests/water/tank-calc.test.js && node tests/water/cassette-calc.test.js && node tests/water/ui.test.js && node --test tests/ask.test.js tests/server.test.js tests/copilot.test.js tests/same-origin.test.js"
   },
   "engines": {
     "node": ">=22 <23"

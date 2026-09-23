@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Motorhome Holding Tank Planner | Fresh, grey and cassette days | UK</title>
+    <meta name="description" content="See how many days a motorhome fresh, grey and cassette tank last together. Uses your saved water figures. UK wild-camping planning estimate.">
+    <meta name="robots" content="index,follow">
+    <meta name="author" content="Wayne Robinson">
+    <link rel="canonical" href="https://motorhometools.co.uk/water/tanks.html">
+    <meta property="og:title" content="Motorhome Holding Tank Planner | Fresh, grey and cassette days">
+    <meta property="og:description" content="Plan a wild-camping stretch: days until fresh runs dry, grey fills, and the cassette needs emptying.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://motorhometools.co.uk/water/tanks.html">
+    <meta property="og:image" content="https://motorhometools.co.uk/water/assets/icon-512.png">
+    <meta name="theme-color" content="#1e5f74">
+    <link rel="icon" href="assets/favicon.svg?v=20260915logos" type="image/svg+xml">
+    <link rel="icon" href="assets/favicon-32.png?v=20260915logos" type="image/png" sizes="32x32">
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260915logos" sizes="180x180">
+    <link rel="icon" href="assets/icon-512.png?v=20260915logos" type="image/png" sizes="512x512">
+    <!-- ASSET_VERSION=20260915logos — bump this query on CSS/JS below to force-refresh cached assets. -->
+    <link rel="stylesheet" href="assets/styles.css?v=20260915logos">
+  </head>
+  <body>
+    <a class="skip-link no-print" href="#calculator">Skip to calculator</a>
+    <header class="site-header">
+      <nav class="hub-home no-print" aria-label="Home">
+        <a href="https://motorhometools.co.uk/">Home</a>
+      </nav>
+      <a class="site-brand no-print" href="/water/">
+        <img class="site-logo" src="assets/logo.svg?v=20260915logos" width="40" height="40" alt="Water — motorhome tools">
+        <span class="eyebrow">Water Tools</span>
+      </a>
+      <nav class="tool-nav no-print" aria-label="Main tools">
+        <a href="/water/">Water</a>
+        <a href="gas.html"><img class="tool-glyph" src="assets/glyph-gas.svg?v=20260915logos" width="24" height="24" alt="">Gas</a>
+        <a href="tanks.html" aria-current="page"><img class="tool-glyph" src="assets/glyph-tanks.svg?v=20260915logos" width="24" height="24" alt="">Tanks</a>
+        <a href="cassette.html"><img class="tool-glyph" src="assets/glyph-cassette.svg?v=20260915logos" width="24" height="24" alt="">Cassette</a>
+      </nav>
+      <details class="more-tools no-print">
+        <summary>More tools</summary>
+        <ul class="more-tools-list">
+          <li><a href="/water/#weight">Water weight</a> <span class="now">on Water</span></li>
+          <li><a href="bottles.html">Gas bottle / cylinder picker</a> <span class="soon">soon</span></li>
+          <li><a href="hotwater.html">Hot water (gas vs electric)</a> <span class="soon">soon</span></li>
+          <li><a href="winterising.html">Winterising volume</a> <span class="soon">soon</span></li>
+          <li><a href="topup.html">Top-up / Aquaroll planner</a> <span class="soon">soon</span></li>
+        </ul>
+      </details>
+      <h1>Holding tank fill / empty planner</h1>
+      <p class="lede no-print">
+        For UK leisure motorhomes and campervans. This page uses the water
+        figures you already saved, plus your tank sizes, to show how many days
+        fresh, grey and the cassette last together — so you can plan a
+        wild-camping stretch without running dry or overflowing grey.
+      </p>
+      <p class="print-only print-meta">Planning estimate · fresh, grey and cassette days</p>
+    </header>
+
+    <main id="calculator" class="site-main">
+      <div class="layout">
+        <div class="summary-stack">
+          <div class="totals-wrap">
+            <section class="totals" aria-live="polite">
+              <article class="total-card primary">
+                <p class="label">Stretch lasts</p>
+                <p class="value"><strong id="stretch-days">0</strong><span>days</span></p>
+                <p class="hint" id="stretch-hint">The first tank to run out or fill up ends the stretch.</p>
+              </article>
+              <div class="ah-grid tank-days">
+                <article class="total-card">
+                  <p class="label">Fresh runs dry</p>
+                  <p class="value"><strong id="fresh-days">0</strong><span>days</span></p>
+                  <p class="hint" id="fresh-hint">From a full tank.</p>
+                </article>
+                <article class="total-card">
+                  <p class="label">Grey fills up</p>
+                  <p class="value"><strong id="grey-days">0</strong><span>days</span></p>
+                  <p class="hint" id="grey-hint">From an empty tank.</p>
+                </article>
+                <article class="total-card">
+                  <p class="label" id="black-label">Cassette needs empty</p>
+                  <p class="value"><strong id="black-days">0</strong><span>days</span></p>
+                  <p class="hint" id="black-hint">From an empty cassette.</p>
+                </article>
+              </div>
+            </section>
+          </div>
+
+          <section class="breakdown panel" aria-labelledby="breakdown-title">
+            <h2 id="breakdown-title">For this trip</h2>
+            <p class="field-hint" id="trip-note">Fill and empty stops for the trip length you set.</p>
+            <p class="field-hint" id="weight-note">A full fresh tank is about the same number in kilograms (1 litre ≈ 1 kg).</p>
+            <ol id="breakdown-list"></ol>
+          </section>
+        </div>
+
+        <div class="controls">
+          <section class="panel no-print" aria-labelledby="preset-title">
+            <div class="panel-head">
+              <div>
+                <h2 id="preset-title">Start from a preset</h2>
+                <p class="save-state" id="save-state">Saved on this device</p>
+              </div>
+              <button type="button" class="print-btn" id="print-sheet">Print / save PDF</button>
+            </div>
+            <div id="presets" class="preset-row" role="group" aria-label="Tank presets"></div>
+          </section>
+
+          <section class="panel habits-panel no-print from-water" aria-labelledby="water-title">
+            <h2 id="water-title">From your Water page</h2>
+            <p class="lede tight" id="water-summary">Daily fresh and grey come from the habits you saved on Water.</p>
+            <a class="add-btn next-tool-link" href="/water/">Edit water habits</a>
+          </section>
+
+          <form id="tank-form" class="panel habits-panel no-print" aria-labelledby="tanks-title">
+            <h2 id="tanks-title">Tank sizes</h2>
+            <p class="lede tight">A typical UK leisure van is about 80–100 L fresh and a similar grey tank. Many vans use a cassette of about 15–20 L rather than a large black tank.</p>
+            <div class="field-grid">
+              <label class="field" for="freshTankLitres">
+                <span>Fresh tank</span>
+                <span class="field-control">
+                  <input id="freshTankLitres" type="number" inputmode="decimal" step="any" value="100">
+                  <em>L</em>
+                </span>
+              </label>
+              <label class="field" for="greyTankLitres">
+                <span>Grey tank</span>
+                <span class="field-control">
+                  <input id="greyTankLitres" type="number" inputmode="decimal" step="any" value="90">
+                  <em>L</em>
+                </span>
+              </label>
+            </div>
+
+            <h2 class="field-heading">Toilet waste</h2>
+            <p class="field-hint" id="black-kind-hint">A cassette is a removable toilet tank you empty at a service point. A fixed black tank is plumbed in and emptied through a dump valve — less common on UK leisure vans.</p>
+            <div class="field">
+              <span>What have you got?</span>
+              <div id="black-kinds" class="choice-row" role="group" aria-label="Toilet waste type">
+                <button type="button" data-black="cassette" aria-pressed="false">Cassette</button>
+                <button type="button" data-black="fixed" aria-pressed="false">Fixed black tank</button>
+              </div>
+            </div>
+            <div class="field-grid">
+              <label class="field" for="blackTankLitres">
+                <span id="black-size-label">Cassette size</span>
+                <span class="field-control">
+                  <input id="blackTankLitres" type="number" inputmode="decimal" step="any" value="18">
+                  <em>L</em>
+                </span>
+              </label>
+              <label class="field" for="tripDays">
+                <span>Trip length to compare</span>
+                <span class="field-control">
+                  <input id="tripDays" type="number" inputmode="decimal" min="0.5" max="90" step="0.5" value="2">
+                  <em>days</em>
+                </span>
+              </label>
+            </div>
+
+            <h2 class="field-heading">Starting levels</h2>
+            <p class="field-hint">Leave these if you start with a full fresh tank and empty waste tanks. Change them if you are already part-way through.</p>
+            <div class="field-grid">
+              <label class="field" for="freshStartPercent">
+                <span>Fresh tank now</span>
+                <span class="field-control">
+                  <input id="freshStartPercent" type="number" inputmode="decimal" min="0" max="100" step="5" value="100">
+                  <em>%</em>
+                </span>
+              </label>
+              <label class="field" for="greyStartPercent">
+                <span>Grey tank now</span>
+                <span class="field-control">
+                  <input id="greyStartPercent" type="number" inputmode="decimal" min="0" max="100" step="5" value="0">
+                  <em>%</em>
+                </span>
+              </label>
+              <label class="field" for="blackStartPercent">
+                <span id="black-start-label">Cassette now</span>
+                <span class="field-control">
+                  <input id="blackStartPercent" type="number" inputmode="decimal" min="0" max="100" step="5" value="0">
+                  <em>%</em>
+                </span>
+              </label>
+            </div>
+            <p class="field-hint">These are how full each tank is at the start. 100% fresh and 0% waste is the usual “just filled and emptied” start.</p>
+          </form>
+        </div>
+      </div>
+
+      <section class="help-grid no-print" aria-labelledby="help-title">
+        <article class="help-card">
+          <h2 id="help-title">How to use</h2>
+          <ol>
+            <li>Set your habits on the Water page first, or keep those defaults.</li>
+            <li>Choose a tank preset if you want a head start, or type your real tank sizes.</li>
+            <li>Say whether you have a cassette or a fixed black tank.</li>
+            <li>Totals update as you type. Refresh the page: your numbers stay on this device.</li>
+          </ol>
+        </article>
+      </section>
+
+      <section class="help-card faq-card no-print" aria-labelledby="faq-title">
+        <h2 id="faq-title">FAQ</h2>
+        <div class="faq-list">
+          <details>
+            <summary>How do I find my tank sizes?</summary>
+            <p>
+              Check the handbook or the spec sheet for your van. There is often a figure
+              near the fresh filler, or on the maker’s website. Grey is less often printed;
+              the cassette usually has the litres on the tank itself (Thetford-style ones
+              are often about 17–20 L). The numbers on this page are typical UK leisure
+              figures — type your real litres when you know them.
+            </p>
+          </details>
+          <details>
+            <summary>Why does the grey tank fill before the fresh tank runs out?</summary>
+            <p>
+              The grey tank is often a bit smaller than the fresh tank, and most of what you
+              use — showers, washing up, laundry — becomes grey water. Drinking and cassette
+              flushes come from the fresh tank but do <strong>not</strong> go in the grey tank.
+              If grey is the smaller tank, it can still fill first. That is why a wild-camping
+              stretch often ends with “need to empty grey”, not “out of fresh water”.
+            </p>
+          </details>
+          <details>
+            <summary>Why is fresh the limit on some vans and grey on others?</summary>
+            <p>
+              It depends on tank sizes versus how you use water. Most washing becomes grey,
+              and many UK vans have a slightly smaller grey tank than fresh — so grey fills
+              first. If you drink a lot, flush a lot, or have a large grey tank, fresh can
+              run out first. “Stretch lasts” is whichever happens sooner on <em>your</em> numbers.
+            </p>
+          </details>
+          <details>
+            <summary>Do drinking and cooking fill the grey tank?</summary>
+            <p>
+              No. On this site, drinking and cooking come out of the fresh tank but do
+              <strong>not</strong> go into grey. Cassette flushes don’t either — they fill
+              the cassette. Showers, washing up and laundry do fill grey. That is why grey
+              can fill before fresh is empty, even when the tanks are a similar size.
+            </p>
+          </details>
+          <details>
+            <summary>What is the difference between a cassette and a black tank?</summary>
+            <p>
+              A <strong>cassette</strong> is a removable toilet tank, usually about 15–20 litres
+              on UK leisure vans (Thetford-style). You slide it out and empty it at a service
+              point. A <strong>fixed black tank</strong> is plumbed in, often much larger, and
+              emptied through a dump valve. Most UK coachbuilt and van conversions use a
+              cassette. This page supports both — pick the one you have and type the litres.
+            </p>
+          </details>
+          <details>
+            <summary>How often should I empty the cassette?</summary>
+            <p>
+              There is no single rule. This page uses the flush litres from Water — a
+              planning figure, not how full the cassette “feels”. A typical 15–20 L cassette
+              on a careful weekend for two can last several days; a busy week may need more
+              empties. Empty at a proper service point when you can, and before it is full.
+              Smell and site rules matter as much as the litre count. The
+              <a href="cassette.html">cassette empty planner</a> focuses on empty stops
+              on their own.
+            </p>
+          </details>
+          <details>
+            <summary>What about Aquaroll / top-up water (not in the onboard tank)?</summary>
+            <p>
+              This page only plans the onboard tanks. Extra water in an Aquaroll, jerry can
+              or from a site tap does not add to “fresh runs dry” until you pour it in
+              (or use it instead of the tank). It can stretch fresh, but grey and the
+              cassette still fill as you wash and flush. A separate top-up planner will
+              come later.
+            </p>
+          </details>
+          <details>
+            <summary>Any tip for wild camping?</summary>
+            <p>
+              Look at the “stretch lasts” figure — that is the first tank that stops you.
+              If grey is the limit, use site showers when you can, wash up in a bowl, and
+              empty grey whenever you pass a service point. If fresh is the limit, keep
+              showers short. Leave a day’s margin; real use is messier than a plan.
+            </p>
+          </details>
+          <details>
+            <summary>Does rain or a leak mess up the numbers?</summary>
+            <p>
+              They can. Rain into a grey tank, a leaky tap, or water you tip away all
+              change the real days. This calculator does not model weather or leaks.
+              Treat the figures as a starting plan and leave a margin.
+            </p>
+          </details>
+          <details>
+            <summary>Can I trust “stretch lasts” for a week off-grid?</summary>
+            <p>
+              Use it as a planning estimate, not a promise. A week off-grid only works if
+              your tanks and habits add up to about seven days — and real use is messier
+              (longer showers, extra people, a leak). Leave a day’s margin, and know where
+              you would fill or empty if you need to.
+            </p>
+          </details>
+          <details>
+            <summary>Is this a design or a guarantee?</summary>
+            <p>
+              No. This is a <strong>planning estimate</strong> only. It is not a design
+              certificate, a payload calculation, or a promise that your tanks will last.
+              Check the sizes stamped on your van, and empty grey and cassette waste at
+              proper points — never on the ground.
+            </p>
+          </details>
+        </div>
+      </section>
+
+      <aside class="disclaimer" aria-label="Disclaimer">
+        <h2>Disclaimer</h2>
+        <p>
+          This calculator is a planning estimate only. It is not a design, a payload
+          calculation, or a guarantee that your tanks will last. Check your van’s tank
+          sizes and weight limits, and dispose of grey and cassette waste at proper points.
+        </p>
+      </aside>
+
+      <section class="help-card next-tool no-print" aria-labelledby="next-tool-title">
+        <h2 id="next-tool-title">Also on this hub</h2>
+        <p>
+          Daily litres come from Water. Gas / LPG usage is on the Gas page.
+          The cassette empty planner focuses on toilet empty stops.
+        </p>
+        <a class="add-btn next-tool-link" href="/water/">Water usage</a>
+        <a class="add-btn next-tool-link" href="gas.html"><img class="tool-glyph" src="assets/glyph-gas.svg?v=20260915logos" width="28" height="28" alt="">Gas / LPG usage</a>
+        <a class="add-btn next-tool-link" href="cassette.html"><img class="tool-glyph" src="assets/glyph-cassette.svg?v=20260915logos" width="28" height="28" alt="">Cassette empties</a>
+      </section>
+
+      <section class="help-card guides-strip no-print" aria-labelledby="guides-title">
+        <h2 id="guides-title">Guides</h2>
+        <p>
+          Short reads on Motorhome Tools. They open in a new tab. They do not
+          change the numbers on this calculator.
+        </p>
+        <ul class="guides-list">
+          <li>
+            <a href="https://motorhometools.co.uk/guides/fresh-waste-tanks.html" target="_blank" rel="noopener noreferrer">
+              <span>Fresh and waste tanks</span>
+              <span class="hint">Fill, weight, empty</span>
+            </a>
+          </li>
+          <li>
+            <a href="https://motorhometools.co.uk/guides/gas-lpg-basics.html" target="_blank" rel="noopener noreferrer">
+              <span>Gas / LPG basics</span>
+              <span class="hint">Bottles and a winter note</span>
+            </a>
+          </li>
+          <li>
+            <a href="https://motorhometools.co.uk/guides/cassette-toilet-empty.html" target="_blank" rel="noopener noreferrer">
+              <span>Cassette toilet empty</span>
+              <span class="hint">When and where</span>
+            </a>
+          </li>
+          <li>
+            <a href="https://motorhometools.co.uk/guides/" target="_blank" rel="noopener noreferrer">
+              <span>All guides</span>
+              <span class="hint">Motorhome Tools</span>
+            </a>
+          </li>
+        </ul>
+      </section>
+    </main>
+
+    <footer class="site-footer no-print">
+      <p class="hub-home">
+        <a href="https://motorhometools.co.uk/">Home</a>
+      </p>
+      <nav class="footer-guides" aria-label="Guides">
+        <a href="https://motorhometools.co.uk/guides/fresh-waste-tanks.html">Tanks guide</a>
+        <a href="https://motorhometools.co.uk/guides/gas-lpg-basics.html">Gas guide</a>
+        <a href="https://motorhometools.co.uk/guides/cassette-toilet-empty.html">Cassette guide</a>
+        <a href="https://motorhometools.co.uk/guides/">All guides</a>
+      </nav>
+      <p>Water Tools for Wayne Robinson. Water, gas, tanks and cassette now; more to follow. No accounts and no server-side data. These calculators live on Motorhome Tools.</p>
+      <nav class="legal-links" aria-label="Legal">
+        <a href="https://motorhometools.co.uk/privacy.html">Privacy</a>
+        <span class="legal-sep" aria-hidden="true">·</span>
+        <a href="https://motorhometools.co.uk/cookies.html">Cookies</a>
+        <span class="legal-sep" aria-hidden="true">·</span>
+        <a href="https://motorhometools.co.uk/disclaimer.html">Disclaimer</a>
+      </nav>
+    </footer>
+
+    <div
+      class="rotate-gate no-print"
+      id="rotate-gate"
+      role="alertdialog"
+      aria-modal="true"
+      aria-hidden="true"
+      aria-labelledby="rotate-gate-title"
+      aria-describedby="rotate-gate-text"
+    >
+      <div class="rotate-gate-card">
+        <svg class="rotate-gate-icon" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+          <rect x="18" y="8" width="28" height="48" rx="5" fill="none" stroke="currentColor" stroke-width="3"></rect>
+          <circle cx="32" cy="48" r="2.2" fill="currentColor"></circle>
+          <path d="M50 28a18 18 0 0 1-28 15" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path>
+          <path d="M46 22v8h8" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+        </svg>
+        <h2 id="rotate-gate-title" tabindex="-1">Turn your phone upright</h2>
+        <p id="rotate-gate-text">This calculator is made for portrait. Rotate your phone back to keep using it.</p>
+      </div>
+    </div>
+    <script src="assets/calc.js?v=20260912home"></script>
+    <script src="assets/gas-calc.js?v=20260912home"></script>
+    <script src="assets/tank-calc.js?v=20260912home"></script>
+    <script src="assets/defaults.js?v=20260912home"></script>
+    <script src="assets/gas-defaults.js?v=20260912home"></script>
+    <script src="assets/tank-defaults.js?v=20260912home"></script>
+    <script src="assets/storage.js?v=20260912home"></script>
+    <script src="assets/ui.js?v=20260912home"></script>
+    <script src="assets/tank-app.js?v=20260912home"></script>
+  </body>
+</html>

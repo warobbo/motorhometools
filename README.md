@@ -2,14 +2,14 @@
 
 Phone-first front door for the UK leisure hubs. Home hero: **Stop guessing your van’s limits.**
 
-This is a **signpost**, not a campsite planner, not a route engine, and not another calculator.
+Payload and Tyres stay on motorhomepayload.co.uk. Power and Water calculators are same-origin pages on this site. This is not a campsite planner and not a route engine.
 
 | Tile | Goes to |
 | --- | --- |
 | Payload | [motorhomepayload.co.uk](https://motorhomepayload.co.uk/) (new tab) |
 | Tyres | [motorhomepayload.co.uk/tyres.html](https://motorhomepayload.co.uk/tyres.html) |
-| Power | [motorhomepower.co.uk](https://motorhomepower.co.uk/) |
-| Water | [motorhomewater.co.uk](https://motorhomewater.co.uk/) — gas, tanks and cassette are tabs on that hub |
+| Power | [/power/](https://motorhometools.co.uk/power/) — Daily Power, Battery, Solar, Inverter, Wire (same origin) |
+| Water | [/water/](https://motorhometools.co.uk/water/) — gas, tanks and cassette live here too (same origin) |
 | Guides | [motorhometools.co.uk/guides/](https://motorhometools.co.uk/guides/) — Payload, Power and Water articles |
 | Ask | [motorhometools.co.uk/ask/](https://motorhometools.co.uk/ask/) — same Ask box, bookmarkable |
 | Route | Coming soon (no fake maps) |
@@ -145,7 +145,7 @@ Static HTML under `guides/`. Copy locked from Wayne’s drafts; polished for UK 
 | Gas / LPG bottles and safety | `/guides/gas-lpg-basics.html` |
 | When and where to empty a cassette toilet | `/guides/cassette-toilet-empty.html` |
 
-Each page has a unique title, meta description, one H1, canonical, and Open Graph basics. Calculator links open in a new tab with `rel="noopener"`. Power CTAs use [motorhomepower.co.uk](https://motorhomepower.co.uk/) (Daily Power, Battery, Solar). Water / gas / cassette CTAs use [motorhomewater.co.uk](https://motorhomewater.co.uk/) (`tanks.html`, `gas.html`, `cassette.html`). Tyres guides stay parked (TRA). Hook-up vs off-grid is a later Power wave.
+Each page has a unique title, meta description, one H1, canonical, and Open Graph basics. Payload and Tyres still open in a new tab. Power and Water are same-origin pages: Daily Power, Battery, Solar, Inverter and Wire under [/power/](https://motorhometools.co.uk/power/); Water, Gas, Tanks and Cassette under [/water/](https://motorhometools.co.uk/water/). Tyres guides stay parked (TRA). Hook-up vs off-grid is a later Power wave.
 
 Cache-bust assets by bumping the `?v=` query in `index.html` and `guides/*.html` (see the `ASSET_VERSION` comment).
 

@@ -81,10 +81,10 @@ assert.equal(routeAsk("microwave").id, "power");
 assert.equal(routeAsk("fridge").id, "power");
 assert.equal(routeAsk("freezer").id, "power");
 assert.equal(routeAsk("coolbox").id, "power");
-assert.equal(routeAsk("microwave").href, "https://motorhomepower.co.uk/");
-assert.equal(routeAsk("fridge").href, "https://motorhomepower.co.uk/");
-assert.equal(routeAsk("freezer").href, "https://motorhomepower.co.uk/");
-assert.equal(routeAsk("coolbox").href, "https://motorhomepower.co.uk/");
+assert.equal(routeAsk("microwave").href, "/power/");
+assert.equal(routeAsk("fridge").href, "/power/");
+assert.equal(routeAsk("freezer").href, "/power/");
+assert.equal(routeAsk("coolbox").href, "/power/");
 
 assert.ok(POWER_COOLBOX_ASKS.length >= 7, "expected coolbox UK variants");
 POWER_COOLBOX_ASKS.forEach(function (row) {
@@ -93,7 +93,7 @@ POWER_COOLBOX_ASKS.forEach(function (row) {
 expectRoute("coolboxes", "power");
 expectRoute("how much battery for a coolbox", "power");
 assert.equal(routeAsk("camping coolbox").id, "power");
-assert.equal(routeAsk("camping coolbox").href, "https://motorhomepower.co.uk/");
+assert.equal(routeAsk("camping coolbox").href, "/power/");
 
 assert.ok(POWER_STARTER_ASKS.length >= 12, "expected live Power STARTER rows");
 POWER_STARTER_ASKS.forEach(function (row) {
@@ -116,7 +116,7 @@ expectRoute("how much power does a kettle use", "power");
 expectRoute("motorhome microwave", "power");
 expectRoute("campervan kettle", "power");
 assert.equal(routeAsk("how much battery for a microwave").id, "power");
-assert.equal(routeAsk("how much battery for a microwave").href, "https://motorhomepower.co.uk/");
+assert.equal(routeAsk("how much battery for a microwave").href, "/power/");
 
 assert.ok(SEARCH_PHRASE_ASKS.length >= 6, "expected a search phrase per hub");
 SEARCH_PHRASE_ASKS.forEach(function (row) {
@@ -139,14 +139,14 @@ expectRoute("wire size", "wire");
 expectRoute("fuse", "wire");
 expectRoute("12V cable", "wire");
 
-assert.equal(routeAsk("leisure battery size").href, "https://motorhomepower.co.uk/battery.html");
-assert.equal(routeAsk("what size leisure battery do I need").href, "https://motorhomepower.co.uk/battery.html");
-assert.equal(routeAsk("solar panels for a week").href, "https://motorhomepower.co.uk/solar.html");
-assert.equal(routeAsk("how many watts of solar do I need").href, "https://motorhomepower.co.uk/solar.html");
-assert.equal(routeAsk("watts of solar for leisure battery").href, "https://motorhomepower.co.uk/solar.html");
-assert.equal(routeAsk("what size solar panel for motorhome").href, "https://motorhomepower.co.uk/solar.html");
-assert.equal(routeAsk("inverter for a kettle").href, "https://motorhomepower.co.uk/inverter.html");
-assert.equal(routeAsk("electrical cable").href, "https://motorhomepower.co.uk/wire.html");
+assert.equal(routeAsk("leisure battery size").href, "/power/battery.html");
+assert.equal(routeAsk("what size leisure battery do I need").href, "/power/battery.html");
+assert.equal(routeAsk("solar panels for a week").href, "/power/solar.html");
+assert.equal(routeAsk("how many watts of solar do I need").href, "/power/solar.html");
+assert.equal(routeAsk("watts of solar for leisure battery").href, "/power/solar.html");
+assert.equal(routeAsk("what size solar panel for motorhome").href, "/power/solar.html");
+assert.equal(routeAsk("inverter for a kettle").href, "/power/inverter.html");
+assert.equal(routeAsk("electrical cable").href, "/power/wire.html");
 
 expectRoute("heater pressure", "tyres");
 expectNone("cable");
@@ -178,7 +178,7 @@ expectRoute("gas fridge", "gas");
 expectRoute("absorption fridge", "gas");
 expectRoute("3-way fridge", "gas");
 expectRoute("three way fridge", "gas");
-assert.equal(routeAsk("bbq").href, "https://motorhomewater.co.uk/gas.html");
+assert.equal(routeAsk("bbq").href, "/water/gas.html");
 assert.equal(routeAsk("gas fridge").id, "gas");
 expectRoute("holding tanks planner", "tanks");
 expectRoute("when to empty the cassette", "cassette");
@@ -194,7 +194,7 @@ expectRoute("porta potty", "cassette");
 expectRoute("portapotty", "cassette");
 expectRoute("porta-potty", "cassette");
 
-assert.equal(routeAsk("toilet").href, "https://motorhomewater.co.uk/cassette.html");
+assert.equal(routeAsk("toilet").href, "/water/cassette.html");
 assert.equal(routeAsk("cassette").id, "cassette");
 assert.equal(routeAsk("water").id, "water");
 
@@ -333,11 +333,11 @@ ASK_REGRESSION.forEach(function (row) {
 });
 
 assert.equal(routeAsk("oven").id, "power");
-assert.equal(routeAsk("oven").href, "https://motorhomepower.co.uk/");
+assert.equal(routeAsk("oven").href, "/power/");
 assert.equal(routeAsk("grill").id, "gas");
-assert.equal(routeAsk("grill").href, "https://motorhomewater.co.uk/gas.html");
+assert.equal(routeAsk("grill").href, "/water/gas.html");
 assert.equal(routeAsk("radio").id, "power");
-assert.equal(routeAsk("radio").href, "https://motorhomepower.co.uk/");
+assert.equal(routeAsk("radio").href, "/power/");
 assert.equal(routeAsk("Radio").id, "power");
 assert.equal(routeAsk("bluetooth").id, "power");
 assert.equal(routeAsk("speaker").id, "power");
