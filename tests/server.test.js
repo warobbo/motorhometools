@@ -123,6 +123,30 @@ test("GET /guides/ and Wave 2 pages return Payload, Power and Water", async func
     const home = await fetch("http://127.0.0.1:" + port + "/");
     const homeHtml = await home.text();
     assert.equal(home.status, 200);
+    assert.equal(home.headers.get("strict-transport-security"), "max-age=31536000; includeSubDomains");
+    assert.equal(home.headers.get("x-content-type-options"), "nosniff");
+    assert.equal(home.headers.get("referrer-policy"), "strict-origin-when-cross-origin");
+    assert.equal(home.headers.get("x-frame-options"), null);
+    assert.equal(home.headers.get("content-security-policy"), server.SECURITY_HEADERS["Content-Security-Policy"]);
+    assert.match(home.headers.get("content-security-policy"), /frame-ancestors 'self'/);
+    assert.match(home.headers.get("content-security-policy"), /script-src 'self'/);
+    assert.match(home.headers.get("content-security-policy"), /connect-src 'self'/);
+    assert.match(home.headers.get("content-security-policy"), /style-src-attr 'unsafe-inline'/);
+    assert.doesNotMatch(home.headers.get("content-security-policy"), /script-src[^;]*unsafe-inline/);
+    assert.doesNotMatch(home.headers.get("strict-transport-security"), /preload/);
+
+    const powerPage = await fetch("http://127.0.0.1:" + port + "/power/");
+    assert.equal(powerPage.status, 200);
+    assert.match(await powerPage.text(), /assets\/app\.js\?v=/);
+    assert.equal(powerPage.headers.get("content-security-policy"), server.SECURITY_HEADERS["Content-Security-Policy"]);
+
+    const askApi = await fetch("http://127.0.0.1:" + port + "/api/ask");
+    assert.equal(askApi.headers.get("x-content-type-options"), "nosniff");
+    assert.equal(askApi.headers.get("strict-transport-security"), "max-age=31536000; includeSubDomains");
+
+    const missing = await fetch("http://127.0.0.1:" + port + "/no-such-page");
+    assert.equal(missing.status, 404);
+    assert.equal(missing.headers.get("referrer-policy"), "strict-origin-when-cross-origin");
     assert.match(homeHtml, /<link rel="canonical" href="https:\/\/motorhometools\.co\.uk\/">/);
     assert.match(homeHtml, /<meta property="og:url" content="https:\/\/motorhometools\.co\.uk\/">/);
     assert.match(homeHtml, /<meta property="og:image" content="https:\/\/motorhometools\.co\.uk\/assets\/icon-512\.png">/);
@@ -231,13 +255,27 @@ test("public HTML home links use / and guide descriptions stay under 160 chars",
       );
     }
     const title = html.match(/<title>([^<]*)<\/title>/);
-    if (title && /solar-reality-check|gas-lpg-basics|cassette-toilet-empty/.test(filePath)) {
-      assert.ok(
-        title[1].length <= 60,
-        `${path.relative(root, filePath)} title is ${title[1].length} chars`
-      );
-    }
+    assert.ok(title, filePath);
+    const decodedTitle = title[1]
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">");
+    assert.ok(
+      decodedTitle.length <= 60,
+      `${path.relative(root, filePath)} title is ${decodedTitle.length} chars: ${decodedTitle}`
+    );
+    const h1s = html.match(/<h1[\s>]/g) || [];
+    assert.equal(h1s.length, 1, path.relative(root, filePath));
   }
+
+  const weighbridge = fs.readFileSync(path.join(root, "guides", "weighbridge-how-to.html"), "utf8");
+  const water = fs.readFileSync(path.join(root, "water", "index.html"), "utf8");
+  const weighbridgeDesc = weighbridge.match(/<meta name="description" content="([^"]*)"/)[1];
+  const waterDesc = water.match(/<meta name="description" content="([^"]*)"/)[1];
+  assert.ok(weighbridgeDesc.length <= 155, `weighbridge description is ${weighbridgeDesc.length}`);
+  assert.ok(waterDesc.length <= 155, `water description is ${waterDesc.length}`);
+  assert.match(weighbridgeDesc, /Empty vs Loaded/);
+  assert.match(waterDesc, /grey water/);
 });
 
 function jsonLdBlocks(html) {
@@ -268,17 +306,30 @@ test("homepage JSON-LD is an honest WebSite hub and Wave B OG tags stay", functi
   assert.equal(blocks.length, 1);
   const data = blocks[0];
   assert.equal(data["@context"], "https://schema.org");
-  assert.equal(data["@type"], "WebSite");
-  assert.equal(data.name, "Motorhome Tools");
-  assert.equal(data.url, "https://motorhometools.co.uk/");
-  assert.match(data.description, /hub of free UK calculators/);
-  assert.match(data.description, /payload, power and water/);
-  assert.equal(data.inLanguage, "en-GB");
-  assert.equal(data.isAccessibleForFree, true);
-  assert.equal(data.author && data.author.name, "Wayne Robinson");
-  assert.equal(data.aggregateRating, undefined);
-  assert.equal(data.review, undefined);
-  assert.equal(data.offers, undefined);
+  assert.ok(Array.isArray(data["@graph"]));
+  const website = data["@graph"].find(function (node) { return node["@type"] === "WebSite"; });
+  const org = data["@graph"].find(function (node) { return node["@type"] === "Organization"; });
+  assert.ok(website);
+  assert.ok(org);
+  assert.equal(website["@id"], "https://motorhometools.co.uk/#website");
+  assert.equal(website.name, "Motorhome Tools");
+  assert.equal(website.url, "https://motorhometools.co.uk/");
+  assert.match(website.description, /hub of free UK calculators/);
+  assert.match(website.description, /payload, power and water/);
+  assert.equal(website.inLanguage, "en-GB");
+  assert.equal(website.isAccessibleForFree, true);
+  assert.equal(website.author && website.author.name, "Wayne Robinson");
+  assert.equal(website.publisher && website.publisher["@id"], "https://motorhometools.co.uk/#organization");
+  assert.equal(website.aggregateRating, undefined);
+  assert.equal(website.review, undefined);
+  assert.equal(website.offers, undefined);
+  assert.equal(org["@id"], "https://motorhometools.co.uk/#organization");
+  assert.equal(org.name, "Motorhome Tools");
+  assert.equal(org.url, "https://motorhometools.co.uk/");
+  assert.equal(org.logo && org.logo.url, "https://motorhometools.co.uk/assets/icon-512.png");
+  assert.equal(org.sameAs, undefined);
+  assert.equal(org.aggregateRating, undefined);
+  assert.doesNotMatch(html, /"sameAs"/);
 });
 
 test("guide pages have BreadcrumbList that matches the visible crumbs", function () {
@@ -312,5 +363,52 @@ test("guide pages have BreadcrumbList that matches the visible crumbs", function
       assert.equal(items[2].item, "https://motorhometools.co.uk/guides/" + name);
     }
     assert.doesNotMatch(html, /aggregateRating|reviewCount|ratingValue/);
+  }
+});
+
+test("decorative SVG icons keep an empty alt and are hidden; logos stay labelled", function () {
+  const root = path.join(__dirname, "..");
+  const htmlFiles = walkHtmlFiles(root, []);
+  for (const filePath of htmlFiles) {
+    const html = fs.readFileSync(filePath, "utf8");
+    const rel = path.relative(root, filePath);
+    const imgs = html.match(/<img\b[^>]*>/g) || [];
+    assert.ok(imgs.length > 0, rel);
+    for (const tag of imgs) {
+      const altMatch = tag.match(/\balt="([^"]*)"/);
+      assert.ok(altMatch, rel + " image missing alt: " + tag);
+      const alt = altMatch[1];
+      if (alt === "") {
+        assert.match(tag, /aria-hidden="true"/, rel + " decorative icon: " + tag);
+        assert.match(tag, /\.svg/, rel + " " + tag);
+      } else {
+        assert.doesNotMatch(tag, /aria-hidden="true"/, rel + " labelled image: " + tag);
+        assert.ok(!/^(power|water|payload|tyres)$/i.test(alt), rel + " keyword-only alt: " + alt);
+      }
+    }
+  }
+});
+
+test("live water calculators expose a light WebApplication without ratings or prices", function () {
+  const root = path.join(__dirname, "..");
+  const pages = {
+    "gas.html": "https://motorhometools.co.uk/water/gas.html",
+    "tanks.html": "https://motorhometools.co.uk/water/tanks.html",
+    "cassette.html": "https://motorhometools.co.uk/water/cassette.html"
+  };
+  for (const name of Object.keys(pages)) {
+    const html = fs.readFileSync(path.join(root, "water", name), "utf8");
+    const blocks = jsonLdBlocks(html);
+    assert.equal(blocks.length, 1, name);
+    const data = blocks[0];
+    assert.equal(data["@type"], "WebApplication", name);
+    assert.equal(data.url, pages[name], name);
+    assert.equal(data.isAccessibleForFree, true, name);
+    assert.equal(data.applicationCategory, "UtilitiesApplication", name);
+    assert.ok(data.name && data.description, name);
+    assert.equal(data.aggregateRating, undefined, name);
+    assert.equal(data.offers, undefined, name);
+    assert.equal(data.review, undefined, name);
+    assert.doesNotMatch(html, /FAQPage|aggregateRating|priceCurrency/);
   }
 });
