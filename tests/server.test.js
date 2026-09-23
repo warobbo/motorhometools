@@ -33,6 +33,8 @@ test("does not expose server internals", function () {
   assert.equal(resolvePublicFile("/lib/copilot.js"), null);
   assert.equal(resolvePublicFile("/api/ask.js"), null);
   assert.equal(resolvePublicFile("/COPILOT-ASK.md"), null);
+  assert.equal(resolvePublicFile("/dist/assets/copilot.js"), null);
+  assert.equal(resolvePublicFile("/scripts/minify-client-js.js"), null);
 });
 
 const WAVE2_GUIDES = [
@@ -44,13 +46,26 @@ const WAVE2_GUIDES = [
   "/guides/cassette-toilet-empty.html"
 ];
 
-test("serves the where-you-put-it diagram asset", function () {
+test("serves the where-you-put-it diagram asset under 200KB", function () {
   const filePath = resolvePublicFile("/guides/assets/where-you-put-it-diagram.png");
+  const webpPath = resolvePublicFile("/guides/assets/where-you-put-it-diagram.webp");
   assert.equal(
     filePath,
     path.join(__dirname, "..", "guides", "assets", "where-you-put-it-diagram.png")
   );
+  assert.equal(
+    webpPath,
+    path.join(__dirname, "..", "guides", "assets", "where-you-put-it-diagram.webp")
+  );
   assert.equal(fs.existsSync(filePath), true);
+  assert.equal(fs.existsSync(webpPath), true);
+  const limit = 200 * 1024;
+  const pngBytes = fs.statSync(filePath).size;
+  const webpBytes = fs.statSync(webpPath).size;
+  assert.ok(pngBytes < limit, "png is " + pngBytes + " bytes");
+  assert.ok(webpBytes < limit, "webp is " + webpBytes + " bytes");
+  assert.ok(webpBytes < pngBytes);
+  assert.deepEqual(pngSize(filePath), { width: 1080, height: 1533 });
 });
 
 test("GET /guides/ and Wave 2 pages return Payload, Power and Water", async function () {
@@ -81,7 +96,11 @@ test("GET /guides/ and Wave 2 pages return Payload, Power and Water", async func
     assert.match(indexHtml, /Rear axle overload: under MAM but over on one axle/);
     assert.match(placementHtml, /Example figures only/);
     assert.match(placementHtml, /Three example loads/);
-    assert.match(placementHtml, /where-you-put-it-diagram\.png\?v=20260915ai/);
+    assert.match(placementHtml, /where-you-put-it-diagram\.webp\?v=20260923perf/);
+    assert.match(placementHtml, /where-you-put-it-diagram\.png\?v=20260923perf/);
+    assert.match(placementHtml, /rel="preload" as="image"/);
+    assert.match(placementHtml, /fetchpriority="high"/);
+    assert.doesNotMatch(placementHtml, /where-you-put-it-diagram[^>]*loading="lazy"/);
     assert.match(placementHtml, /guide-figure--diagram/);
     assert.match(placementHtml, /front axle 1,550 kg/);
     assert.match(placementHtml, /1,550/);
@@ -134,6 +153,27 @@ test("GET /guides/ and Wave 2 pages return Payload, Power and Water", async func
     assert.match(home.headers.get("content-security-policy"), /style-src-attr 'unsafe-inline'/);
     assert.doesNotMatch(home.headers.get("content-security-policy"), /script-src[^;]*unsafe-inline/);
     assert.doesNotMatch(home.headers.get("strict-transport-security"), /preload/);
+    assert.equal(home.headers.get("cache-control"), "no-cache");
+    assert.ok(home.headers.get("etag"));
+    const homeAgain = await fetch("http://127.0.0.1:" + port + "/", {
+      headers: { "If-None-Match": home.headers.get("etag") }
+    });
+    assert.equal(homeAgain.status, 304);
+    assert.equal(homeAgain.headers.get("cache-control"), "no-cache");
+
+    const css = await fetch("http://127.0.0.1:" + port + "/assets/styles.css?v=20260922home");
+    assert.equal(css.status, 200);
+    assert.equal(css.headers.get("content-type"), "text/css; charset=utf-8");
+    assert.equal(css.headers.get("cache-control"), "public, max-age=31536000, immutable");
+
+    const logo = await fetch("http://127.0.0.1:" + port + "/assets/logo.svg?v=20260915logo");
+    assert.equal(logo.status, 200);
+    assert.equal(logo.headers.get("cache-control"), "public, max-age=31536000, immutable");
+
+    const script = await fetch("http://127.0.0.1:" + port + "/assets/router.js?v=20260923hub");
+    assert.equal(script.status, 200);
+    assert.equal(script.headers.get("cache-control"), "public, max-age=31536000, immutable");
+    assert.notEqual(script.headers.get("cache-control"), home.headers.get("cache-control"));
 
     const powerPage = await fetch("http://127.0.0.1:" + port + "/power/");
     assert.equal(powerPage.status, 200);
@@ -181,6 +221,7 @@ test("GET /guides/ and Wave 2 pages return Payload, Power and Water", async func
     const sitemap = await fetch("http://127.0.0.1:" + port + "/sitemap.xml");
     const sitemapXml = await sitemap.text();
     assert.equal(sitemap.status, 200);
+    assert.equal(sitemap.headers.get("cache-control"), "public, max-age=300");
     assert.match(sitemapXml, /<loc>https:\/\/motorhometools\.co\.uk\/ask\/<\/loc>/);
   } finally {
     await new Promise(function (resolve) { server.close(resolve); });
@@ -414,4 +455,123 @@ test("live water calculators expose a light WebApplication without ratings or pr
     assert.equal(data.review, undefined, name);
     assert.doesNotMatch(html, /FAQPage|aggregateRating|priceCurrency/);
   }
+});
+
+function imgTags(html) {
+  return html.match(/<img\b[^>]*>/g) || [];
+}
+
+test("hero images are preloaded and below-fold icons are lazy", function () {
+  const root = path.join(__dirname, "..");
+  const home = fs.readFileSync(path.join(root, "index.html"), "utf8");
+  assert.match(home, /<link rel="preload" as="image" href="assets\/payload\.svg\?v=20260915logo">/);
+  const payload = imgTags(home).find(function (tag) { return tag.includes("payload.svg"); });
+  const homeLogo = imgTags(home).find(function (tag) { return tag.includes("logo.svg"); });
+  assert.match(payload, /fetchpriority="high"/);
+  assert.doesNotMatch(payload, /loading="lazy"/);
+  assert.doesNotMatch(homeLogo, /loading="lazy"/);
+  for (const name of ["power.svg", "water.svg", "tyres.svg"]) {
+    const tag = imgTags(home).find(function (item) { return item.includes(name); });
+    assert.match(tag, /loading="lazy"/, name);
+  }
+
+  const powerPages = [
+    "power/index.html",
+    "power/battery.html",
+    "power/solar.html",
+    "power/inverter.html",
+    "power/wire.html"
+  ];
+  for (const rel of powerPages) {
+    const html = fs.readFileSync(path.join(root, rel), "utf8");
+    assert.match(html, /<link rel="preload" as="image" href="assets\/logo\.svg\?v=20260916glyphs">/, rel);
+    for (const tag of imgTags(html)) {
+      if (tag.includes("logo.svg")) {
+        assert.match(tag, /fetchpriority="high"/, rel);
+        assert.doesNotMatch(tag, /loading="lazy"/, rel);
+      }
+      if (tag.includes("tool-glyph") || tag.includes("glyph-")) {
+        assert.match(tag, /loading="lazy"/, rel + " " + tag);
+      }
+    }
+  }
+
+  const waterPages = [
+    "water/index.html",
+    "water/gas.html",
+    "water/tanks.html",
+    "water/cassette.html",
+    "water/hotwater.html",
+    "water/topup.html",
+    "water/bottles.html",
+    "water/winterising.html"
+  ];
+  for (const rel of waterPages) {
+    const html = fs.readFileSync(path.join(root, rel), "utf8");
+    assert.match(html, /<link rel="preload" as="image" href="assets\/logo\.svg\?v=20260915logos">/, rel);
+    for (const tag of imgTags(html)) {
+      if (tag.includes("logo.svg")) {
+        assert.match(tag, /fetchpriority="high"/, rel);
+        assert.doesNotMatch(tag, /loading="lazy"/, rel);
+      }
+      if (tag.includes("tool-glyph") || tag.includes("glyph-")) {
+        assert.match(tag, /loading="lazy"/, rel + " " + tag);
+      }
+    }
+  }
+});
+
+test("production build minifies client JS and the server serves that file", function () {
+  const { execFileSync } = require("node:child_process");
+  const { build } = require("../scripts/minify-client-js");
+  const root = path.join(__dirname, "..");
+  const stats = build();
+  assert.ok(stats.files >= 20, "expected client scripts, got " + stats.files);
+  assert.ok(
+    stats.outBytes < stats.srcBytes * 0.75,
+    stats.outBytes + " is not smaller than 75% of " + stats.srcBytes
+  );
+
+  const builtCopilot = fs.readFileSync(path.join(root, "dist", "assets", "copilot.js"));
+  const sourceCopilot = fs.readFileSync(path.join(root, "assets", "copilot.js"));
+  assert.ok(builtCopilot.length < sourceCopilot.length * 0.7);
+  assert.doesNotMatch(builtCopilot.toString("utf8"), /Payload-first co-pilot/);
+  assert.equal(fs.existsSync(path.join(root, "dist", "assets", "copilot.js.map")), false);
+
+  function walkJs(dir, files) {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) walkJs(full, files);
+      else if (entry.name.endsWith(".js")) files.push(full);
+      else assert.equal(entry.name.endsWith(".map"), false, full);
+    }
+    return files;
+  }
+  const builtFiles = walkJs(path.join(root, "dist"), []);
+  assert.equal(builtFiles.length, stats.files);
+  for (const file of builtFiles) {
+    execFileSync(process.execPath, ["--check", file]);
+  }
+
+  const copilot = require(path.join(root, "dist", "assets", "copilot.js"));
+  const answer = copilot.handleAsk("I've got 720 kg payload — can I take 2 e-bikes at 22 kg each?");
+  assert.equal(answer.handled, true);
+  assert.equal(answer.usedKg, 44);
+
+  const { routeAsk } = require(path.join(root, "dist", "assets", "router.js"));
+  assert.equal(routeAsk("leisure battery size").href, "/power/battery.html");
+  assert.equal(routeAsk("fridge").href, "/power/");
+
+  const calc = require(path.join(root, "dist", "power", "assets", "calc.js"));
+  assert.equal(calc.applianceWh({ watts: 45, hours: 10, qty: 1, enabled: true }), 450);
+
+  const gas = require(path.join(root, "dist", "water", "assets", "gas-calc.js"));
+  assert.equal(typeof gas.calcGas, "function");
+  const storage = require(path.join(root, "dist", "water", "assets", "storage.js"));
+  assert.equal(typeof storage.loadProfile, "function");
+
+  assert.equal(
+    resolvePublicFile("/assets/copilot.js"),
+    path.join(root, "dist", "assets", "copilot.js")
+  );
 });

@@ -34,6 +34,8 @@ npm start
 
 Open [http://127.0.0.1:4173/](http://127.0.0.1:4173/). Folders such as `/guides/` and `/ask/` serve `index.html` (same as the old static site).
 
+`npm run build` writes minified client JavaScript to `dist/`. After that, `npm start` serves those files. Without `dist/`, it serves the readable source. On Render, `NODE_ENV=production` builds `dist/` at startup as well.
+
 Keyword checks and Ask capture:
 
 ```bash
@@ -72,7 +74,7 @@ This is no longer a static-only site. `/api/ask` has to run in a Node process, s
 3. Connect `warobbo/motorhometools`, branch `main`.
 4. Settings:
    - **Runtime:** Node
-   - **Build Command:** `npm install`
+   - **Build Command:** `npm install && npm run build`
    - **Start Command:** `npm start`
    - **Instance:** a **paid** web service (Starter or above). Free web services cannot keep a custom domain.
 5. Environment (Dashboard → the new web service → **Environment**):
@@ -147,7 +149,7 @@ Static HTML under `guides/`. Copy locked from Wayne’s drafts; polished for UK 
 
 Each page has a unique title, meta description, one H1, canonical, and Open Graph basics. Payload and Tyres still open in a new tab. Power and Water are same-origin pages: Daily Power, Battery, Solar, Inverter and Wire under [/power/](https://motorhometools.co.uk/power/); Water, Gas, Tanks and Cassette under [/water/](https://motorhometools.co.uk/water/). Tyres guides stay parked (TRA). Hook-up vs off-grid is a later Power wave.
 
-Cache-bust assets by bumping the `?v=` query in `index.html` and `guides/*.html` (see the `ASSET_VERSION` comment).
+Cache-bust assets by bumping the `?v=` query in the HTML (see the `ASSET_VERSION` comment). Static files are cached for a year as `immutable`, so a changed CSS, JS, image or icon is invisible until that query changes.
 
 ## Security headers
 
@@ -170,6 +172,28 @@ curl -sI https://motorhometools.co.uk/
 The homepage source should include `WebSite` and `Organization` JSON-LD. `/power/` and `/water/` should still load their calculator scripts.
 
 If Cloudflare Rocket Loader, Email Obfuscation, or Web Analytics is turned on later, those injected scripts will be blocked until the policy lists them.
+
+## Caching
+
+`server.js` sets `Cache-Control` on this Node process. Render is the origin (`motorhometools-ask`). Do not rely on a Cloudflare cache rule for this.
+
+| Response | `Cache-Control` |
+| --- | --- |
+| CSS, JavaScript, images, icons, fonts, SVG | `public, max-age=31536000, immutable` |
+| HTML | `no-cache`, with an `ETag` so the browser revalidates |
+| `robots.txt`, `sitemap.xml` | `public, max-age=300` |
+
+The `?v=` query is the cache buster. The server strips it before reading the file. Browsers cache the full URL, so immutable and `?v=` work together. HTML is not given a year-long cache.
+
+## Minified JavaScript
+
+Browser scripts in `assets/`, `power/assets/` and `water/assets/` are minified with esbuild into `dist/` (no source maps, not bundled). Tests keep requiring the readable source. When `dist/` exists, the server serves those files at the same URLs the HTML already uses (`assets/copilot.js?v=…` and the calculator scripts).
+
+```bash
+npm run build
+```
+
+Render build command: `npm install && npm run build`, then `npm start`. `NODE_ENV=production` also runs that minify step when `node server.js` starts, so a service whose dashboard build command is still only `npm install` still ships minified JavaScript. esbuild is a normal dependency because Render sets `NODE_ENV=production` during install and would skip a devDependency.
 
 ## Out of scope
 

@@ -46,6 +46,7 @@
     <link rel="icon" href="../assets/favicon-32.png?v=20260915logo" type="image/png" sizes="32x32">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png?v=20260915logo" sizes="180x180">
     <link rel="icon" href="../assets/icon-512.png?v=20260915logo" type="image/png" sizes="512x512">
+    <link rel="preload" as="image" href="./assets/where-you-put-it-diagram.webp?v=20260923perf" type="image/webp">
     <!-- ASSET_VERSION=20260915ac — bump this query on CSS/JS to force-refresh cached assets. -->
     <link rel="stylesheet" href="../assets/styles.css?v=20260915ac">
   </head>
@@ -73,11 +74,15 @@
 
         <h2>Three example loads</h2>
         <figure class="guide-figure guide-figure--diagram">
-          <img
-            src="./assets/where-you-put-it-diagram.png?v=20260915ai"
-            width="1080"
-            height="1533"
-            alt="Example-only diagram of a realistic coachbuilt motorhome with large kilogramme figures. 1 Empty motorhome: front axle 1,550 kg, rear axle 1,850 kg, total 3,400 kg, within limits. 2 Typical load: front 1,450 kg (−100 kg), rear 1,950 kg (+100 kg), total 3,400 kg, still OK. 3 After extras with bikes on a rear rack: front 1,400 kg (−150 kg), rear 2,100 kg (+250 kg), total 3,500 kg, rear axle overloaded. Not your van.">
+          <picture>
+            <source srcset="./assets/where-you-put-it-diagram.webp?v=20260923perf" type="image/webp">
+            <img
+              src="./assets/where-you-put-it-diagram.png?v=20260923perf"
+              width="1080"
+              height="1533"
+              fetchpriority="high"
+              alt="Example-only diagram of a realistic coachbuilt motorhome with large kilogramme figures. 1 Empty motorhome: front axle 1,550 kg, rear axle 1,850 kg, total 3,400 kg, within limits. 2 Typical load: front 1,450 kg (−100 kg), rear 1,950 kg (+100 kg), total 3,400 kg, still OK. 3 After extras with bikes on a rear rack: front 1,400 kg (−150 kg), rear 2,100 kg (+250 kg), total 3,500 kg, rear axle overloaded. Not your van.">
+          </picture>
           <figcaption>Example figures only. They are not your van. Read your VIN plate and a Loaded weighbridge ticket for real numbers.</figcaption>
         </figure>
 
