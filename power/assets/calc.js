@@ -47,6 +47,20 @@
   var MAX_WIRING_LENGTH_M = 50;
   var MAX_WIRING_AMPS = 600;
   var MAX_WIRING_WATTS = 20000;
+  // Daily Power appliance inputs on /power/. The form must show these
+  // limits when a typed value is outside the range. Do not clamp the
+  // Wh/day figure while leaving a higher number in the field.
+  var MIN_APPLIANCE_WATTS = 0;
+  var MAX_APPLIANCE_WATTS = 20000;
+  var MIN_APPLIANCE_HOURS = 0;
+  var MAX_APPLIANCE_HOURS = 24;
+  var MIN_APPLIANCE_QTY = 1;
+  var MAX_APPLIANCE_QTY = 99;
+  var APPLIANCE_FIELD_LIMITS = {
+    watts: { min: MIN_APPLIANCE_WATTS, max: MAX_APPLIANCE_WATTS, round: false, fallback: 0 },
+    hours: { min: MIN_APPLIANCE_HOURS, max: MAX_APPLIANCE_HOURS, round: false, fallback: 0 },
+    qty: { min: MIN_APPLIANCE_QTY, max: MAX_APPLIANCE_QTY, round: true, fallback: 1 },
+  };
   var DEFAULT_FUSE_MARGIN = 1.1;
   // Small sizes stay close to everyday leisure/chassis cable. From ~25 mm² up,
   // ratings are thick flexible copper battery / welding-style inverter cable.
@@ -91,12 +105,87 @@
     return {
       id: raw && raw.id ? String(raw.id) : "",
       name: raw && raw.name ? String(raw.name) : "",
-      watts: clamp(toNumber(raw && raw.watts, 0), 0, 20000),
-      hours: clamp(toNumber(raw && raw.hours, 0), 0, 24),
-      qty: clamp(Math.round(toNumber(raw && raw.qty, 1)), 1, 99),
+      watts: clamp(toNumber(raw && raw.watts, 0), MIN_APPLIANCE_WATTS, MAX_APPLIANCE_WATTS),
+      hours: clamp(toNumber(raw && raw.hours, 0), MIN_APPLIANCE_HOURS, MAX_APPLIANCE_HOURS),
+      qty: clamp(Math.round(toNumber(raw && raw.qty, 1)), MIN_APPLIANCE_QTY, MAX_APPLIANCE_QTY),
       enabled: !!(raw && raw.enabled),
       custom: !!(raw && raw.custom),
     };
+  }
+
+  function formatLimitNumber(value) {
+    return new Intl.NumberFormat("en-GB", { maximumFractionDigits: 2 }).format(value);
+  }
+
+  /**
+   * Read one Daily Power field. `limited` is true only when a real number
+   * falls outside the documented min/max. Empty or non-numeric input uses
+   * the fallback and is not a limit message (so clearing a field can stay blank).
+   */
+  function readApplianceField(field, raw) {
+    var spec = APPLIANCE_FIELD_LIMITS[field];
+    if (!spec) {
+      return { value: toNumber(raw, 0), limited: false, bound: "", min: 0, max: 0 };
+    }
+    var parsed = typeof raw === "number" ? raw : parseFloat(raw);
+    var finite = Number.isFinite(parsed);
+    var n = finite ? parsed : spec.fallback;
+    if (spec.round) n = Math.round(n);
+    var bound = "";
+    if (finite && n > spec.max) bound = "max";
+    else if (finite && n < spec.min) bound = "min";
+    return {
+      value: clamp(n, spec.min, spec.max),
+      limited: bound !== "",
+      bound: bound,
+      min: spec.min,
+      max: spec.max,
+    };
+  }
+
+  function applianceFieldLimitMessage(field, reading) {
+    if (!reading || !reading.limited) return "";
+    var limit = reading.bound === "min" ? reading.min : reading.max;
+    var shown = formatLimitNumber(limit);
+    var floor = reading.bound === "min";
+    if (field === "watts") {
+      return (
+        (floor ? "Minimum is " : "Maximum is ") +
+        shown +
+        " W. This row uses " +
+        shown +
+        " W."
+      );
+    }
+    if (field === "hours") {
+      return floor
+        ? "Minimum is " + shown + " hours. This row uses " + shown + " h."
+        : "Maximum is " + shown + " hours a day. This row uses " + shown + " h.";
+    }
+    if (field === "qty") {
+      return floor
+        ? "Minimum quantity is " + shown + ". This row uses " + shown + "."
+        : "Maximum quantity is " + shown + ". This row uses " + shown + ".";
+    }
+    return "";
+  }
+
+  function applianceLimitSummary() {
+    return (
+      "Each appliance stays within " +
+      formatLimitNumber(MIN_APPLIANCE_WATTS) +
+      "–" +
+      formatLimitNumber(MAX_APPLIANCE_WATTS) +
+      " W, " +
+      formatLimitNumber(MIN_APPLIANCE_HOURS) +
+      "–" +
+      formatLimitNumber(MAX_APPLIANCE_HOURS) +
+      " hours a day, and quantity " +
+      formatLimitNumber(MIN_APPLIANCE_QTY) +
+      "–" +
+      formatLimitNumber(MAX_APPLIANCE_QTY) +
+      ". A number outside that range is brought back to the limit, with a message, and Wh/day uses that limit."
+    );
   }
 
   function applianceWh(appliance) {
@@ -739,6 +828,15 @@
     toNumber: toNumber,
     clamp: clamp,
     normaliseAppliance: normaliseAppliance,
+    MIN_APPLIANCE_WATTS: MIN_APPLIANCE_WATTS,
+    MAX_APPLIANCE_WATTS: MAX_APPLIANCE_WATTS,
+    MIN_APPLIANCE_HOURS: MIN_APPLIANCE_HOURS,
+    MAX_APPLIANCE_HOURS: MAX_APPLIANCE_HOURS,
+    MIN_APPLIANCE_QTY: MIN_APPLIANCE_QTY,
+    MAX_APPLIANCE_QTY: MAX_APPLIANCE_QTY,
+    readApplianceField: readApplianceField,
+    applianceFieldLimitMessage: applianceFieldLimitMessage,
+    applianceLimitSummary: applianceLimitSummary,
     applianceWh: applianceWh,
     applyInverterLoss: applyInverterLoss,
     calcTotals: calcTotals,

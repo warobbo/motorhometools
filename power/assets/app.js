@@ -28,6 +28,7 @@
     inverterLoss: document.getElementById("inverter-loss"),
     saveState: document.getElementById("save-state"),
     addCustom: document.getElementById("add-custom"),
+    applianceLimits: document.getElementById("appliance-limits"),
     presets: document.getElementById("presets"),
     printSheet: document.getElementById("print-sheet"),
   };
@@ -224,9 +225,17 @@
       remove +
       "</div>" +
       '<div class="appliance-fields">' +
-      field(item, "watts", "Watts", "W", 0, 20000, item.watts % 1 === 0 ? 1 : 0.1) +
-      field(item, "hours", "Hours / day", "h", 0, 24, 0.05) +
-      field(item, "qty", "Quantity", "×", 1, 99, 1) +
+      field(
+        item,
+        "watts",
+        "Watts",
+        "W",
+        calc.MIN_APPLIANCE_WATTS,
+        calc.MAX_APPLIANCE_WATTS,
+        item.watts % 1 === 0 ? 1 : 0.1
+      ) +
+      field(item, "hours", "Hours / day", "h", calc.MIN_APPLIANCE_HOURS, calc.MAX_APPLIANCE_HOURS, 0.05) +
+      field(item, "qty", "Quantity", "×", calc.MIN_APPLIANCE_QTY, calc.MAX_APPLIANCE_QTY, 1) +
       "</div>" +
       "</article>"
     );
@@ -276,7 +285,54 @@
     syncPresetSelection();
   }
 
-  function updateField(id, field, value) {
+  function syncFieldLimit(input, field, reading, fromChange) {
+    var card = input.closest(".appliance-card");
+    if (!card) return;
+    var noteId = "limit-" + input.id;
+    var note = document.getElementById(noteId);
+
+    if (!reading.limited) {
+      // Writing the capped number back can re-enter this handler. Keep the note.
+      if (input.getAttribute("data-limit-sync") === "1") return;
+      // Blur fires change with the already-capped value. Keep the explanation.
+      if (fromChange && note) return;
+      input.removeAttribute("aria-invalid");
+      if (input.getAttribute("aria-describedby") === noteId) {
+        input.removeAttribute("aria-describedby");
+      }
+      if (note) note.remove();
+      return;
+    }
+
+    var shown = String(reading.value);
+    if (input.value !== shown) {
+      input.setAttribute("data-limit-sync", "1");
+      input.value = shown;
+      input.removeAttribute("data-limit-sync");
+    }
+
+    input.setAttribute("aria-invalid", "true");
+    input.setAttribute("aria-describedby", noteId);
+
+    if (!note) {
+      var box = card.querySelector(".field-limits");
+      if (!box) {
+        box = document.createElement("div");
+        box.className = "field-limits";
+        var fields = card.querySelector(".appliance-fields");
+        if (fields) fields.insertAdjacentElement("afterend", box);
+        else card.appendChild(box);
+      }
+      note = document.createElement("p");
+      note.id = noteId;
+      note.className = "field-limit";
+      note.setAttribute("role", "status");
+      box.appendChild(note);
+    }
+    note.textContent = calc.applianceFieldLimitMessage(field, reading);
+  }
+
+  function updateField(id, field, value, input, fromChange) {
     var item = findAppliance(id);
     if (!item) return;
 
@@ -284,12 +340,10 @@
       item.enabled = !!value;
     } else if (field === "name") {
       item.name = String(value).slice(0, 48);
-    } else if (field === "qty") {
-      item.qty = calc.clamp(Math.round(calc.toNumber(value, 1)), 1, 99);
-    } else if (field === "hours") {
-      item.hours = calc.clamp(calc.toNumber(value, 0), 0, 24);
-    } else if (field === "watts") {
-      item.watts = calc.clamp(calc.toNumber(value, 0), 0, 20000);
+    } else if (field === "qty" || field === "hours" || field === "watts") {
+      var reading = calc.readApplianceField(field, value);
+      item[field] = reading.value;
+      if (input) syncFieldLimit(input, field, reading, !!fromChange);
     }
 
     clearActivePreset();
@@ -325,7 +379,7 @@
       return;
     }
 
-    updateField(id, fieldName, target.value);
+    updateField(id, fieldName, target.value, target, event.type === "change");
   }
 
   function onListClick(event) {
@@ -415,6 +469,10 @@
     } else {
       setTimeout(run, 0);
     }
+  }
+
+  if (els.applianceLimits) {
+    els.applianceLimits.textContent = calc.applianceLimitSummary();
   }
 
   renderPresetButtons();
