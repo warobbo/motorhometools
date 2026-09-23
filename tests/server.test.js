@@ -369,7 +369,21 @@ test("guide pages have BreadcrumbList that matches the visible crumbs", function
   }
 });
 
-test("decorative SVG icons keep an empty alt and are hidden; logos stay labelled", function () {
+function decodeAttr(value) {
+  return value
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">");
+}
+
+function isHomePowerWater(rel) {
+  const norm = rel.split(path.sep).join("/");
+  return norm === "index.html" || norm.startsWith("power/") || norm.startsWith("water/");
+}
+
+test("home, power and water images have no empty alt", function () {
   const root = path.join(__dirname, "..");
   const htmlFiles = walkHtmlFiles(root, []);
   for (const filePath of htmlFiles) {
@@ -377,19 +391,43 @@ test("decorative SVG icons keep an empty alt and are hidden; logos stay labelled
     const rel = path.relative(root, filePath);
     const imgs = html.match(/<img\b[^>]*>/g) || [];
     assert.ok(imgs.length > 0, rel);
+    const onSurface = isHomePowerWater(rel);
     for (const tag of imgs) {
       const altMatch = tag.match(/\balt="([^"]*)"/);
       assert.ok(altMatch, rel + " image missing alt: " + tag);
       const alt = altMatch[1];
-      if (alt === "") {
-        assert.match(tag, /aria-hidden="true"/, rel + " decorative icon: " + tag);
+      const hidden = /aria-hidden="true"/.test(tag);
+      if (alt.trim() === "") {
+        assert.equal(onSurface, false, rel + " empty alt: " + tag);
+        assert.equal(hidden, true, rel + " decorative icon: " + tag);
         assert.match(tag, /\.svg/, rel + " " + tag);
+      } else if (hidden) {
+        assert.doesNotMatch(alt.trim(), /^icon$/i, rel + " generic icon alt: " + tag);
       } else {
-        assert.doesNotMatch(tag, /aria-hidden="true"/, rel + " labelled image: " + tag);
         assert.ok(!/^(power|water|payload|tyres)$/i.test(alt), rel + " keyword-only alt: " + alt);
       }
     }
+
+    if (!onSurface) continue;
+    assert.doesNotMatch(html, /<img\b[^>]*\balt="\s*"/, rel + " whitespace alt");
+    const glyphs = html.matchAll(
+      /<a\b[^>]*>\s*(<img\b[^>]*class="tool-glyph"[^>]*>)\s*([^<]+)/g
+    );
+    for (const match of glyphs) {
+      const tag = match[1];
+      const altMatch = tag.match(/\balt="([^"]*)"/);
+      const adjacent = decodeAttr(match[2]).replace(/\s+/g, " ").trim();
+      const alt = decodeAttr(altMatch[1]).replace(/\s+/g, " ").trim();
+      assert.equal(alt, adjacent, rel + " glyph alt: " + tag);
+      assert.match(tag, /aria-hidden="true"/, rel + " glyph stays hidden: " + tag);
+    }
   }
+
+  const home = fs.readFileSync(path.join(root, "index.html"), "utf8");
+  assert.match(home, /src="assets\/payload\.svg[^"]*"[^>]*\balt="Payload calculator"/);
+  assert.match(home, /src="assets\/power\.svg[^"]*"[^>]*\balt="Power calculator"/);
+  assert.match(home, /src="assets\/water\.svg[^"]*"[^>]*\balt="Water calculator"/);
+  assert.match(home, /src="assets\/tyres\.svg[^"]*"[^>]*\balt="Tyres calculator"/);
 });
 
 test("live water calculators expose a light WebApplication without ratings or prices", function () {
