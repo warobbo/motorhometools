@@ -323,6 +323,8 @@ test("homepage JSON-LD is an honest WebSite hub and Wave B OG tags stay", functi
   assert.equal(website.isAccessibleForFree, true);
   assert.equal(website.author && website.author.name, "Wayne Robinson");
   assert.equal(website.author["@id"], "https://motorhometools.co.uk/#person");
+  assert.equal(website.author.url, "https://motorhometools.co.uk/");
+  assert.equal(website.author.sameAs, undefined);
   assert.equal(website.publisher && website.publisher["@id"], "https://motorhometools.co.uk/#organization");
   assert.equal(website.aggregateRating, undefined);
   assert.equal(website.review, undefined);
@@ -330,7 +332,7 @@ test("homepage JSON-LD is an honest WebSite hub and Wave B OG tags stay", functi
   assert.equal(org["@id"], "https://motorhometools.co.uk/#organization");
   assert.equal(org.name, "Motorhome Tools");
   assert.equal(org.url, "https://motorhometools.co.uk/");
-  assert.equal(org.logo && org.logo.url, "https://motorhometools.co.uk/assets/icon-512.png");
+  assert.equal(org.logo, "https://motorhometools.co.uk/assets/icon-512.png");
   assert.equal(org.sameAs, undefined);
   assert.equal(org.aggregateRating, undefined);
   assert.doesNotMatch(html, /"sameAs"/);
@@ -453,6 +455,8 @@ test("live water calculators expose a light WebApplication without ratings or pr
     assert.equal(data.review, undefined, name);
     assert.equal(data.author && data.author.name, "Wayne Robinson", name);
     assert.equal(data.author["@id"], "https://motorhometools.co.uk/#person", name);
+    assert.equal(data.author.url, "https://motorhometools.co.uk/", name);
+    assert.equal(data.author.sameAs, undefined, name);
     assert.doesNotMatch(html, /FAQPage|aggregateRating|priceCurrency/);
   }
 });
@@ -492,7 +496,11 @@ test("repeated Person, Organization, and WebSite entities share one absolute @id
         if (IDENTITY_TYPES.indexOf(type) === -1) continue;
         const key = type + "\n" + node.name;
         if (!groups.has(key)) groups.set(key, []);
-        groups.get(key).push({ rel: rel, id: node["@id"] || "" });
+        groups.get(key).push({
+          rel: rel,
+          id: node["@id"] || "",
+          url: node.url || ""
+        });
       }
     }
   }
@@ -508,6 +516,11 @@ test("repeated Person, Organization, and WebSite entities share one absolute @id
     if (key === "Person\nWayne Robinson") {
       sawPerson = true;
       assert.equal(id, "https://motorhometools.co.uk/#person");
+      const urls = new Set(entries.map(function (entry) { return entry.url; }));
+      assert.deepEqual([...urls], ["https://motorhometools.co.uk/"]);
+      entries.forEach(function (entry) {
+        assert.equal(entry.url, "https://motorhometools.co.uk/", entry.rel);
+      });
       assert.ok(pages.has("index.html"));
       assert.ok(pages.has("power/index.html"));
       assert.ok(pages.has("water/index.html"));
