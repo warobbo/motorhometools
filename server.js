@@ -39,8 +39,8 @@ const MIME = {
 
 // Served by this Node process (Render origin). Cloudflare proxies the response
 // and does not add these itself. HSTS has no `preload` — the host is not on
-// the preload list. Frame control is CSP frame-ancestors only, so it is not
-// also sent as X-Frame-Options.
+// the preload list. Framing is CSP frame-ancestors 'self', plus the classic
+// X-Frame-Options: SAMEORIGIN so older scanners (Screaming Frog) still see it.
 // Scripts, images and fonts are same-origin files (system font stack, no
 // Google Fonts, no inline scripts). Ask posts to /api/ask on this host.
 // Calculator breakdown bars set width with a style attribute, so attributes
@@ -63,6 +63,7 @@ const CONTENT_SECURITY_POLICY = [
 const SECURITY_HEADERS = {
   "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
   "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "SAMEORIGIN",
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Content-Security-Policy": CONTENT_SECURITY_POLICY
 };
