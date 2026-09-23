@@ -103,8 +103,12 @@
       // Copilot href already includes calculator prefill (?bikes=, gas, cassette).
       // Do not replace this with the bare hub URL.
       link.href = result.href;
-      link.target = "_blank";
-      link.rel = "noopener noreferrer";
+      // Payload and Tyres stay on motorhomepayload.co.uk (new tab).
+      // Power and Water are same-origin /power and /water paths.
+      if (/^https?:\/\//i.test(result.href)) {
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+      }
       link.textContent = result.hrefLabel;
       cta.appendChild(link);
       answerEl.appendChild(cta);

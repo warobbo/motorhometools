@@ -33,15 +33,15 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
   var PAYLOAD_HREF = "https://motorhomepayload.co.uk/";
   var TYRES_HREF = "https://motorhomepayload.co.uk/tyres.html";
-  var POWER_HREF = "https://motorhomepower.co.uk/";
-  var BATTERY_HREF = "https://motorhomepower.co.uk/battery.html";
-  var SOLAR_HREF = "https://motorhomepower.co.uk/solar.html";
-  var INVERTER_HREF = "https://motorhomepower.co.uk/inverter.html";
-  var WIRE_HREF = "https://motorhomepower.co.uk/wire.html";
-  var WATER_HREF = "https://motorhomewater.co.uk/";
-  var GAS_HREF = "https://motorhomewater.co.uk/gas.html";
-  var TANKS_HREF = "https://motorhomewater.co.uk/tanks.html";
-  var CASSETTE_HREF = "https://motorhomewater.co.uk/cassette.html";
+  var POWER_HREF = "/power/";
+  var BATTERY_HREF = "/power/battery.html";
+  var SOLAR_HREF = "/power/solar.html";
+  var INVERTER_HREF = "/power/inverter.html";
+  var WIRE_HREF = "/power/wire.html";
+  var WATER_HREF = "/water/";
+  var GAS_HREF = "/water/gas.html";
+  var TANKS_HREF = "/water/tanks.html";
+  var CASSETTE_HREF = "/water/cassette.html";
 
   /**
    * Full-bottle defaults from Payload DEFAULTS (gas only + steel cylinder).

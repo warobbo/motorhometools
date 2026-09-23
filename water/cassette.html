@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Motorhome Cassette / Toilet Empty Planner | Days between empties | UK</title>
+    <meta name="description" content="Estimate how many days a motorhome cassette or black tank lasts from people, flushes and tank size. Plan empty stops for a UK trip.">
+    <meta name="robots" content="index,follow">
+    <meta name="author" content="Wayne Robinson">
+    <link rel="canonical" href="https://motorhometools.co.uk/water/cassette.html">
+    <meta property="og:title" content="Motorhome Cassette / Toilet Empty Planner | Days between empties">
+    <meta property="og:description" content="Turn people, flush habits and cassette size into days until you need a service point.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://motorhometools.co.uk/water/cassette.html">
+    <meta property="og:image" content="https://motorhometools.co.uk/water/assets/icon-512.png">
+    <meta name="theme-color" content="#1e5f74">
+    <link rel="icon" href="assets/favicon.svg?v=20260915logos" type="image/svg+xml">
+    <link rel="icon" href="assets/favicon-32.png?v=20260915logos" type="image/png" sizes="32x32">
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260915logos" sizes="180x180">
+    <link rel="icon" href="assets/icon-512.png?v=20260915logos" type="image/png" sizes="512x512">
+    <!-- ASSET_VERSION=20260915logos — bump this query on CSS/JS below to force-refresh cached assets. -->
+    <link rel="stylesheet" href="assets/styles.css?v=20260915logos">
+  </head>
+  <body>
+    <a class="skip-link no-print" href="#calculator">Skip to calculator</a>
+    <header class="site-header">
+      <nav class="hub-home no-print" aria-label="Home">
+        <a href="https://motorhometools.co.uk/">Home</a>
+      </nav>
+      <a class="site-brand no-print" href="/water/">
+        <img class="site-logo" src="assets/logo.svg?v=20260915logos" width="40" height="40" alt="Water — motorhome tools">
+        <span class="eyebrow">Water Tools</span>
+      </a>
+      <nav class="tool-nav no-print" aria-label="Main tools">
+        <a href="/water/">Water</a>
+        <a href="gas.html"><img class="tool-glyph" src="assets/glyph-gas.svg?v=20260915logos" width="24" height="24" alt="">Gas</a>
+        <a href="tanks.html"><img class="tool-glyph" src="assets/glyph-tanks.svg?v=20260915logos" width="24" height="24" alt="">Tanks</a>
+        <a href="cassette.html" aria-current="page"><img class="tool-glyph" src="assets/glyph-cassette.svg?v=20260915logos" width="24" height="24" alt="">Cassette</a>
+      </nav>
+      <details class="more-tools no-print">
+        <summary>More tools</summary>
+        <ul class="more-tools-list">
+          <li><a href="/water/#weight">Water weight</a> <span class="now">on Water</span></li>
+          <li><a href="bottles.html">Gas bottle / cylinder picker</a> <span class="soon">soon</span></li>
+          <li><a href="hotwater.html">Hot water (gas vs electric)</a> <span class="soon">soon</span></li>
+          <li><a href="winterising.html">Winterising volume</a> <span class="soon">soon</span></li>
+          <li><a href="topup.html">Top-up / Aquaroll planner</a> <span class="soon">soon</span></li>
+        </ul>
+      </details>
+      <h1>Cassette / toilet empty planner</h1>
+      <p class="lede no-print">
+        For UK leisure motorhomes and campervans. Set people, flush habits and
+        cassette size to see how many days until you need an empty, how many
+        litres of waste, and how many empties a trip needs. This page is about
+        toilet empty stops — not fresh or grey water.
+      </p>
+      <p class="print-only print-meta">Planning estimate · cassette / black tank empties</p>
+    </header>
+
+    <main id="calculator" class="site-main">
+      <div class="layout">
+        <div class="summary-stack">
+          <div class="totals-wrap">
+            <section class="totals" aria-live="polite">
+              <article class="total-card primary">
+                <p class="label" id="black-label">Days until empty</p>
+                <p class="value"><strong id="empty-days">0</strong><span>days</span></p>
+                <p class="hint" id="empty-hint">From an empty cassette.</p>
+              </article>
+              <div class="ah-grid tank-days">
+                <article class="total-card">
+                  <p class="label">Waste each day</p>
+                  <p class="value"><strong id="waste-daily">0</strong><span>L / day</span></p>
+                  <p class="hint" id="waste-daily-hint">Flush litres into the cassette.</p>
+                </article>
+                <article class="total-card">
+                  <p class="label">Waste this trip</p>
+                  <p class="value"><strong id="waste-trip">0</strong><span>L</span></p>
+                  <p class="hint" id="waste-trip-hint">Planning estimate only.</p>
+                </article>
+                <article class="total-card">
+                  <p class="label">Empties needed</p>
+                  <p class="value"><strong id="empties-needed">0</strong><span id="empties-unit">empties</span></p>
+                  <p class="hint" id="empties-hint">For the trip length you set.</p>
+                </article>
+              </div>
+            </section>
+          </div>
+
+          <section class="breakdown panel" aria-labelledby="breakdown-title">
+            <h2 id="breakdown-title">For this trip</h2>
+            <p class="field-hint" id="trip-note">Empty stops for the trip length you set.</p>
+            <ol id="breakdown-list"></ol>
+          </section>
+        </div>
+
+        <div class="controls">
+          <section class="panel no-print" aria-labelledby="preset-title">
+            <div class="panel-head">
+              <div>
+                <h2 id="preset-title">Start from a preset</h2>
+                <p class="save-state" id="save-state">Saved on this device</p>
+              </div>
+              <button type="button" class="print-btn" id="print-sheet">Print / save PDF</button>
+            </div>
+            <div id="presets" class="preset-row" role="group" aria-label="Cassette presets"></div>
+          </section>
+
+          <form id="cassette-form" class="panel habits-panel no-print" aria-labelledby="habits-title">
+            <h2 id="habits-title">People and trip</h2>
+            <p class="lede tight">People and days start from the Water page if you have already used it. After that, this page keeps its own numbers.</p>
+            <div class="field-grid">
+              <label class="field" for="adults">
+                <span>Adults</span>
+                <span class="field-control">
+                  <input id="adults" type="number" inputmode="numeric" min="0" max="20" step="1" value="2">
+                  <em>people</em>
+                </span>
+              </label>
+              <label class="field" for="children">
+                <span>Children <span class="sr-only">(optional)</span></span>
+                <span class="field-control">
+                  <input id="children" type="number" inputmode="numeric" min="0" max="20" step="1" value="0">
+                  <em>people</em>
+                </span>
+              </label>
+              <label class="field" for="tripDays">
+                <span>Trip length</span>
+                <span class="field-control">
+                  <input id="tripDays" type="number" inputmode="decimal" min="0.5" max="90" step="0.5" value="2">
+                  <em>days</em>
+                </span>
+              </label>
+            </div>
+            <p class="field-hint">Trip length is optional for “days until empty”. It is used for waste this trip and how many empties you need.</p>
+
+            <h2 class="field-heading">Toilet waste</h2>
+            <p class="field-hint" id="black-kind-hint">A cassette is a removable toilet tank you empty at a service point. A fixed black tank is plumbed in and emptied through a dump valve — less common on UK leisure vans.</p>
+            <div class="field">
+              <span>What have you got?</span>
+              <div id="black-kinds" class="choice-row" role="group" aria-label="Toilet waste type">
+                <button type="button" data-black="cassette" aria-pressed="false">Cassette</button>
+                <button type="button" data-black="fixed" aria-pressed="false">Fixed black tank</button>
+              </div>
+            </div>
+            <div class="field-grid">
+              <label class="field" for="blackTankLitres">
+                <span id="black-size-label">Cassette size</span>
+                <span class="field-control">
+                  <input id="blackTankLitres" type="number" inputmode="decimal" step="any" value="18">
+                  <em>L</em>
+                </span>
+              </label>
+              <label class="field" for="startPercent">
+                <span id="black-start-label">Cassette now</span>
+                <span class="field-control">
+                  <input id="startPercent" type="number" inputmode="decimal" min="0" max="100" step="5" value="0">
+                  <em>%</em>
+                </span>
+              </label>
+            </div>
+            <p class="field-hint">0% is an empty cassette. Change this if you are already part-way through.</p>
+
+            <h2 class="field-heading">Flush habits</h2>
+            <p class="field-hint">A typical cassette flush is about 0.25 L. Five flushes each for two people is about 2.5 L a day. These litres go in the cassette, not the grey tank.</p>
+            <div class="field-grid">
+              <label class="field" for="flushesPerPersonPerDay">
+                <span>Flushes per person per day</span>
+                <span class="field-control">
+                  <input id="flushesPerPersonPerDay" type="number" inputmode="decimal" min="0" max="20" step="1" value="5">
+                  <em>/ day</em>
+                </span>
+              </label>
+              <label class="field" for="litresPerFlush">
+                <span>Litres per flush</span>
+                <span class="field-control">
+                  <input id="litresPerFlush" type="number" inputmode="decimal" min="0" max="5" step="0.05" value="0.25">
+                  <em>L</em>
+                </span>
+              </label>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <section class="help-grid no-print" aria-labelledby="help-title">
+        <article class="help-card">
+          <h2 id="help-title">How to use</h2>
+          <ol>
+            <li>Choose a preset if you want a head start, or keep the defaults.</li>
+            <li>Set people and how many days you are away.</li>
+            <li>Say whether you have a cassette or a fixed black tank, and type the litres.</li>
+            <li>Edit flushes if your habits differ. Totals update as you type. Refresh the page: your numbers stay on this device.</li>
+          </ol>
+        </article>
+      </section>
+
+      <section class="help-card faq-card no-print" aria-labelledby="faq-title">
+        <h2 id="faq-title">FAQ</h2>
+        <div class="faq-list">
+          <details>
+            <summary>How often should I empty the cassette?</summary>
+            <p>
+              There is no single rule. This page uses flush litres — a planning
+              figure, not how full the cassette “feels”. A typical 15–20 L cassette
+              on a careful weekend for two can last several days. A busy family week
+              often needs more than one empty. Empty at a proper service point when
+              you can, and before it is full. Smell and site rules matter as much as
+              the litre count.
+            </p>
+          </details>
+          <details>
+            <summary>What is the difference between a cassette and a black tank?</summary>
+            <p>
+              A <strong>cassette</strong> is a removable toilet tank, usually about 15–20 litres
+              on UK leisure vans (Thetford-style). You slide it out and empty it at a service
+              point. A <strong>fixed black tank</strong> is plumbed in, often much larger, and
+              emptied through a dump valve. Most UK coachbuilt and van conversions use a
+              cassette. Pick the one you have and type the litres.
+            </p>
+          </details>
+          <details>
+            <summary>What size is a typical UK cassette?</summary>
+            <p>
+              Thetford-style cassettes are often about 17–20 L. The litres are usually
+              printed on the tank. This page defaults to 18 L. Type your real size if
+              you know it — the field will not snap back while you type.
+            </p>
+          </details>
+          <details>
+            <summary>Does this count wee and solids, or only flush water?</summary>
+            <p>
+              Only flush water. Real waste takes a bit more room, and a chemical
+              starter dose or rinse can add a litre or two. Treat the days as a
+              starting plan and empty before the cassette is full.
+            </p>
+          </details>
+          <details>
+            <summary>Where should I empty it?</summary>
+            <p>
+              At a proper motorhome service point, aire, or campsite cassette point.
+              Never on the ground, in a hedge, or down a household drain. If you are
+              unsure, ask the site or use a published dump-point list.
+            </p>
+          </details>
+          <details>
+            <summary>Why might this differ from the Tanks page?</summary>
+            <p>
+              The <a href="tanks.html">Tanks page</a> plans fresh, grey and cassette
+              together, and it reads flush litres from the Water page. This page is
+              only about empty stops, and it keeps its own people and flush numbers
+              after the first visit. Use Tanks for a wild-camping stretch; use this
+              page when you just want cassette empties.
+            </p>
+          </details>
+          <details>
+            <summary>What does “Cassette now” mean?</summary>
+            <p>
+              How full the cassette is at the start. 0% is empty — the usual “just
+              emptied” start. 50% means you are already half full, so you have fewer
+              days until the next empty.
+            </p>
+          </details>
+          <details>
+            <summary>Is this a design or a guarantee?</summary>
+            <p>
+              No. This is a <strong>planning estimate</strong> only. It is not a
+              design, a waste test, or a promise that the cassette will last. Empty
+              at proper points — never on the ground.
+            </p>
+          </details>
+        </div>
+      </section>
+
+      <aside class="disclaimer" aria-label="Disclaimer">
+        <h2>Disclaimer</h2>
+        <p>
+          This calculator is a planning estimate only. It is not a design or a
+          guarantee that a cassette will last. Empty grey and cassette waste at
+          proper points — never on the ground.
+        </p>
+      </aside>
+
+      <section class="help-card next-tool no-print" aria-labelledby="next-tool-title">
+        <h2 id="next-tool-title">Also on this hub</h2>
+        <p>
+          Flush litres also sit on Water usage. The Tanks page plans fresh, grey
+          and cassette days together for a wild-camping stretch.
+        </p>
+        <a class="add-btn next-tool-link" href="/water/">Water usage</a>
+        <a class="add-btn next-tool-link" href="tanks.html"><img class="tool-glyph" src="assets/glyph-tanks.svg?v=20260915logos" width="28" height="28" alt="">Holding tanks</a>
+      </section>
+
+      <section class="help-card guides-strip no-print" aria-labelledby="guides-title">
+        <h2 id="guides-title">Guides</h2>
+        <p>
+          Short reads on Motorhome Tools. They open in a new tab. They do not
+          change the numbers on this calculator.
+        </p>
+        <ul class="guides-list">
+          <li>
+            <a href="https://motorhometools.co.uk/guides/fresh-waste-tanks.html" target="_blank" rel="noopener noreferrer">
+              <span>Fresh and waste tanks</span>
+              <span class="hint">Fill, weight, empty</span>
+            </a>
+          </li>
+          <li>
+            <a href="https://motorhometools.co.uk/guides/gas-lpg-basics.html" target="_blank" rel="noopener noreferrer">
+              <span>Gas / LPG basics</span>
+              <span class="hint">Bottles and a winter note</span>
+            </a>
+          </li>
+          <li>
+            <a href="https://motorhometools.co.uk/guides/cassette-toilet-empty.html" target="_blank" rel="noopener noreferrer">
+              <span>Cassette toilet empty</span>
+              <span class="hint">When and where</span>
+            </a>
+          </li>
+          <li>
+            <a href="https://motorhometools.co.uk/guides/" target="_blank" rel="noopener noreferrer">
+              <span>All guides</span>
+              <span class="hint">Motorhome Tools</span>
+            </a>
+          </li>
+        </ul>
+      </section>
+    </main>
+
+    <footer class="site-footer no-print">
+      <p class="hub-home">
+        <a href="https://motorhometools.co.uk/">Home</a>
+      </p>
+      <nav class="footer-guides" aria-label="Guides">
+        <a href="https://motorhometools.co.uk/guides/fresh-waste-tanks.html">Tanks guide</a>
+        <a href="https://motorhometools.co.uk/guides/gas-lpg-basics.html">Gas guide</a>
+        <a href="https://motorhometools.co.uk/guides/cassette-toilet-empty.html">Cassette guide</a>
+        <a href="https://motorhometools.co.uk/guides/">All guides</a>
+      </nav>
+      <p>Water Tools for Wayne Robinson. Water, gas, tanks and cassette now; more to follow. No accounts and no server-side data. These calculators live on Motorhome Tools.</p>
+      <nav class="legal-links" aria-label="Legal">
+        <a href="https://motorhometools.co.uk/privacy.html">Privacy</a>
+        <span class="legal-sep" aria-hidden="true">·</span>
+        <a href="https://motorhometools.co.uk/cookies.html">Cookies</a>
+        <span class="legal-sep" aria-hidden="true">·</span>
+        <a href="https://motorhometools.co.uk/disclaimer.html">Disclaimer</a>
+      </nav>
+    </footer>
+
+    <div
+      class="rotate-gate no-print"
+      id="rotate-gate"
+      role="alertdialog"
+      aria-modal="true"
+      aria-hidden="true"
+      aria-labelledby="rotate-gate-title"
+      aria-describedby="rotate-gate-text"
+    >
+      <div class="rotate-gate-card">
+        <svg class="rotate-gate-icon" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+          <rect x="18" y="8" width="28" height="48" rx="5" fill="none" stroke="currentColor" stroke-width="3"></rect>
+          <circle cx="32" cy="48" r="2.2" fill="currentColor"></circle>
+          <path d="M50 28a18 18 0 0 1-28 15" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path>
+          <path d="M46 22v8h8" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+        </svg>
+        <h2 id="rotate-gate-title" tabindex="-1">Turn your phone upright</h2>
+        <p id="rotate-gate-text">This calculator is made for portrait. Rotate your phone back to keep using it.</p>
+      </div>
+    </div>
+    <script src="assets/calc.js?v=20260912home"></script>
+    <script src="assets/tank-calc.js?v=20260912home"></script>
+    <script src="assets/cassette-calc.js?v=20260918cassette"></script>
+    <script src="assets/defaults.js?v=20260912home"></script>
+    <script src="assets/tank-defaults.js?v=20260912home"></script>
+    <script src="assets/cassette-defaults.js?v=20260912home"></script>
+    <script src="assets/storage.js?v=20260912home"></script>
+    <script src="assets/ui.js?v=20260912home"></script>
+    <script src="assets/cassette-app.js?v=20260918cassette"></script>
+  </body>
+</html>

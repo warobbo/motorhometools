@@ -92,8 +92,27 @@ function resolvePublicFile(urlPath) {
   return filePath;
 }
 
+const DIRECTORY_REDIRECTS = {
+  "/power": "/power/",
+  "/water": "/water/",
+  "/power/index.html": "/power/",
+  "/water/index.html": "/water/"
+};
+
 const server = http.createServer(function (req, res) {
-  const urlPath = decodeURIComponent((req.url || "/").split("?")[0]);
+  const rawUrl = req.url || "/";
+  const queryIndex = rawUrl.indexOf("?");
+  const urlPath = decodeURIComponent(queryIndex === -1 ? rawUrl : rawUrl.slice(0, queryIndex));
+  const query = queryIndex === -1 ? "" : rawUrl.slice(queryIndex);
+
+  if (DIRECTORY_REDIRECTS[urlPath] && (req.method === "GET" || req.method === "HEAD")) {
+    res.writeHead(301, {
+      Location: DIRECTORY_REDIRECTS[urlPath] + query,
+      "Cache-Control": "public, max-age=300"
+    });
+    res.end();
+    return;
+  }
 
   if (urlPath === "/api/ask") {
     Promise.resolve(handleAsk(req, res)).catch(function (err) {
@@ -147,6 +166,8 @@ if (require.main === module) {
   server.listen(PORT, "0.0.0.0", function () {
     console.log("Motorhome Tools ready");
     console.log("  Local:  http://localhost:" + PORT + "/");
+    console.log("  Power:  http://localhost:" + PORT + "/power/");
+    console.log("  Water:  http://localhost:" + PORT + "/water/");
     console.log("  Ask:    http://localhost:" + PORT + "/ask/");
     console.log("  Ask API: POST /api/ask");
     console.log("  Notify: " + (process.env.ASK_NOTIFY_EMAIL ? "mailto fallback set" : "logs only"));

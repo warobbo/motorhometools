@@ -38,55 +38,55 @@
     },
     power: {
       id: "power",
-      href: "https://motorhomepower.co.uk/",
+      href: "/power/",
       label: "Power",
       line: "Daily power, battery, solar"
     },
     battery: {
       id: "battery",
-      href: "https://motorhomepower.co.uk/battery.html",
+      href: "/power/battery.html",
       label: "Battery",
       line: "Leisure battery size"
     },
     solar: {
       id: "solar",
-      href: "https://motorhomepower.co.uk/solar.html",
+      href: "/power/solar.html",
       label: "Solar",
       line: "Solar panel watts"
     },
     inverter: {
       id: "inverter",
-      href: "https://motorhomepower.co.uk/inverter.html",
+      href: "/power/inverter.html",
       label: "Inverter",
       line: "Inverter continuous watts"
     },
     wire: {
       id: "wire",
-      href: "https://motorhomepower.co.uk/wire.html",
+      href: "/power/wire.html",
       label: "Wire & fuse",
       line: "Cable size and fuse"
     },
     water: {
       id: "water",
-      href: "https://motorhomewater.co.uk/",
+      href: "/water/",
       label: "Water",
       line: "Water, gas, tanks, cassette"
     },
     gas: {
       id: "gas",
-      href: "https://motorhomewater.co.uk/gas.html",
+      href: "/water/gas.html",
       label: "Gas",
       line: "Gas / LPG usage"
     },
     tanks: {
       id: "tanks",
-      href: "https://motorhomewater.co.uk/tanks.html",
+      href: "/water/tanks.html",
       label: "Tanks",
       line: "Fresh, grey and cassette tanks"
     },
     cassette: {
       id: "cassette",
-      href: "https://motorhomewater.co.uk/cassette.html",
+      href: "/water/cassette.html",
       label: "Cassette",
       line: "Cassette empty planner"
     }

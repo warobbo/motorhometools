@@ -492,7 +492,7 @@ test("golden: portable aircon with no hours asks for hours / soft CTA — no inv
     assert.ok(result.gaps.some(function (line) {
       return /hours a day/i.test(line);
     }), question);
-    assert.match(result.href, /^https:\/\/motorhomepower\.co\.uk\/\?/, question);
+    assert.match(result.href, /^\/power\/\?/, question);
     assert.match(result.href, /wave3=1/, question);
     assert.match(result.href, /#wave3/, question);
     assert.doesNotMatch(result.href, /hours=/, question);
@@ -536,7 +536,7 @@ test("golden: portable aircon 4 hours a day is 2560 Wh/day and ~213 Ah at 12 V",
     return /hours a day/i.test(line);
   }));
   assert.equal(result.gaps.length, 0);
-  assert.match(result.href, /^https:\/\/motorhomepower\.co\.uk\/\?/);
+  assert.match(result.href, /^\/power\/\?/);
   assert.match(result.href, /wave3=1/);
   assert.match(result.href, /hours=4/);
   assert.match(result.href, /#wave3/);
@@ -561,9 +561,9 @@ test("Wave 3 CTA href matches power-tool PR #26 contract for 4 hours", function 
   const href = copilot.buildPowerPrefillHref({
     wave3: 1,
     hours: 4
-  }, "https://motorhomepower.co.uk/");
-  const url = new URL(href);
-  assert.equal(href, "https://motorhomepower.co.uk/?wave3=1&hours=4#wave3");
+  }, "/power/");
+  const url = new URL(href, "https://motorhometools.co.uk");
+  assert.equal(href, "/power/?wave3=1&hours=4#wave3");
   assert.equal(url.hash, "#wave3");
   assert.equal(url.searchParams.get("wave3"), "1");
   assert.equal(url.searchParams.get("hours"), "4");
@@ -572,8 +572,8 @@ test("Wave 3 CTA href matches power-tool PR #26 contract for 4 hours", function 
     assert.ok(typeof key === "string");
   });
 
-  const noHours = copilot.buildPowerPrefillHref({ wave3: 1 }, "https://motorhomepower.co.uk/");
-  assert.equal(noHours, "https://motorhomepower.co.uk/?wave3=1#wave3");
+  const noHours = copilot.buildPowerPrefillHref({ wave3: 1 }, "/power/");
+  assert.equal(noHours, "/power/?wave3=1#wave3");
   assert.match(noHours, /#wave3/);
 });
 
@@ -653,7 +653,7 @@ test("golden: gas BBQ twice a day estimates 0.28 kg/day and ~25 days, stays in A
   assert.ok(result.followUps.some(function (line) {
     return /bottle kg \/ minutes/i.test(line);
   }));
-  assert.match(result.href, /^https:\/\/motorhomewater\.co\.uk\/gas\.html\?/);
+  assert.match(result.href, /^\/water\/gas\.html\?/);
   assert.match(result.href, /adults=2/);
   assert.match(result.href, /children=0/);
   assert.match(result.href, /mealsPerDay=2/);
@@ -737,10 +737,10 @@ test("Gas CTA href matches mhwater buildGasPrefillHref contract for BBQ twice a 
     boilerEnabled: 0,
     gasType: "butane",
     bottleId: "butane7"
-  }, "https://motorhomewater.co.uk/gas.html");
+  }, "/water/gas.html");
   const qs = href.slice(href.indexOf("?") + 1);
   const params = new URLSearchParams(qs);
-  assert.equal(href.startsWith("https://motorhomewater.co.uk/gas.html?"), true);
+  assert.equal(href.startsWith("/water/gas.html?"), true);
   assert.equal(params.get("adults"), "2");
   assert.equal(params.get("children"), "0");
   assert.equal(params.get("mealsPerDay"), "2");
@@ -851,7 +851,7 @@ test("golden: 2nd toilet cassette for 2 estimates ~7 extra / ~14 total days, sta
   assert.ok(result.followUps.some(function (line) {
     return /cassette litres \/ flushes/i.test(line);
   }));
-  assert.match(result.href, /^https:\/\/motorhomewater\.co\.uk\/cassette\.html\?/);
+  assert.match(result.href, /^\/water\/cassette\.html\?/);
   assert.match(result.href, /adults=2/);
   assert.match(result.href, /children=0/);
   assert.match(result.href, /blackKind=cassette/);
@@ -898,10 +898,10 @@ test("Cassette CTA href matches mhwater PR #19 contract for a 2nd cassette", fun
     litresPerFlush: 0.25,
     startPercent: 0,
     cassetteCount: 2
-  }, "https://motorhomewater.co.uk/cassette.html");
+  }, "/water/cassette.html");
   const qs = href.slice(href.indexOf("?") + 1);
   const params = new URLSearchParams(qs);
-  assert.equal(href.startsWith("https://motorhomewater.co.uk/cassette.html?"), true);
+  assert.equal(href.startsWith("/water/cassette.html?"), true);
   assert.equal(params.get("adults"), "2");
   assert.equal(params.get("children"), "0");
   assert.equal(params.get("blackKind"), "cassette");
