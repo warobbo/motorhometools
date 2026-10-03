@@ -225,8 +225,18 @@ const server = http.createServer(function (req, res) {
 
   const rawUrl = req.url || "/";
   const queryIndex = rawUrl.indexOf("?");
-  const urlPath = decodeURIComponent(queryIndex === -1 ? rawUrl : rawUrl.slice(0, queryIndex));
+  const pathPart = queryIndex === -1 ? rawUrl : rawUrl.slice(0, queryIndex);
   const query = queryIndex === -1 ? "" : rawUrl.slice(queryIndex);
+  let urlPath;
+  // A bad percent-escape throws URIError. Uncaught, that exits the process.
+  try {
+    urlPath = decodeURIComponent(pathPart);
+  } catch (err) {
+    if (!(err instanceof URIError)) throw err;
+    res.writeHead(400, { "Content-Type": "text/plain; charset=utf-8" });
+    res.end("Bad request");
+    return;
+  }
 
   if (DIRECTORY_REDIRECTS[urlPath] && (req.method === "GET" || req.method === "HEAD")) {
     res.writeHead(301, {

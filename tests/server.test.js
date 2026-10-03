@@ -3,6 +3,8 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
+const http = require("node:http");
+const net = require("node:net");
 const path = require("node:path");
 const server = require("../server");
 const { resolvePublicFile } = server;
@@ -265,6 +267,96 @@ test("GET /guides/ and Wave 2 pages return Payload, Power and Water", async func
     assert.match(sitemapXml, /<loc>https:\/\/motorhometools\.co\.uk\/about\/<\/loc>/);
   } finally {
     await new Promise(function (resolve) { server.close(resolve); });
+  }
+});
+
+function decodeChunked(body) {
+  let rest = body;
+  let out = "";
+  while (rest.length > 0) {
+    const lineEnd = rest.indexOf("\r\n");
+    if (lineEnd === -1) break;
+    const size = parseInt(rest.slice(0, lineEnd), 16);
+    if (!Number.isFinite(size) || size === 0) break;
+    const start = lineEnd + 2;
+    out += rest.slice(start, start + size);
+    rest = rest.slice(start + size + 2);
+  }
+  return out;
+}
+
+function rawHttp(port, method, target) {
+  return new Promise(function (resolve, reject) {
+    const socket = net.connect(port, "127.0.0.1");
+    const chunks = [];
+    const timer = setTimeout(function () {
+      socket.destroy();
+      reject(new Error("no response for " + method + " " + target));
+    }, 2000);
+    socket.on("error", function (err) {
+      clearTimeout(timer);
+      reject(err);
+    });
+    socket.on("data", function (chunk) { chunks.push(chunk); });
+    socket.on("end", function () {
+      clearTimeout(timer);
+      const raw = Buffer.concat(chunks).toString("utf8");
+      const headerEnd = raw.indexOf("\r\n\r\n");
+      const head = headerEnd === -1 ? raw : raw.slice(0, headerEnd);
+      const body = headerEnd === -1 ? "" : raw.slice(headerEnd + 4);
+      const statusLine = head.split("\r\n")[0];
+      const status = Number((statusLine.match(/HTTP\/1\.[01] (\d+)/) || [])[1]);
+      const decoded = /transfer-encoding:\s*chunked/i.test(head) ? decodeChunked(body) : body;
+      resolve({ status, head, body: decoded });
+    });
+    socket.write(
+      method + " " + target + " HTTP/1.1\r\n" +
+      "Host: 127.0.0.1\r\n" +
+      "Connection: close\r\n\r\n"
+    );
+  });
+}
+
+test("malformed percent-encoding returns 400 and the server keeps serving", async function () {
+  const handler = server.listeners("request")[0];
+  const isolated = http.createServer(handler);
+  await new Promise(function (resolve) {
+    isolated.listen(0, "127.0.0.1", resolve);
+  });
+  const { port } = isolated.address();
+  try {
+    const queryOnly = await rawHttp(port, "GET", "/?q=%ZZ");
+    assert.equal(queryOnly.status, 200);
+
+    for (const target of ["/%", "/%FF", "/ask/%ZZ", "/%E0%A4%A", "/%FF?v=1"]) {
+      const bad = await rawHttp(port, "GET", target);
+      assert.equal(bad.status, 400, target);
+      assert.match(bad.head, /Content-Type: text\/plain; charset=utf-8/i);
+      assert.match(bad.head, /X-Content-Type-Options: nosniff/i);
+      assert.equal(bad.body, "Bad request");
+    }
+
+    const badPost = await rawHttp(port, "POST", "/%");
+    assert.equal(badPost.status, 400);
+    assert.equal(badPost.body, "Bad request");
+
+    for (const target of ["/", "/power/", "/water/", "/ask/", "/about/"]) {
+      const ok = await rawHttp(port, "GET", target);
+      assert.equal(ok.status, 200, target);
+    }
+
+    const encodedAbout = await rawHttp(port, "GET", "/%61bout/");
+    assert.equal(encodedAbout.status, 200);
+    assert.match(encodedAbout.body, /About \| Motorhome Tools/);
+
+    const css = await rawHttp(port, "GET", "/assets/styles.css?v=20260922home");
+    assert.equal(css.status, 200);
+    assert.match(css.head, /Content-Type: text\/css; charset=utf-8/i);
+
+    const powerQuery = await rawHttp(port, "GET", "/power/?hours=4");
+    assert.equal(powerQuery.status, 200);
+  } finally {
+    await new Promise(function (resolve) { isolated.close(resolve); });
   }
 });
 
