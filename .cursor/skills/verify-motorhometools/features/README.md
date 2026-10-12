@@ -2,7 +2,7 @@
 
 This directory is the maintained source for verifying the user-facing behaviour of [motorhometools.co.uk](https://motorhometools.co.uk/). Read this index before driving the app, then use the matching feature file as the recipe.
 
-Whenever a build changes pages or tools, update this feature map in the same PR. This repo does not run a weekly or daily maintain pass.
+Whenever a build changes pages or tools, update this feature map in the same PR. A weekly maintain pass runs on Mondays, from Freddie the Font2's routine. That pass edits only this verify folder, opens at most one PR through the review loop, and stays quiet unless blocked.
 
 Calculator files include an INPUT / EXPECTED / ACTUAL table. EXPECTED is worked from the formula in the cited source file, then the page’s own en-GB formatter. ACTUAL is what a drive of this server showed. If a case was not driven, the row says so. Do not invent a number.
 

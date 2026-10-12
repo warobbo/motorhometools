@@ -7,7 +7,7 @@ description: Drive motorhometools.co.uk the way a visitor does — launch the No
 
 This skill drives the Motorhome Tools site (https://motorhometools.co.uk/) locally. The surface is a phone-first website plus `POST /api/ask` in the same Node process. Payload and Tyres are a different site (https://motorhomepayload.co.uk/), recorded only as an external reference.
 
-The feature map is `.cursor/skills/verify-motorhometools/features/README.md`. Whenever a build changes pages or tools, update that map in the same PR. This repo does not run a weekly or daily maintain pass.
+The feature map is `.cursor/skills/verify-motorhometools/features/README.md`. Whenever a build changes pages or tools, update that map in the same PR. A weekly maintain pass runs on Mondays, from Freddie the Font2's routine. That pass edits only this verify folder, opens at most one PR through the review loop, and stays quiet unless blocked.
 
 Do not print secrets. Do not commit `.env`. Do not put `ASK_NOTIFY_EMAIL` or any API key in the skill, the logs you quote, or the proof.
 

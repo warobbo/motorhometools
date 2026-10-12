@@ -32,6 +32,6 @@ These pages do no maths. There is no INPUT / EXPECTED / ACTUAL row. Inventing a 
 
 ## Gotchas
 
-- `/water/bottles.html` still says the picker “will sit next to Gas / LPG usage once that calculator is live.” Gas at `/water/gas.html` is already live. The stub is still coming soon. Do not treat the picker as a working calculator, and do not “fix” this map to hide that sentence: it is what the page shows. This verification change does not edit that copy.
+- `/water/bottles.html` says the picker is not built yet, and links the live calculator: “It sits next to the Gas / LPG usage calculator, which is live” (`gas.html`). The stub is still coming soon. Do not treat the picker as a working calculator.
 - The soon pages are `noindex`. They are still user-facing if someone opens the URL or the More tools list.
 - A 200 with “Coming soon” is a pass for these URLs. A calculated figure on them would be a product bug.
