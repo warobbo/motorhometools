@@ -4,7 +4,7 @@ Fresh water at https://motorhometools.co.uk/water/ estimates litres per day and 
 
 ## Sub-features
 
-- `water-default` opens the starter weekend for two.
+- `water-default` opens the default profile: 2 adults, 2 days, 5 cassette flushes, 37 L for the trip. That is not the Weekend preset button.
 - `water-edited` changes shower length, showers per day, and turns cassette flushes off.
 - `water-weight` shows the trip’s fresh water in kilograms.
 - `water-persist` stores `watertools.systemProfile`, which Gas, Tanks and Cassette also read.
@@ -40,6 +40,7 @@ EXPECTED comes from `water/assets/calc.js` `calcWater`, then the en-GB formatter
 
 ## Gotchas
 
+- The Weekend preset button (`data-preset="weekend"`) uses 4 cassette flushes and shows 36 L for the trip (`#total-daily` 18). The default row is 5 flushes and 37 L. Do not click Weekend when checking the default.
 - Children count as 0.7 for showers and drinking, and as a full person for cassette flushes. Mixing those up fails a family preset.
 - Grey water is not “all the fresh water”. Drinking and cassette flushes are left out of grey.
 - This profile is shared with Gas, Tanks and Cassette. A water edit changes those pages in the same browser.

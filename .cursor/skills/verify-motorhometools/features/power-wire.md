@@ -12,7 +12,7 @@ Wire and fuse at https://motorhometools.co.uk/power/wire.html picks a flexible c
 
 - From the inverter page, follow “Next: size the DC cable and fuse”.
 - Open https://motorhometools.co.uk/power/wire.html.
-- Ask “wire”, “cable” or “fuse”, then follow the Open link.
+- Ask “wire”, “fuse”, or “electrical cable”, then follow the Open link. Bare “cable” does not match: it posts an unmatched note and offers no Wire link.
 
 Inputs: preset buttons in `#presets` (`data-preset`), `#current-a`, `#watts`, `#one-way-length`, `#drop-pct`, voltage buttons in `#voltages`.
 

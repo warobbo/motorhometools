@@ -1,12 +1,12 @@
 # Inverter
 
-The inverter calculator at https://motorhometools.co.uk/power/inverter.html sizes a 230 V inverter from the loads ticked on at once. Recommended continuous watts = running watts × (1 + margin% / 100). Recommended surge is the larger of the combined surge and that continuous figure. DC amps shown on the summary use running watts ÷ efficiency ÷ system voltage (the cable page does not divide by efficiency again).
+The inverter calculator at https://motorhometools.co.uk/power/inverter.html sizes a 230 V inverter from the loads ticked on at once. Recommended continuous watts = running watts × (1 + margin% / 100). Recommended surge is the larger of the combined surge and that continuous figure. The summary always shows two DC amp figures: running watts ÷ efficiency ÷ 12, and the same watts ÷ efficiency ÷ 24. Choosing 12 V or 24 V does not change those figures or the watt headlines (the cable page does not divide by efficiency again).
 
 ## Sub-features
 
 - `inverter-default` starts with only the kettle ticked.
 - `inverter-loads` add or remove 230 V loads, each with running watts, surge watts and quantity.
-- `inverter-voltage` switches the DC amp columns between 12 V and 24 V.
+- `inverter-voltage` selects the leisure-system voltage, 12 V or 24 V. Both amp figures stay on the summary. For the default kettle they stay `114` and `56.8`, and the watt headlines stay `1,440`. The hint text changes.
 
 ## How to get to it (user POV)
 
@@ -37,4 +37,5 @@ EXPECTED comes from `power/assets/calc.js` `calcInverter` and `formatWatts` / `f
 
 - The headline watts are the recommended size (load plus margin), not the bare 1200 W nameplate.
 - The amp figures divide by efficiency. The Wire page’s inverter-feed current does not. 120 A on Wire and 114 A here are both correct for this kettle.
+- Choosing 24 V (`#voltages button[data-voltage="24"]`) leaves `#inverter-continuous`, `#inverter-surge`, `#inverter-amps12` and `#inverter-amps24` unchanged. The hint becomes “Same 230 V watts, about half the battery current. Cables and the leisure battery still have to suit 24 V.”
 - Unticked loads contribute nothing. The induction hob starts off, so the default is not 1200 + 1600.

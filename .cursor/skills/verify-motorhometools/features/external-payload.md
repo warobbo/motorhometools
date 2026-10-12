@@ -14,7 +14,7 @@ Payload and Tyres are not pages this repo serves. The Payload calculator and the
 - Use a footer “Payload” or “Tyres” link on the home page, About, or a guide.
 - Ask a payload or tyre question and follow the link it offers. Tyre questions get a hold message, not a psi figure.
 
-This repo has no payload or tyre inputs and no local result.
+This server does not host the Payload or Tyres forms. Ask on this origin can still show a labelled rough payload estimate. The question “i have 500kg payload what happens when i add 3 bikes” left 446 kg, linked to motorhomepayload.co.uk, and wrote no `[ask]` line. That estimate is not a result from the other site.
 
 ## Driving it with verify-motorhometools
 
