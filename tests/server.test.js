@@ -49,6 +49,75 @@ test("does not expose server internals", function () {
   assert.equal(resolvePublicFile("/scripts/minify-client-js.js"), null);
 });
 
+test("dotfiles and dot-folders are not public", async function () {
+  assert.equal(resolvePublicFile("/.gitignore"), null);
+  assert.equal(resolvePublicFile("/.git/config"), null);
+  assert.equal(resolvePublicFile("/.cursor"), null);
+  assert.equal(resolvePublicFile("/.cursor/"), null);
+  assert.equal(resolvePublicFile("/.cursor/skills/verify-motorhometools/SKILL.md"), null);
+  assert.equal(resolvePublicFile("/.env"), null);
+  assert.equal(resolvePublicFile("/.env.example"), null);
+  assert.equal(resolvePublicFile("/.node-version"), null);
+  assert.equal(resolvePublicFile("/.cursor/../.env"), null);
+  assert.equal(resolvePublicFile("/assets/.hidden"), null);
+  assert.equal(
+    resolvePublicFile("/privacy.html"),
+    path.join(__dirname, "..", "privacy.html")
+  );
+  assert.equal(
+    resolvePublicFile("/power/battery.html"),
+    path.join(__dirname, "..", "power", "battery.html")
+  );
+
+  const handler = server.listeners("request")[0];
+  const isolated = http.createServer(handler);
+  await new Promise(function (resolve) {
+    isolated.listen(0, "127.0.0.1", resolve);
+  });
+  const { port } = isolated.address();
+  const hidden = [
+    "/.gitignore",
+    "/.git/config",
+    "/.cursor",
+    "/.cursor/",
+    "/.cursor/skills/verify-motorhometools/SKILL.md",
+    "/.cursor/skills/verify-motorhometools/SKILL.md?v=1",
+    "/.env",
+    "/.env.example",
+    "/.node-version"
+  ];
+  try {
+    for (const target of hidden) {
+      const response = await fetch("http://127.0.0.1:" + port + target, { redirect: "manual" });
+      const body = await response.text();
+      assert.equal(response.status, 404, target);
+      assert.equal(body, "Not found");
+      assert.equal(response.headers.get("x-content-type-options"), "nosniff");
+    }
+
+    for (const target of [
+      "/%2Egitignore",
+      "/%2Egit/config",
+      "/%2Ecursor/skills/verify-motorhometools/SKILL.md",
+      "/.cursor/%2Eenv"
+    ]) {
+      const encoded = await rawHttp(port, "GET", target);
+      assert.equal(encoded.status, 404, target);
+      assert.equal(encoded.body, "Not found");
+    }
+
+    const head = await rawHttp(port, "HEAD", "/.cursor/skills/verify-motorhometools/SKILL.md");
+    assert.equal(head.status, 404);
+
+    for (const target of ["/", "/power/", "/water/", "/ask/", "/api/ask", "/assets/styles.css", "/sitemap.xml"]) {
+      const ok = await fetch("http://127.0.0.1:" + port + target);
+      assert.equal(ok.status, 200, target);
+    }
+  } finally {
+    await new Promise(function (resolve) { isolated.close(resolve); });
+  }
+});
+
 const WAVE2_GUIDES = [
   "/guides/daily-power-budget.html",
   "/guides/battery-size-plain-english.html",

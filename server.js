@@ -179,8 +179,18 @@ const HIDDEN_FILES = new Set([
   "COPILOT-ASK.md"
 ]);
 
+// A segment that starts with "." is private, the same way ".gitignore" is.
+// That covers a dotfile and anything inside a dot-folder (.git/config,
+// .cursor/skills/...). A name that only contains a dot (privacy.html) stays public.
+function hasDotSegment(relativePath) {
+  return relativePath.split(/[/\\]/).some(function (segment) {
+    return segment.startsWith(".") && segment !== "." && segment !== "..";
+  });
+}
+
 function isHidden(relativePath) {
   if (HIDDEN_FILES.has(relativePath)) return true;
+  if (hasDotSegment(relativePath)) return true;
   return HIDDEN_PREFIXES.some(function (prefix) {
     return relativePath === prefix.slice(0, -1) || relativePath.startsWith(prefix);
   });
@@ -195,9 +205,6 @@ function resolvePublicFile(urlPath) {
   let filePath = path.join(ROOT, requested);
   if (!filePath.startsWith(ROOT)) return null;
   if (isHidden(requested)) return null;
-
-  const baseName = path.basename(filePath);
-  if (baseName.startsWith(".") && baseName !== ".") return null;
 
   try {
     const stat = fs.statSync(filePath);
