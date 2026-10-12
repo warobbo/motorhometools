@@ -164,10 +164,10 @@ Drive (Chrome, calculators, Ask, mobile widths):
 - **`dist/` is stale.** Tests load the readable source. The browser loads `dist/` when those files exist. Rebuild after a formula change or the page will not match the feature map.
 - **Saved profile.** Power tools share `localStorage` key `powertools.systemProfile`. Water, Gas, Tanks and Cassette share `watertools.systemProfile`. A leftover profile changes “default” numbers. The drive uses a fresh context per default case.
 - **Rotate gate.** A short landscape viewport (height ≤ 540px, width ≤ 1000px) blocks the form. Use 390×844 to use the calculator. Use 844×390 only to prove the gate.
-- **Ask rate limit.** 10 unmatched posts in 10 minutes per client return 429. The honeypot `#ask-website` returns `ignored: true` and writes no `[ask]` line. Leave it empty.
+- **Ask rate limit.** 10 unmatched posts in 10 minutes per client return 429. If `#ask-website` has a value, the page shows `We’ve noted your question.` and does not POST. A direct `POST /api/ask` with `website` set returns `{ "ok": true, "ignored": true }`. Neither path writes an `[ask]` line. Leave the field empty.
 - **Ask log.** With `NODE_ENV=production` and no `ASK_LOG_PATH`, notes go to stdout only. Point `ASK_LOG_PATH` at the run’s scratch file.
 - **Cache.** CSS and JS are cached as immutable and the HTML uses a `?v=` query. A local fresh context avoids an old cached script. After a real deploy, bump `?v=` or the live site keeps the previous file.
-- **Payload and Tyres.** This server does not calculate them. Follow the external feature file and stop.
+- **Payload and Tyres.** This server does not host those calculators. Ask may show a labelled rough payload estimate; do not score it as the other site. Follow the external feature file and stop.
 
 ## Feature map
 

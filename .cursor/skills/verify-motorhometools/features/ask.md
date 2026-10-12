@@ -38,18 +38,20 @@ Other matched destinations a visitor can type (not all are in the default drive;
 | --- | --- |
 | `battery` | `/power/battery.html` |
 | `inverter` | `/power/inverter.html` |
-| `wire` or `cable` | `/power/wire.html` |
+| `wire`, `fuse`, or `electrical cable` | `/power/wire.html` |
 | `water` | `/water/` |
 | `gas` or `calor` | `/water/gas.html` |
 | `cassette` or `toilet` | `/water/cassette.html` |
 | `payload` or `weighbridge` | `https://motorhomepayload.co.uk/` (new tab) |
+
+Bare `cable` is not in that list. Typed on its own it is an unmatched note: the status is the site-owner line, there is no Wire link, and the server log gains an `[ask]` line. `wire`, `fuse`, and `electrical cable` offer `/power/wire.html` and do not POST.
 
 A correct matched result is that guide text plus the link. A correct unmatched result is the status above and `{"ok":true,"saved":true}` from `POST /api/ask`. Tyres questions get a hold / caution, not a pressure.
 
 ## Gotchas
 
 - Ask never auto-navigates. A proof that only watches the URL will miss a successful match.
-- The honeypot field is `website` (`#ask-website`). Filling it returns `{ "ok": true, "ignored": true }` and writes no log line. Leave it empty.
+- The honeypot is `#ask-website` inside an `inert` block. A visitor does not fill it. If that field has a value when the form is submitted, the status is `We’ve noted your question.` The page does not POST and writes no `[ask]` line. A direct `POST /api/ask` with `website` set returns `{ "ok": true, "ignored": true }` and writes no log line. Leave the field empty for a real note.
 - Rate limit is 10 posts in 10 minutes per client. A burst of unmatched proofs returns `429` with `error: "rate"`.
 - Locally, with `NODE_ENV` unset and `ASK_LOG_PATH` unset, notes also append to gitignored `data/asks.jsonl`. Production logs stdout only unless `ASK_LOG_PATH` is set. Do not print `ASK_NOTIFY_EMAIL`.
 - Copilot answers for gas bottle-days, cassette empties and Wave 3 watts are estimates with labelled assumptions and a prefilled calculator link. They are still not a substitute for opening the calculator.
