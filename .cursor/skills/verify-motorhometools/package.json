@@ -1,0 +1,12 @@
+{
+  "name": "verify-motorhometools",
+  "private": true,
+  "description": "Browser harness for the Motorhome Tools verification skill. Not part of the public site.",
+  "scripts": {
+    "doctor": "node scripts/doctor.js",
+    "drive": "node scripts/drive.js"
+  },
+  "dependencies": {
+    "playwright": "^1.55.0"
+  }
+}
