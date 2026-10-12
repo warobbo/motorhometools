@@ -15,7 +15,7 @@ Payload and Tyres are not features of this server. They are an external referenc
 - Node 22 (`package.json` engines: `>=22 <23`). From the repo root: `npm install`, `npm test`, `npm run build`, then `node server.js` on a chosen `PORT` (default `4173`).
 - The server listens on `0.0.0.0`. Drive `http://127.0.0.1:$PORT`.
 - Set `ASK_LOG_PATH` to a file under `/tmp/motorhometools-verify-run/$RUN_ID/` so Ask notes from this run do not mix with another run. Do not set or print `ASK_NOTIFY_EMAIL`.
-- Run `node .cursor/skills/verify-motorhometools/scripts/doctor.js --base http://127.0.0.1:$PORT --pages` and require every route below to return 200.
+- Run `node .cursor/skills/verify-motorhometools/scripts/doctor.js --base http://127.0.0.1:$PORT --pages` and require every route below to return 200. The same doctor run requires `/.cursor/skills/verify-motorhometools/SKILL.md`, `/.gitignore` and `/.git/config` to return 404.
 - Calculator proofs use a fresh browser context (empty `localStorage`). Power tools share `powertools.systemProfile`. Water, Gas, Tanks and Cassette share `watertools.systemProfile`.
 - Never drive an instance that was not started by this verification run.
 
@@ -57,6 +57,16 @@ Each feature file starts with an H1 and one paragraph, then exactly four H2 sect
 - [Guides](./guides.md) — https://motorhometools.co.uk/guides/
 - [About and legal](./about-legal.md) — About, Privacy, Cookies, Disclaimer
 - [Payload and Tyres (external)](./external-payload.md) — https://motorhomepayload.co.uk/
+
+## Not public
+
+Dotfiles and dot-folders are not pages. A path segment that starts with `.` returns 404, the same response `/.gitignore` already had. That includes `/.cursor/**` (the verify skill and the rest of the agent folder), `/.git/config`, `/.env` and any other dot path. Doctor asserts these three and does not print a body:
+
+- `/.cursor/skills/verify-motorhometools/SKILL.md`
+- `/.gitignore`
+- `/.git/config`
+
+`/`, `/power/`, `/water/`, `/ask/`, `/api/ask` and the public assets stay as listed below. A filename that only contains a dot, such as `privacy.html`, is still a page.
 
 ## Live URL index
 

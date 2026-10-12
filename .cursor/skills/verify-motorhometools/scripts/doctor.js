@@ -126,6 +126,24 @@ async function main() {
     }
   }
 
+  const hiddenPaths = [
+    "/.cursor/skills/verify-motorhometools/SKILL.md",
+    "/.gitignore",
+    "/.git/config"
+  ];
+  for (const hiddenPath of hiddenPaths) {
+    try {
+      const result = await request(base, hiddenPath, "manual");
+      if (result.response.status !== 404) {
+        bad(hiddenPath + " expected 404, got " + result.response.status);
+      } else {
+        console.log("doctor hidden 404 " + hiddenPath);
+      }
+    } catch (err) {
+      bad(hiddenPath + " " + err.message);
+    }
+  }
+
   if (pages) {
     for (const page of PAGES) {
       if (page.path === "/") continue;

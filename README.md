@@ -162,6 +162,8 @@ Cache-bust assets by bumping the `?v=` query in the HTML (see the `ASSET_VERSION
 - `Content-Security-Policy` with `frame-ancestors 'self'`
 - `Permissions-Policy` disables camera, microphone, geolocation, payment, USB and motion/light sensors for every origin, including this one. Ask, forms and normal browsing do not use those features.
 
+Dotfiles and dot-folders are not served. A request whose path has a segment starting with `.` — `/.cursor/**`, `/.git/config`, `/.gitignore`, `/.env` — is a 404. Names that only contain a dot (`privacy.html`, `sitemap.xml`) stay public.
+
 Scripts, stylesheets, images and fonts are same-origin files. The font stack is system UI, not Google Fonts. Ask uses `fetch` to `/api/ask`. The policy is `script-src 'self'` and `connect-src 'self'`. `style-src-attr 'unsafe-inline'` is there because calculator breakdown bars set a width with a `style` attribute. Script sources do not allow `unsafe-inline`.
 
 After a production deploy:

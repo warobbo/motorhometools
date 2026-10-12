@@ -60,6 +60,7 @@ Worth driving when all of these are true:
 - The log contains `Motorhome Tools ready`.
 - `GET /` is 200, the body contains `Stop guessing your van`, and `X-Content-Type-Options` is `nosniff`.
 - `GET /api/ask` is JSON `{ "ok": true, "capture": true }`. Doctor prints whether a mailto address is set. It does not print the address.
+- `GET /.cursor/skills/verify-motorhometools/SKILL.md`, `GET /.gitignore` and `GET /.git/config` are 404. Doctor prints the status only, never the body. Any other dotfile or dot-folder is the same rule.
 - With `--pages`, every route in `scripts/routes.js` is 200 and contains its expected snippet, and `/power` and `/water` (no slash) are 301 to the slashed paths.
 
 Doctor does not click a calculator. A passing doctor is not proof of a result.
