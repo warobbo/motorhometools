@@ -4,8 +4,7 @@
  * Parse is deterministic (optional LLM hook is off by default and may
  * only refine slots). Maths is the Payload calculator — never invented.
  *
- * Source of truth: warobbo/motorhome-payload-calculator
- * commit 611d2207d6e91d4a48fb3dc2c66d957092c59a59
+ * Source of truth: the payload calculator
  *   app.js compute(), lib/custom-kit.js, lib/driver-payload.js,
  *   lib/fuel-payload.js
  *
@@ -70,7 +69,7 @@
   var WAVE3_MAX_HOURS = 24;
 
   /**
-   * Cooking-line constants from warobbo/mhwater assets/gas-calc.js.
+   * Cooking-line constants from the water gas calculator.
    * Do not drift. Ask uses this cooking line only — no invented BBQ kg/h.
    */
   var GAS_CHILD_FACTOR = 0.7;
@@ -99,8 +98,6 @@
   };
 
   var PAYLOAD_SOURCE = {
-    repo: "warobbo/motorhome-payload-calculator",
-    commit: "611d2207d6e91d4a48fb3dc2c66d957092c59a59",
     waterKgPerLitre: WATER_KG_PER_L,
     gasFullKg: GAS_FULL_KG,
     bikeDefaultKg: BIKE_DEFAULT_KG,
@@ -109,7 +106,6 @@
   };
 
   var GAS_SOURCE = {
-    repo: "warobbo/mhwater",
     file: "assets/gas-calc.js",
     cookKgPerPersonPerMeal: { light: 0.025, normal: 0.04, heavy: 0.07 },
     childFactor: GAS_CHILD_FACTOR,
@@ -118,7 +114,7 @@
   };
 
   /**
-   * Cassette empty-days constants from warobbo/mhwater
+   * Cassette empty-days constants from the water cassette calculator
    * assets/cassette-defaults.js / cassette-calc.js labelled defaults.
    * Do not drift. Ask does not invent flush rates or tank litres.
    */
@@ -138,7 +134,6 @@
     fixed_black: "fixed"
   };
   var CASSETTE_SOURCE = {
-    repo: "warobbo/mhwater",
     file: "assets/cassette-calc.js",
     defaults: {
       adults: 2,
@@ -577,7 +572,7 @@
   }
 
   /**
-   * Mirrored from warobbo/mhwater GasCalc.buildGasPrefillQuery / Href
+   * Mirrored from the water GasCalc.buildGasPrefillQuery / Href
    * (PR #18, now on main). Unknown keys stay off the URL. bottleKg is
    * only sent for custom bottles; heatingHours only when heatingLevel
    * is omitted; boilerHours only when boilerLevel is omitted.
@@ -885,7 +880,7 @@
   }
 
   /**
-   * Ask→Power Wave 3 query keys — warobbo/power-tool PR #26 contract,
+   * Ask→Power Wave 3 query keys — Power calculator prefill contract,
    * plus #wave3 so Power can scroll to the air-con row on handoff.
    * wave3=1 enables the starter. hours only when the visitor named them
    * (page keeps 0 if omitted). watts only if Ask overrides; missing watts

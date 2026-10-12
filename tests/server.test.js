@@ -289,7 +289,7 @@ test("GET /guides/ and Wave 2 pages return Payload, Power and Water", async func
     assert.match(homeHtml, /href="\/ask\/">shareable Ask page</);
     assert.match(homeHtml, /<h2 id="ask-title">Not sure\? Ask in plain English<\/h2>/);
     assert.match(homeHtml, /id="ask-answer"/);
-    assert.match(homeHtml, /assets\/copilot\.js\?v=20260923hub/);
+    assert.match(homeHtml, /assets\/copilot\.js\?v=20261012pub/);
     assert.match(homeHtml, /assets\/app\.js\?v=20260923hub/);
     assert.match(homeHtml, /href="\/power\/"/);
     assert.match(homeHtml, /href="\/water\/"/);
@@ -305,7 +305,7 @@ test("GET /guides/ and Wave 2 pages return Payload, Power and Water", async func
     assert.match(askHtml, /id="ask-form"/);
     assert.match(askHtml, /id="ask-question"/);
     assert.match(askHtml, /assets\/router\.js/);
-    assert.match(askHtml, /assets\/copilot\.js\?v=20260923hub/);
+    assert.match(askHtml, /assets\/copilot\.js\?v=20261012pub/);
     assert.match(askHtml, /assets\/app\.js\?v=20260923hub/);
     assert.doesNotMatch(askHtml, /motorhomepower\.co\.uk|motorhomewater\.co\.uk/);
     assert.match(askHtml, /id="ask-answer"/);
@@ -317,7 +317,8 @@ test("GET /guides/ and Wave 2 pages return Payload, Power and Water", async func
     assert.match(aboutHtml, /<title>About \| Motorhome Tools<\/title>/);
     assert.match(aboutHtml, /<link rel="canonical" href="https:\/\/motorhometools\.co\.uk\/about\/">/);
     assert.match(aboutHtml, /<meta property="og:url" content="https:\/\/motorhometools\.co\.uk\/about\/">/);
-    assert.match(aboutHtml, /Wayne Robinson/);
+    assert.match(aboutHtml, /id="author-title">Motorhome Tools</);
+    assert.doesNotMatch(aboutHtml, /wayne|robinson|warobbo/i);
     assert.match(aboutHtml, /motorhomepayload\.co\.uk/);
     assert.match(aboutHtml, /free guidance tools/);
     assert.match(aboutHtml, /don.t invent tyre pressures, weights or legal advice/);
@@ -563,9 +564,10 @@ test("homepage JSON-LD is an honest WebSite hub and Wave B OG tags stay", functi
   assert.match(website.description, /payload, power and water/);
   assert.equal(website.inLanguage, "en-GB");
   assert.equal(website.isAccessibleForFree, true);
-  assert.equal(website.author && website.author.name, "Wayne Robinson");
-  assert.equal(website.author["@id"], "https://motorhometools.co.uk/#person");
-  assert.equal(website.author.url, "https://motorhometools.co.uk/about/");
+  assert.equal(website.author && website.author["@type"], "Organization");
+  assert.equal(website.author.name, "Motorhome Tools");
+  assert.equal(website.author["@id"], "https://motorhometools.co.uk/#organization");
+  assert.equal(website.author.url, "https://motorhometools.co.uk/");
   assert.equal(website.author.sameAs, undefined);
   assert.equal(website.publisher && website.publisher["@id"], "https://motorhometools.co.uk/#organization");
   assert.equal(website.aggregateRating, undefined);
@@ -695,9 +697,10 @@ test("live water calculators expose a light WebApplication without ratings or pr
     assert.equal(data.aggregateRating, undefined, name);
     assert.equal(data.offers, undefined, name);
     assert.equal(data.review, undefined, name);
-    assert.equal(data.author && data.author.name, "Wayne Robinson", name);
-    assert.equal(data.author["@id"], "https://motorhometools.co.uk/#person", name);
-    assert.equal(data.author.url, "https://motorhometools.co.uk/about/", name);
+    assert.equal(data.author && data.author["@type"], "Organization", name);
+    assert.equal(data.author.name, "Motorhome Tools", name);
+    assert.equal(data.author["@id"], "https://motorhometools.co.uk/#organization", name);
+    assert.equal(data.author.url, "https://motorhometools.co.uk/", name);
     assert.equal(data.author.sameAs, undefined, name);
     assert.doesNotMatch(html, /FAQPage|aggregateRating|priceCurrency/);
   }
@@ -782,6 +785,7 @@ test("production build minifies client JS and the server serves that file", func
   const sourceCopilot = fs.readFileSync(path.join(root, "assets", "copilot.js"));
   assert.ok(builtCopilot.length < sourceCopilot.length * 0.7);
   assert.doesNotMatch(builtCopilot.toString("utf8"), /Payload-first co-pilot/);
+  assert.doesNotMatch(builtCopilot.toString("utf8"), /wayne|robinson|warobbo/i);
   assert.equal(fs.existsSync(path.join(root, "dist", "assets", "copilot.js.map")), false);
 
   function walkJs(dir, files) {
@@ -797,6 +801,11 @@ test("production build minifies client JS and the server serves that file", func
   assert.equal(builtFiles.length, stats.files);
   for (const file of builtFiles) {
     execFileSync(process.execPath, ["--check", file]);
+    assert.doesNotMatch(
+      fs.readFileSync(file, "utf8"),
+      /wayne|robinson|warobbo/i,
+      path.relative(root, file)
+    );
   }
 
   const copilot = require(path.join(root, "dist", "assets", "copilot.js"));
@@ -842,7 +851,7 @@ function collectIdentityNodes(node, out) {
   });
 }
 
-test("repeated Person, Organization, and WebSite entities share one absolute @id", function () {
+test("public schema has no Person and repeated organizations share one absolute @id", function () {
   const root = path.join(__dirname, "..");
   const groups = new Map();
   for (const filePath of walkHtmlFiles(root, [])) {
@@ -866,22 +875,18 @@ test("repeated Person, Organization, and WebSite entities share one absolute @id
     }
   }
 
-  let sawPerson = false;
+  let sawOrg = false;
   for (const [key, entries] of groups) {
+    assert.equal(key.startsWith("Person\n"), false, key);
     const pages = new Set(entries.map(function (entry) { return entry.rel; }));
     if (pages.size < 2) continue;
     const ids = new Set(entries.map(function (entry) { return entry.id; }));
     assert.equal(ids.size, 1, key);
     const id = [...ids][0];
     assert.match(id, /^https:\/\/motorhometools\.co\.uk\/#/, key);
-    if (key === "Person\nWayne Robinson") {
-      sawPerson = true;
-      assert.equal(id, "https://motorhometools.co.uk/#person");
-      const urls = new Set(entries.map(function (entry) { return entry.url; }));
-      assert.deepEqual([...urls], ["https://motorhometools.co.uk/about/"]);
-      entries.forEach(function (entry) {
-        assert.equal(entry.url, "https://motorhometools.co.uk/about/", entry.rel);
-      });
+    if (key === "Organization\nMotorhome Tools") {
+      sawOrg = true;
+      assert.equal(id, "https://motorhometools.co.uk/#organization");
       assert.ok(pages.has("index.html"));
       assert.ok(pages.has(path.join("about", "index.html")));
       assert.ok(pages.has("power/index.html"));
@@ -891,10 +896,10 @@ test("repeated Person, Organization, and WebSite entities share one absolute @id
       assert.ok(pages.has(path.join("water", "tanks.html")));
     }
   }
-  assert.equal(sawPerson, true);
+  assert.equal(sawOrg, true);
 });
 
-test("About page links Person @id to /about/ and every public page can reach it", function () {
+test("About page names the Motorhome Tools organization and every public page can reach it", function () {
   const root = path.join(__dirname, "..");
   const html = fs.readFileSync(path.join(root, "about", "index.html"), "utf8");
   const blocks = jsonLdBlocks(html);
@@ -905,19 +910,19 @@ test("About page links Person @id to /about/ and every public page can reach it"
   const person = graph.find(function (node) { return node["@type"] === "Person"; });
   const org = graph.find(function (node) { return node["@type"] === "Organization"; });
   assert.ok(about);
-  assert.ok(person);
+  assert.equal(person, undefined);
   assert.equal(about.url, "https://motorhometools.co.uk/about/");
-  assert.equal(about.author["@id"], "https://motorhometools.co.uk/#person");
-  assert.equal(about.mainEntity["@id"], "https://motorhometools.co.uk/#person");
-  assert.equal(person["@id"], "https://motorhometools.co.uk/#person");
-  assert.equal(person.name, "Wayne Robinson");
-  assert.equal(person.url, "https://motorhometools.co.uk/about/");
-  assert.equal(person.sameAs, undefined);
-  assert.equal(person.image, undefined);
-  assert.equal(person.jobTitle, undefined);
+  assert.equal(about.author["@type"], "Organization");
+  assert.equal(about.author["@id"], "https://motorhometools.co.uk/#organization");
+  assert.equal(about.author.name, "Motorhome Tools");
+  assert.equal(about.mainEntity["@id"], "https://motorhometools.co.uk/#organization");
+  assert.equal(org["@id"], "https://motorhometools.co.uk/#organization");
+  assert.equal(org.name, "Motorhome Tools");
+  assert.equal(org.url, "https://motorhometools.co.uk/");
+  assert.equal(org.sameAs, undefined);
   assert.equal(org.logo, "https://motorhometools.co.uk/assets/icon-512.png");
   assert.equal(typeof org.logo, "string");
-  assert.match(html, /id="author-title">Wayne Robinson</);
+  assert.match(html, /id="author-title">Motorhome Tools</);
   assert.match(html, /free guidance tools/);
   assert.match(html, /motorhomepayload\.co\.uk/);
   assert.match(html, /don.t invent tyre pressures/);
@@ -957,4 +962,25 @@ test("ask honeypot is not a focusable control inside aria-hidden", function () {
     assert.match(block[0], /autocomplete="off"/, rel);
     assert.doesNotMatch(block[0], /\bdisabled\b/, rel);
   }
+});
+
+test("served files do not name the site owner or publish an email address", function () {
+  const root = path.join(__dirname, "..");
+  const forbidden = /wayne|robinson|warobbo|warobbo24|wayne\.robinson/i;
+  const email = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i;
+  function walk(dir, relBase) {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const rel = relBase ? relBase + "/" + entry.name : entry.name;
+      if (server.isHidden(rel)) continue;
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(full, rel);
+        continue;
+      }
+      const text = fs.readFileSync(full).toString("latin1");
+      assert.doesNotMatch(text, forbidden, rel);
+      assert.doesNotMatch(text, email, rel);
+    }
+  }
+  walk(root, "");
 });

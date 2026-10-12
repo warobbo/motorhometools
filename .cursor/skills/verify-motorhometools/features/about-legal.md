@@ -23,7 +23,7 @@ Preconditions:
 - Doctor `--pages`.
 
 - **Load each page.** `./.cursor/skills/verify-motorhometools/scripts/doctor.js --base http://127.0.0.1:$PORT --pages` requires 200 and the H1 text for `/about/`, `/privacy.html`, `/cookies.html` and `/disclaimer.html`.
-- **What correct looks like.** About names Payload on motorhomepayload.co.uk and Power and Water on this site. Privacy says unmatched Ask notes are for the site owner and replies are not automated. None of the four pages show a calculator total.
+- **What correct looks like.** About names Motorhome Tools as the publisher, Payload on motorhomepayload.co.uk, and Power and Water on this site. It does not name a person. Privacy says unmatched Ask notes are for the site owner and replies are not automated. None of the four pages show a calculator total.
 - **Proof.** Doctor stdout for those four paths.
 
 These pages do no maths. There is no INPUT / EXPECTED / ACTUAL row.

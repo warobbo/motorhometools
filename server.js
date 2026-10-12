@@ -331,6 +331,7 @@ if (require.main === module) {
 
 module.exports = server;
 module.exports.resolvePublicFile = resolvePublicFile;
+module.exports.isHidden = isHidden;
 module.exports.SECURITY_HEADERS = SECURITY_HEADERS;
 module.exports.cacheControlFor = cacheControlFor;
 module.exports.LONG_CACHE = LONG_CACHE;

@@ -1,6 +1,6 @@
 # Ask synonym coverage (Font owns this)
 
-Wayne lock, 15 Sep 2026: **Wayne must never discover missing Ask synonyms by typing.** Font QA owns Ask coverage permanently.
+15 Sep 2026: **Missing Ask synonyms must not be found by typing.** Font QA owns Ask coverage permanently.
 
 ## Same-change rule
 
@@ -8,12 +8,12 @@ When a hub adds a starter appliance or default label, update `assets/router.js` 
 
 | Hub | Source of truth |
 | --- | --- |
-| Power | `warobbo/power-tool` `assets/defaults.js` — `STARTER_IDS` / `starterSet()` and `INVERTER_LOAD_IDS` / `inverterStarterSet()` |
-| Gas | `warobbo/mhwater` `assets/gas-defaults.js`, `assets/gas-calc.js` (Calor / LPG / bottles / cooking / heating / fridge-on-gas) |
-| Water | `warobbo/mhwater` `assets/defaults.js` (shower, wash-up, laundry, drink/cook, fresh) |
-| Tanks | `warobbo/mhwater` `assets/tank-defaults.js` (fresh / grey / black holding tanks) |
-| Cassette | `warobbo/mhwater` `assets/cassette-defaults.js` plus toilet / loo / chemical toilet |
-| Payload | `warobbo/motorhome-payload-calculator` — MAM, MIRO, Mass in Service, axle, weighbridge, remaining payload |
+| Power | Power calculator `assets/defaults.js` — `STARTER_IDS` / `starterSet()` and `INVERTER_LOAD_IDS` / `inverterStarterSet()` |
+| Gas | Water gas calculator `assets/gas-defaults.js`, `assets/gas-calc.js` (Calor / LPG / bottles / cooking / heating / fridge-on-gas) |
+| Water | Water calculator `assets/defaults.js` (shower, wash-up, laundry, drink/cook, fresh) |
+| Tanks | Water tanks calculator `assets/tank-defaults.js` (fresh / grey / black holding tanks) |
+| Cassette | Water cassette calculator `assets/cassette-defaults.js` plus toilet / loo / chemical toilet |
+| Payload | Payload calculator — MAM, MIRO, Mass in Service, axle, weighbridge, remaining payload |
 | Tyres | Existing pressure / psi / bar / CP only. Do not invent sidewall pressure synonyms. |
 
 ## Routing locks (do not reverse)

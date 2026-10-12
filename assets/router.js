@@ -4,8 +4,8 @@
  * Keyword router for the Motorhome Tools front door.
  * Points at an existing hub. Never invents pressures, weights or legal advice.
  *
- * FONT OWNS ASK COVERAGE (Wayne lock, 15 Sep 2026).
- * Wayne must never discover missing synonyms by typing. When a hub adds a
+ * FONT OWNS ASK COVERAGE (15 Sep 2026).
+ * Missing synonyms must not be found by typing. When a hub adds a
  * starter item, update the matching seed list here in the same change.
  * See ASK-SYNONYMS.md.
  *
