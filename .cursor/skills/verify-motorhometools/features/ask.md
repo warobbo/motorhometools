@@ -10,7 +10,7 @@ The unmatched `POST /api/ask` handler runs in the same Node process as the pages
 - `ask-unmatched` posts the question and shows that the note reached the site owner.
 - `ask-honeypot` ignores a filled `website` field and does not log it.
 - `ask-tyres` holds tyre-pressure questions and does not invent a psi or bar figure.
-- `ask-api` answers `GET /api/ask` with `{ "ok": true, "capture": true }`.
+- `ask-api` answers `GET /api/ask` with `{ "ok": true, "capture": true }`. The JSON `mailto` field is null when no notify address is set, and it stays null when that address contains the site owner’s name.
 
 ## How to get to it (user POV)
 

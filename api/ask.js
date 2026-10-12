@@ -56,10 +56,9 @@ async function handleAsk(req, res) {
   }
 
   if (req.method === "GET") {
-    const email = ask.notifyEmail();
     send(res, 200, {
       ok: true,
-      mailto: email || null,
+      mailto: ask.publicNotifyEmail() || null,
       capture: true,
       copilot: "payload"
     });
@@ -112,7 +111,7 @@ async function handleAsk(req, res) {
   send(res, 200, {
     ok: true,
     saved: true,
-    mailto: ask.notifyEmail() || null
+    mailto: ask.publicNotifyEmail() || null
   });
 }
 

@@ -128,6 +128,26 @@ test("POST /api/ask ignores honeypot without logging a real note", async functio
   assert.equal(json.ignored, true);
 });
 
+test("GET /api/ask does not publish an owner address", async function () {
+  const previous = process.env.ASK_NOTIFY_EMAIL;
+  process.env.ASK_NOTIFY_EMAIL = "owner.wayne.robinson@motorhometools.co.uk";
+  try {
+    const res = fakeRes();
+    await handleAsk({ method: "GET", headers: {} }, res);
+    const json = JSON.parse(res.body);
+    assert.equal(json.ok, true);
+    assert.equal(json.mailto, null);
+    ask.resetRateLimit();
+    const posted = await postAsk({ question: "best campsite near York" });
+    assert.equal(posted.res.statusCode, 200);
+    assert.equal(posted.json.saved, true);
+    assert.equal(posted.json.mailto, null);
+  } finally {
+    if (previous == null) delete process.env.ASK_NOTIFY_EMAIL;
+    else process.env.ASK_NOTIFY_EMAIL = previous;
+  }
+});
+
 test("GET /api/ask reports capture without a hardcoded address", async function () {
   const req = { method: "GET", headers: {} };
   const res = fakeRes();
