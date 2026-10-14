@@ -61,6 +61,12 @@ test("buildRecord ignores honeypot", function () {
   assert.deepEqual(built, { ok: true, ignored: true });
 });
 
+test("buildRecord treats a blank website as an empty honeypot", function () {
+  const built = ask.buildRecord({ question: "hello", website: "   " });
+  assert.equal(built.ok, true);
+  assert.equal(built.record.question, "hello");
+});
+
 test("buildRecord rejects an empty question", function () {
   const built = ask.buildRecord({ question: "   " });
   assert.equal(built.ok, false);
@@ -96,13 +102,17 @@ test("persistRecord writes one JSON line with email", function () {
   assert.equal(files[0].data, JSON.stringify(record) + "\n");
 });
 
-test("rate limit blocks a burst from one client", function () {
+test("rate limit allows 5 posts per IP in 10 minutes", function () {
   ask.resetRateLimit();
+  assert.equal(ask.RATE_MAX, 5);
+  assert.equal(ask.RATE_WINDOW_MS, 10 * 60 * 1000);
+  const start = 1_000_000;
   for (let i = 0; i < ask.RATE_MAX; i += 1) {
-    assert.equal(ask.allowSubmit("1.2.3.4", 1000), true);
+    assert.equal(ask.allowSubmit("1.2.3.4", start), true);
   }
-  assert.equal(ask.allowSubmit("1.2.3.4", 1000), false);
-  assert.equal(ask.allowSubmit("9.9.9.9", 1000), true);
+  assert.equal(ask.allowSubmit("1.2.3.4", start + ask.RATE_WINDOW_MS - 1), false);
+  assert.equal(ask.allowSubmit("9.9.9.9", start), true);
+  assert.equal(ask.allowSubmit("1.2.3.4", start + ask.RATE_WINDOW_MS), true);
   ask.resetRateLimit();
 });
 
@@ -119,13 +129,60 @@ test("POST /api/ask saves and returns ok", async function () {
 
 test("POST /api/ask ignores honeypot without logging a real note", async function () {
   ask.resetRateLimit();
-  const { res, json } = await postAsk({
-    question: "hello",
-    website: "https://bots.test"
-  });
-  assert.equal(res.statusCode, 200);
-  assert.equal(json.ok, true);
-  assert.equal(json.ignored, true);
+  const lines = [];
+  const originalLog = console.log;
+  console.log = function (line) { lines.push(String(line)); };
+  try {
+    const { res, json } = await postAsk({
+      question: "hello",
+      website: "https://bots.test"
+    }, { "x-forwarded-for": "203.0.113.8" });
+    assert.equal(res.statusCode, 200);
+    assert.equal(json.ok, true);
+    assert.equal(json.ignored, true);
+    assert.equal(json.saved, undefined);
+    assert.equal(lines.some(function (line) { return line.indexOf("[ask]") === 0; }), false);
+  } finally {
+    console.log = originalLog;
+  }
+});
+
+test("POST /api/ask rate limit is 5 per IP and honeypot stays silent", async function () {
+  ask.resetRateLimit();
+  const headers = { "x-forwarded-for": "203.0.113.10, 10.0.0.1" };
+  for (let i = 0; i < 5; i += 1) {
+    const saved = await postAsk({ question: "campsite question " + i }, headers);
+    assert.equal(saved.res.statusCode, 200, "post " + i);
+    assert.equal(saved.json.saved, true);
+  }
+  const blocked = await postAsk({ question: "one more campsite" }, headers);
+  assert.equal(blocked.res.statusCode, 429);
+  assert.equal(blocked.json.ok, false);
+  assert.equal(blocked.json.error, "rate");
+
+  const lines = [];
+  const originalLog = console.log;
+  console.log = function (line) { lines.push(String(line)); };
+  try {
+    const honeypot = await postAsk({
+      question: "spam after the limit",
+      website: "https://bots.test"
+    }, headers);
+    assert.equal(honeypot.res.statusCode, 200);
+    assert.equal(honeypot.json.ok, true);
+    assert.equal(honeypot.json.ignored, true);
+    assert.equal(lines.some(function (line) { return line.indexOf("[ask]") === 0; }), false);
+  } finally {
+    console.log = originalLog;
+  }
+
+  const other = await postAsk(
+    { question: "different visitor" },
+    { "x-forwarded-for": "203.0.113.11" }
+  );
+  assert.equal(other.res.statusCode, 200);
+  assert.equal(other.json.saved, true);
+  ask.resetRateLimit();
 });
 
 test("GET /api/ask does not publish an owner address", async function () {

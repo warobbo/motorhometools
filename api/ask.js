@@ -25,6 +25,16 @@ function clientKey(req) {
   return forwarded || (req.socket && req.socket.remoteAddress) || "anon";
 }
 
+function rejectIfLimited(req, res) {
+  if (ask.allowSubmit(clientKey(req))) return false;
+  send(res, 429, {
+    ok: false,
+    error: "rate",
+    message: "Please wait before sending another question."
+  });
+  return true;
+}
+
 async function readJson(req) {
   if (req.body && typeof req.body === "object" && !Buffer.isBuffer(req.body)) {
     return req.body;
@@ -70,15 +80,11 @@ async function handleAsk(req, res) {
     return;
   }
 
-  if (!ask.allowSubmit(clientKey(req))) {
-    send(res, 429, { ok: false, error: "rate", message: "Please wait before sending another question." });
-    return;
-  }
-
   let body = {};
   try {
     body = await readJson(req);
   } catch (err) {
+    if (rejectIfLimited(req, res)) return;
     send(res, err && err.code === "too_large" ? 413 : 400, {
       ok: false,
       error: err && err.code === "too_large" ? "too_large" : "invalid_json",
@@ -88,12 +94,16 @@ async function handleAsk(req, res) {
   }
 
   const built = ask.buildRecord(body);
-  if (!built.ok) {
-    send(res, 400, { ok: false, error: built.error, message: built.message });
-    return;
-  }
+  // A filled honeypot is discarded: HTTP 200, no log line, no rate-limit slot.
   if (built.ignored) {
     send(res, 200, { ok: true, ignored: true });
+    return;
+  }
+
+  if (rejectIfLimited(req, res)) return;
+
+  if (!built.ok) {
+    send(res, 400, { ok: false, error: built.error, message: built.message });
     return;
   }
 

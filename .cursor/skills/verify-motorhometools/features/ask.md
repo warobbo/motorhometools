@@ -8,7 +8,7 @@ The unmatched `POST /api/ask` handler runs in the same Node process as the pages
 
 - `ask-match` shows a guide and a link for a known topic such as “solar”. It does not navigate by itself and it does not POST.
 - `ask-unmatched` posts the question and shows that the note reached the site owner.
-- `ask-honeypot` ignores a filled `website` field and does not log it.
+- `ask-honeypot` hides the optional Website field off-screen. A filled `website` value is discarded and is not logged.
 - `ask-tyres` holds tyre-pressure questions and does not invent a psi or bar figure.
 - `ask-api` answers `GET /api/ask` with `{ "ok": true, "capture": true }`. The JSON `mailto` field is null when no notify address is set, and it stays null when that address contains the site owner’s name.
 
@@ -51,7 +51,7 @@ A correct matched result is that guide text plus the link. A correct unmatched r
 ## Gotchas
 
 - Ask never auto-navigates. A proof that only watches the URL will miss a successful match.
-- The honeypot is `#ask-website` inside an `inert` block. A visitor does not fill it. If that field has a value when the form is submitted, the status is `We’ve noted your question.` The page does not POST and writes no `[ask]` line. A direct `POST /api/ask` with `website` set returns `{ "ok": true, "ignored": true }` and writes no log line. Leave the field empty for a real note.
-- Rate limit is 10 posts in 10 minutes per client. A burst of unmatched proofs returns `429` with `error: "rate"`.
+- The honeypot is `#ask-website` inside an `inert` block styled by `.hp` (positioned off-screen, 1×1px, overflow hidden). A visitor does not see or fill it. If that field has a value when the form is submitted, the status is `We’ve noted your question.` The page does not POST and writes no `[ask]` line. A direct `POST /api/ask` with `website` set returns `{ "ok": true, "ignored": true }`, writes no log line, and does not use a rate-limit slot. A blank website is not a honeypot hit. Leave the field empty for a real note.
+- Rate limit is 5 posts in 10 minutes per IP, stored in memory for this process. The key is the first `X-Forwarded-For` address, or the socket address when that header is absent. A burst of unmatched proofs returns `429` with `error: "rate"`. A different IP is counted on its own. There is no Turnstile widget on the form.
 - Locally, with `NODE_ENV` unset and `ASK_LOG_PATH` unset, notes also append to gitignored `data/asks.jsonl`. Production logs stdout only unless `ASK_LOG_PATH` is set. Do not print `ASK_NOTIFY_EMAIL`.
 - Copilot answers for gas bottle-days, cassette empties and Wave 3 watts are estimates with labelled assumptions and a prefilled calculator link. They are still not a substitute for opening the calculator.

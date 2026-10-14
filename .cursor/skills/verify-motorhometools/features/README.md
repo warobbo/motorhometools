@@ -6,7 +6,7 @@ Whenever a build changes pages or tools, update this feature map in the same PR.
 
 Calculator files include an INPUT / EXPECTED / ACTUAL table. EXPECTED is worked from the formula in the cited source file, then the page’s own en-GB formatter. ACTUAL is what a drive of this server showed. If a case was not driven, the row says so. Do not invent a number.
 
-The ACTUAL cells that say “Same as EXPECTED” were checked on 12 Oct 2026 by `scripts/drive.js` against a local server (80 checks, all passed). The screen text matched the EXPECTED cell. Payload stays `NOT RUN` because its formula is not in this repo.
+The ACTUAL cells that say “Same as EXPECTED” were checked on 14 Oct 2026 by `scripts/drive.js` against a local server (80 checks, all passed). The screen text matched the EXPECTED cell. Payload stays `NOT RUN` because its formula is not in this repo.
 
 Payload and Tyres are not features of this server. They are an external reference: [motorhomepayload.co.uk](https://motorhomepayload.co.uk/) (repo `warobbo/motorhome-payload-calculator`). See [external-payload.md](./external-payload.md).
 
