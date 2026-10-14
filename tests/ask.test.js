@@ -116,6 +116,33 @@ test("rate limit allows 5 posts per IP in 10 minutes", function () {
   ask.resetRateLimit();
 });
 
+test("rate limit drops idle addresses and does not grow without bound", function () {
+  ask.resetRateLimit();
+  const start = 5_000_000;
+  assert.equal(ask.allowSubmit("198.51.100.10", start), true);
+  assert.equal(ask.allowSubmit("198.51.100.11", start), true);
+  assert.equal(ask.rateLimitSize(), 2);
+  assert.equal(ask.allowSubmit("198.51.100.12", start + ask.RATE_WINDOW_MS), true);
+  assert.equal(ask.rateLimitSize(), 1);
+
+  const now = start + ask.RATE_WINDOW_MS * 2;
+  const victim = "192.0.2.10";
+  for (let n = 0; n < ask.RATE_MAX; n += 1) {
+    assert.equal(ask.allowSubmit(victim, now), true);
+  }
+  for (let i = 1; i < ask.RATE_BUCKET_MAX; i += 1) {
+    const key = "10." + ((i >> 16) & 255) + "." + ((i >> 8) & 255) + "." + (i & 255);
+    assert.equal(ask.allowSubmit(key, now), true);
+  }
+  assert.equal(ask.rateLimitSize(), ask.RATE_BUCKET_MAX);
+  assert.equal(ask.allowSubmit(victim, now), false);
+  assert.equal(ask.allowSubmit("203.0.113.77", now), true);
+  assert.equal(ask.rateLimitSize(), ask.RATE_BUCKET_MAX);
+  assert.equal(ask.allowSubmit("203.0.113.77", now + ask.RATE_WINDOW_MS), true);
+  assert.equal(ask.rateLimitSize(), 1);
+  ask.resetRateLimit();
+});
+
 test("POST /api/ask saves and returns ok", async function () {
   ask.resetRateLimit();
   const { res, json } = await postAsk({
@@ -182,6 +209,93 @@ test("POST /api/ask rate limit is 5 per IP and honeypot stays silent", async fun
   );
   assert.equal(other.res.statusCode, 200);
   assert.equal(other.json.saved, true);
+  ask.resetRateLimit();
+});
+
+test("POST /api/ask keys Cloudflare visitors by CF-Connecting-IP", async function () {
+  ask.resetRateLimit();
+  const headers = {
+    "cf-connecting-ip": "203.0.113.20",
+    "x-forwarded-for": "198.51.100.20, 10.0.0.1"
+  };
+  for (let i = 0; i < 5; i += 1) {
+    const saved = await postAsk({ question: "cf visitor " + i }, headers);
+    assert.equal(saved.res.statusCode, 200, "post " + i);
+    assert.equal(saved.json.saved, true);
+  }
+  const blocked = await postAsk({ question: "cf visitor again" }, headers);
+  assert.equal(blocked.res.statusCode, 429);
+  assert.equal(blocked.json.error, "rate");
+
+  const spoofOnly = await postAsk(
+    { question: "forwarded header alone" },
+    { "x-forwarded-for": "198.51.100.20" }
+  );
+  assert.equal(spoofOnly.res.statusCode, 200);
+  assert.equal(spoofOnly.json.saved, true);
+
+  const other = await postAsk(
+    { question: "other cloudflare visitor" },
+    { "cf-connecting-ip": "203.0.113.21", "x-forwarded-for": "198.51.100.20" }
+  );
+  assert.equal(other.res.statusCode, 200);
+  assert.equal(other.json.saved, true);
+  ask.resetRateLimit();
+});
+
+test("a non-IP forwarded header shares one bucket", async function () {
+  ask.resetRateLimit();
+  for (let i = 0; i < 5; i += 1) {
+    const saved = await postAsk(
+      { question: "junk header " + i },
+      { "x-forwarded-for": "not-an-ip-" + i + "-" + "x".repeat(80) }
+    );
+    assert.equal(saved.res.statusCode, 200, "post " + i);
+    assert.equal(saved.json.saved, true);
+  }
+  const blocked = await postAsk(
+    { question: "another junk header" },
+    { "x-forwarded-for": "also-not-an-ip" }
+  );
+  assert.equal(blocked.res.statusCode, 429);
+  assert.equal(blocked.json.error, "rate");
+  assert.equal(ask.rateLimitSize(), 1);
+  ask.resetRateLimit();
+});
+
+test("cross-site POST does not log or use a rate-limit slot", async function () {
+  ask.resetRateLimit();
+  const lines = [];
+  const originalLog = console.log;
+  console.log = function (line) { lines.push(String(line)); };
+  try {
+    const honeypot = await postAsk(
+      { question: "cross-site spam", website: "https://bots.test" },
+      { "sec-fetch-site": "cross-site", "x-forwarded-for": "203.0.113.40" }
+    );
+    assert.equal(honeypot.res.statusCode, 200);
+    assert.equal(honeypot.json.ok, true);
+    assert.equal(honeypot.json.ignored, true);
+
+    for (let i = 0; i < 6; i += 1) {
+      const blocked = await postAsk(
+        { question: "from another site " + i },
+        { "sec-fetch-site": "cross-site", "x-forwarded-for": "203.0.113.40" }
+      );
+      assert.equal(blocked.res.statusCode, 403);
+      assert.equal(blocked.json.ok, false);
+      assert.equal(blocked.json.error, "origin");
+    }
+    assert.equal(lines.some(function (line) { return line.indexOf("[ask]") === 0; }), false);
+  } finally {
+    console.log = originalLog;
+  }
+  const saved = await postAsk(
+    { question: "same visitor on the site" },
+    { "sec-fetch-site": "same-origin", "x-forwarded-for": "203.0.113.40" }
+  );
+  assert.equal(saved.res.statusCode, 200);
+  assert.equal(saved.json.saved, true);
   ask.resetRateLimit();
 });
 

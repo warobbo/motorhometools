@@ -127,7 +127,7 @@ Then in Render → the **Node** web service → **Custom Domains** add `motorhom
 3. If the POST fails, a copy may stay on the visitor’s phone (`localStorage` key `motorhometools.unansweredAsks`). The page does **not** pretend a human already has it.
 4. Optional email is stored with the question only if the visitor types one. We will not email a pressure, a weight or legal advice.
 5. Honeypot field `website` is hidden off-screen. A filled value is discarded: HTTP 200 `{ "ok": true, "ignored": true }`, no log line, and it does not use a rate-limit slot.
-6. Rate limit: 5 posts / 10 minutes per IP, kept in memory on this process. The key is the first `X-Forwarded-For` address, or the socket address when that header is absent.
+6. Rate limit: 5 posts / 10 minutes per IP, kept in memory on this process. Cloudflare visitors are keyed by `CF-Connecting-IP`. Otherwise the key is the first `X-Forwarded-For` value that is an IP, or the socket address. Non-IP header values share one fallback bucket. Addresses older than the window are dropped, and a full table does not refuse a new visitor. A browser POST from another site is refused and does not use a slot.
 
 ## Guides (Wave 1 Payload + Wave 2 Power / Water)
 
