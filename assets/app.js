@@ -198,6 +198,11 @@
     });
   }
 
+  function honeypotText() {
+    if (!honeypot || honeypot.value == null) return "";
+    return String(honeypot.value).replace(/\s+/g, " ").trim();
+  }
+
   function buildRecord(question, email) {
     return {
       question: question,
@@ -205,7 +210,7 @@
       at: new Date().toISOString(),
       href: window.location.href,
       source: "motorhometools-ask",
-      website: honeypot && honeypot.value ? honeypot.value : ""
+      website: honeypotText()
     };
   }
 
@@ -240,7 +245,7 @@
     event.preventDefault();
     if (submitBtn) submitBtn.textContent = "Find it";
 
-    if (honeypot && honeypot.value) {
+    if (honeypotText()) {
       clearAnswer();
       setStatus("We’ve noted your question.", "ok");
       return;
@@ -301,6 +306,10 @@
       }
       if (result && result.json && result.json.ok && result.json.ignored) {
         setStatus("We’ve noted your question.", "ok");
+        return;
+      }
+      if (result && result.json && result.json.error === "rate") {
+        setStatus(result.json.message || "Please wait before sending another question.", "warn");
         return;
       }
       showFallback(record);

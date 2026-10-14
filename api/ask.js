@@ -7,6 +7,7 @@
  * Do not invent a tyre pressure, weight or legal answer here.
  */
 
+const net = require("net");
 const ask = require("../lib/ask");
 const copilot = require("../lib/copilot");
 
@@ -20,9 +21,39 @@ function send(res, status, body) {
   res.end(JSON.stringify(body));
 }
 
+// Cloudflare overwrites CF-Connecting-IP with the visitor address. The first
+// X-Forwarded-For token is whatever the caller sent, so it is only a fallback.
+// Anything that is not one IP shares the socket address, or "anon", instead
+// of becoming its own bucket.
+function ipToken(value) {
+  const first = String(value || "").split(",")[0].trim();
+  if (!first || first.length > 64) return "";
+  return net.isIP(first) ? first : "";
+}
+
 function clientKey(req) {
-  const forwarded = String(req.headers && req.headers["x-forwarded-for"] || "").split(",")[0].trim();
-  return forwarded || (req.socket && req.socket.remoteAddress) || "anon";
+  const headers = (req && req.headers) || {};
+  const cloudflare = ipToken(headers["cf-connecting-ip"]);
+  if (cloudflare) return cloudflare;
+  const forwarded = ipToken(headers["x-forwarded-for"]);
+  if (forwarded) return forwarded;
+  const remote = req && req.socket && req.socket.remoteAddress;
+  return ipToken(remote) || "anon";
+}
+
+function crossSitePost(req) {
+  const site = String(req.headers && req.headers["sec-fetch-site"] || "").trim().toLowerCase();
+  return site === "cross-site";
+}
+
+function rejectIfLimited(req, res) {
+  if (ask.allowSubmit(clientKey(req))) return false;
+  send(res, 429, {
+    ok: false,
+    error: "rate",
+    message: "Please wait before sending another question."
+  });
+  return true;
 }
 
 async function readJson(req) {
@@ -70,15 +101,15 @@ async function handleAsk(req, res) {
     return;
   }
 
-  if (!ask.allowSubmit(clientKey(req))) {
-    send(res, 429, { ok: false, error: "rate", message: "Please wait before sending another question." });
-    return;
-  }
-
   let body = {};
   try {
     body = await readJson(req);
   } catch (err) {
+    if (crossSitePost(req)) {
+      send(res, 403, { ok: false, error: "origin", message: "Send that from the site." });
+      return;
+    }
+    if (rejectIfLimited(req, res)) return;
     send(res, err && err.code === "too_large" ? 413 : 400, {
       ok: false,
       error: err && err.code === "too_large" ? "too_large" : "invalid_json",
@@ -88,12 +119,23 @@ async function handleAsk(req, res) {
   }
 
   const built = ask.buildRecord(body);
-  if (!built.ok) {
-    send(res, 400, { ok: false, error: built.error, message: built.message });
-    return;
-  }
+  // A filled honeypot is discarded: HTTP 200, no log line, no rate-limit slot.
   if (built.ignored) {
     send(res, 200, { ok: true, ignored: true });
+    return;
+  }
+
+  // A browser on another site can otherwise spend this visitor's 5 posts.
+  // Sec-Fetch-Site is set by the browser. A same-origin Ask post is not cross-site.
+  if (crossSitePost(req)) {
+    send(res, 403, { ok: false, error: "origin", message: "Send that from the site." });
+    return;
+  }
+
+  if (rejectIfLimited(req, res)) return;
+
+  if (!built.ok) {
+    send(res, 400, { ok: false, error: built.error, message: built.message });
     return;
   }
 

@@ -290,7 +290,7 @@ test("GET /guides/ and Wave 2 pages return Payload, Power and Water", async func
     assert.match(homeHtml, /<h2 id="ask-title">Not sure\? Ask in plain English<\/h2>/);
     assert.match(homeHtml, /id="ask-answer"/);
     assert.match(homeHtml, /assets\/copilot\.js\?v=20261012pub/);
-    assert.match(homeHtml, /assets\/app\.js\?v=20260923hub/);
+    assert.match(homeHtml, /assets\/app\.js\?v=20261014ask/);
     assert.match(homeHtml, /href="\/power\/"/);
     assert.match(homeHtml, /href="\/water\/"/);
     assert.doesNotMatch(homeHtml, /motorhomepower\.co\.uk|motorhomewater\.co\.uk/);
@@ -306,7 +306,7 @@ test("GET /guides/ and Wave 2 pages return Payload, Power and Water", async func
     assert.match(askHtml, /id="ask-question"/);
     assert.match(askHtml, /assets\/router\.js/);
     assert.match(askHtml, /assets\/copilot\.js\?v=20261012pub/);
-    assert.match(askHtml, /assets\/app\.js\?v=20260923hub/);
+    assert.match(askHtml, /assets\/app\.js\?v=20261014ask/);
     assert.doesNotMatch(askHtml, /motorhomepower\.co\.uk|motorhomewater\.co\.uk/);
     assert.match(askHtml, /id="ask-answer"/);
     assert.doesNotMatch(askHtml, /best campsite|campsites near|directory of sites/i);

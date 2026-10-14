@@ -126,8 +126,8 @@ Then in Render → the **Node** web service → **Custom Domains** add `motorhom
 2. Unmatched questions `POST` JSON to `/api/ask`. On success the visitor sees that the note reached the site owner, and that replies are not automated.
 3. If the POST fails, a copy may stay on the visitor’s phone (`localStorage` key `motorhometools.unansweredAsks`). The page does **not** pretend a human already has it.
 4. Optional email is stored with the question only if the visitor types one. We will not email a pressure, a weight or legal advice.
-5. Honeypot field `website` is ignored (no log line).
-6. Rate limit: 10 posts / 10 minutes per client.
+5. Honeypot field `website` is hidden off-screen. A filled value is discarded: HTTP 200 `{ "ok": true, "ignored": true }`, no log line, and it does not use a rate-limit slot.
+6. Rate limit: 5 posts / 10 minutes per IP, kept in memory on this process. Cloudflare visitors are keyed by `CF-Connecting-IP`. Otherwise the key is the first `X-Forwarded-For` value that is an IP, or the socket address. Non-IP header values share one fallback bucket. Addresses older than the window are dropped, and a full table does not refuse a new visitor. A browser POST from another site is refused and does not use a slot.
 
 ## Guides (Wave 1 Payload + Wave 2 Power / Water)
 
@@ -174,7 +174,7 @@ curl -sI https://motorhometools.co.uk/
 
 The homepage source should include `WebSite` and `Organization` JSON-LD. `/power/` and `/water/` should still load their calculator scripts.
 
-If Cloudflare Rocket Loader, Email Obfuscation, or Web Analytics is turned on later, those injected scripts will be blocked until the policy lists them.
+If Cloudflare Rocket Loader, Email Obfuscation, or Web Analytics is turned on later, those injected scripts will be blocked until the policy lists them. No Web Analytics beacon token is stored in this repo, so the beacon is not included. Ask does not load Turnstile; a site key is not set in `render.yaml` or `.env.example`.
 
 ## Caching
 
