@@ -66,6 +66,10 @@ test("privacy is a UK GDPR notice for Motorhome Tools and shows no email address
   assert.match(html, /objection/);
   assert.match(html, /https:\/\/ico\.org\.uk\/make-a-complaint\//);
   assert.match(html, /Information Commissioner/);
+  assert.match(html, /Render \(hosting, USA region\)/);
+  assert.match(html, /Stores the log line so Motorhome Tools can read it/);
+  assert.match(html, /Cloudflare \(Workers\/CDN, if used\)/);
+  assert.match(html, /May see the connection, including an IP address, in order to deliver the page/);
   assert.doesNotMatch(html, /automated inbox/i);
   assert.doesNotMatch(html, /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i);
   assert.doesNotMatch(html, /wayne|robinson|warobbo/i);
@@ -98,14 +102,8 @@ test("contact form posts to /api/contact with one label per field and a honeypot
   assert.doesNotMatch(html, /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i);
 });
 
-test("Power and Water fields each have one label", function () {
-  const water = fs.readFileSync(path.join(root, "water", "index.html"), "utf8");
-  assert.doesNotMatch(water, /<label class="field" for=/);
-  assert.match(water, /id="shower-length-label"/);
-  assert.match(water, /aria-labelledby="shower-length-label"/);
-  assert.doesNotMatch(water, /id="shower-styles"[^>]*aria-label=/);
-
-  const labels = [...water.matchAll(/<label\b([^>]*)>([\s\S]*?)<\/label>/g)];
+function labelCounts(html) {
+  const labels = [...html.matchAll(/<label\b([^>]*)>([\s\S]*?)<\/label>/g)];
   const counts = new Map();
   for (const match of labels) {
     const attrs = match[1];
@@ -122,30 +120,109 @@ test("Power and Water fields each have one label", function () {
     if (explicit) ids.add(explicit);
     for (const id of ids) counts.set(id, (counts.get(id) || 0) + 1);
   }
-  for (const id of [
-    "adults",
-    "children",
-    "tripDays",
-    "freshTankLitres",
-    "showersPerPersonPerDay",
-    "showerMinutes",
-    "showerLitres",
-    "washUpLitresPerDay",
-    "drinkCookLitresPerPersonPerDay",
-    "laundryEnabled",
-    "laundryLoadsPerTrip",
-    "laundryLitresPerLoad",
-    "cassetteEnabled",
-    "cassetteFlushesPerPersonPerDay",
-    "cassetteLitresPerFlush"
-  ]) {
-    assert.equal(counts.get(id), 1, id);
+  return counts;
+}
+
+test("Power and Water fields each have one label", function () {
+  const pages = {
+    "water/index.html": [
+      "adults",
+      "children",
+      "tripDays",
+      "freshTankLitres",
+      "showersPerPersonPerDay",
+      "showerMinutes",
+      "showerLitres",
+      "washUpLitresPerDay",
+      "drinkCookLitresPerPersonPerDay",
+      "laundryEnabled",
+      "laundryLoadsPerTrip",
+      "laundryLitresPerLoad",
+      "cassetteEnabled",
+      "cassetteFlushesPerPersonPerDay",
+      "cassetteLitresPerFlush"
+    ],
+    "water/gas.html": [
+      "adults",
+      "children",
+      "tripDays",
+      "mealsPerDay",
+      "heatingHours",
+      "fridgeGasEnabled",
+      "fridgeHoursPerDay",
+      "boilerEnabled",
+      "boilerHours",
+      "bottleKg"
+    ],
+    "water/tanks.html": [
+      "freshTankLitres",
+      "greyTankLitres",
+      "blackTankLitres",
+      "tripDays",
+      "freshStartPercent",
+      "greyStartPercent",
+      "blackStartPercent"
+    ],
+    "water/cassette.html": [
+      "adults",
+      "children",
+      "tripDays",
+      "blackTankLitres",
+      "startPercent",
+      "flushesPerPersonPerDay",
+      "litresPerFlush"
+    ]
+  };
+
+  for (const [rel, ids] of Object.entries(pages)) {
+    const html = fs.readFileSync(path.join(root, rel), "utf8");
+    assert.doesNotMatch(html, /<label class="field" for=/, rel);
+    const counts = labelCounts(html);
+    for (const id of ids) assert.equal(counts.get(id), 1, rel + " " + id);
   }
+
+  const choiceLabels = {
+    "water/gas.html": [
+      "season-label",
+      "cooking-style-label",
+      "heating-level-label",
+      "boiler-level-label",
+      "gas-type-label",
+      "bottle-size-label"
+    ],
+    "water/tanks.html": ["black-kind-label"],
+    "water/cassette.html": ["black-kind-label"]
+  };
+  for (const [rel, ids] of Object.entries(choiceLabels)) {
+    const html = fs.readFileSync(path.join(root, rel), "utf8");
+    for (const id of ids) {
+      const group = html.match(new RegExp("<div\\b[^>]*\\baria-labelledby=\"" + id + "\"[^>]*>"));
+      assert.ok(group, rel + " " + id);
+      assert.doesNotMatch(group[0], /\baria-label=/, rel + " " + id);
+      assert.equal((html.match(new RegExp("\\bid=\"" + id + "\"", "g")) || []).length, 1, rel + " " + id);
+    }
+  }
+
+  const water = fs.readFileSync(path.join(root, "water", "index.html"), "utf8");
+  assert.match(water, /id="shower-length-label"/);
+  assert.match(water, /aria-labelledby="shower-length-label"/);
+  assert.doesNotMatch(water, /id="shower-styles"[^>]*aria-label=/);
 
   const power = fs.readFileSync(path.join(root, "power", "assets", "app.js"), "utf8");
   const field = power.slice(power.indexOf("function field("), power.indexOf("function renderAppliances"));
   assert.match(field, /'<label class="field">'/);
   assert.doesNotMatch(field, /for="/);
+});
+
+test("Water pages use the site theme colour", function () {
+  const waterDir = path.join(root, "water");
+  const files = fs.readdirSync(waterDir).filter(function (name) { return name.endsWith(".html"); });
+  assert.ok(files.indexOf("index.html") !== -1);
+  for (const name of files) {
+    const html = fs.readFileSync(path.join(waterDir, name), "utf8");
+    assert.match(html, /<meta name="theme-color" content="#1e4f43">/, name);
+    assert.doesNotMatch(html, /name="theme-color" content="#1e5f74"/, name);
+  }
 });
 
 test("sitemap lists contact and accessibility and dates this release", function () {

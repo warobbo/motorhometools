@@ -41,3 +41,4 @@ A second input that changes Water first (for example the 68 L trip edit) changes
 - Stretch days follow the Water habits saved in this browser. They are not a fixed property of the tank sizes alone.
 - Fresh “days” assume the tank starts full. Grey and cassette “days” assume they start empty. A different start percent is a different sum.
 - The cassette days here use Water’s flush litres. The Cassette page has its own flush fields and can disagree if those were edited separately.
+- Each field has one label. A number label wraps the input and does not also use `for`. Toilet waste type is named once, from `#black-kind-label`.

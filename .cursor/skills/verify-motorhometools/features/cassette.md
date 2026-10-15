@@ -37,3 +37,4 @@ EXPECTED comes from `water/assets/cassette-calc.js` `calcCassette` and `formatDa
 - A 2-day trip does not empty an 18 L cassette (5 L of waste, labelled `5.0`). Days until empty stay 7.2. Do not expect the trip length to appear in `#empty-days`, and do not expect a bare `5` with no decimal.
 - There is no child factor on this page. A family preset is not 0.7 × flushes.
 - Ask can prefill `blackTankLitres` with a multiplied total (two cassettes stored as one litre figure). The form has no cassette-count field. A prefilled 36 L cassette is a different case from this 18 L default.
+- Each field has one label. A number label wraps the input and does not also use `for`. Toilet waste type is named once, from `#black-kind-label`.

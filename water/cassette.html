@@ -21,7 +21,7 @@
     <meta name="twitter:description" content="Turn people, flush habits and cassette size into days until you need a service point.">
     <meta name="twitter:image" content="https://motorhometools.co.uk/assets/og-image.png">
     <meta name="twitter:image:alt" content="Motorhome Tools">
-    <meta name="theme-color" content="#1e5f74">
+    <meta name="theme-color" content="#1e4f43">
     <link rel="icon" href="assets/favicon.svg?v=20260915logos" type="image/svg+xml">
     <link rel="icon" href="assets/favicon-32.png?v=20260915logos" type="image/png" sizes="32x32">
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260915logos" sizes="180x180">
@@ -139,21 +139,21 @@
             <h2 id="habits-title">People and trip</h2>
             <p class="lede tight">People and days start from the Water page if you have already used it. After that, this page keeps its own numbers.</p>
             <div class="field-grid">
-              <label class="field" for="adults">
+              <label class="field">
                 <span>Adults</span>
                 <span class="field-control">
                   <input id="adults" type="number" inputmode="numeric" min="0" max="20" step="1" value="2">
                   <em>people</em>
                 </span>
               </label>
-              <label class="field" for="children">
+              <label class="field">
                 <span>Children <span class="sr-only">(optional)</span></span>
                 <span class="field-control">
                   <input id="children" type="number" inputmode="numeric" min="0" max="20" step="1" value="0">
                   <em>people</em>
                 </span>
               </label>
-              <label class="field" for="tripDays">
+              <label class="field">
                 <span>Trip length</span>
                 <span class="field-control">
                   <input id="tripDays" type="number" inputmode="decimal" min="0.5" max="90" step="0.5" value="2">
@@ -166,21 +166,21 @@
             <h2 class="field-heading">Toilet waste</h2>
             <p class="field-hint" id="black-kind-hint">A cassette is a removable toilet tank you empty at a service point. A fixed black tank is plumbed in and emptied through a dump valve — less common on UK leisure vans.</p>
             <div class="field">
-              <span>What have you got?</span>
-              <div id="black-kinds" class="choice-row" role="group" aria-label="Toilet waste type">
+              <span id="black-kind-label">What have you got?</span>
+              <div id="black-kinds" class="choice-row" role="group" aria-labelledby="black-kind-label">
                 <button type="button" data-black="cassette" aria-pressed="false">Cassette</button>
                 <button type="button" data-black="fixed" aria-pressed="false">Fixed black tank</button>
               </div>
             </div>
             <div class="field-grid">
-              <label class="field" for="blackTankLitres">
+              <label class="field">
                 <span id="black-size-label">Cassette size</span>
                 <span class="field-control">
                   <input id="blackTankLitres" type="number" inputmode="decimal" step="any" value="18">
                   <em>L</em>
                 </span>
               </label>
-              <label class="field" for="startPercent">
+              <label class="field">
                 <span id="black-start-label">Cassette now</span>
                 <span class="field-control">
                   <input id="startPercent" type="number" inputmode="decimal" min="0" max="100" step="5" value="0">
@@ -193,14 +193,14 @@
             <h2 class="field-heading">Flush habits</h2>
             <p class="field-hint">A typical cassette flush is about 0.25 L. Five flushes each for two people is about 2.5 L a day. These litres go in the cassette, not the grey tank.</p>
             <div class="field-grid">
-              <label class="field" for="flushesPerPersonPerDay">
+              <label class="field">
                 <span>Flushes per person per day</span>
                 <span class="field-control">
                   <input id="flushesPerPersonPerDay" type="number" inputmode="decimal" min="0" max="20" step="1" value="5">
                   <em>/ day</em>
                 </span>
               </label>
-              <label class="field" for="litresPerFlush">
+              <label class="field">
                 <span>Litres per flush</span>
                 <span class="field-control">
                   <input id="litresPerFlush" type="number" inputmode="decimal" min="0" max="5" step="0.05" value="0.25">

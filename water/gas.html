@@ -21,7 +21,7 @@
     <meta name="twitter:description" content="Pick butane or propane, trip length and a UK Calor bottle size to see kilograms of gas and how many days a bottle lasts.">
     <meta name="twitter:image" content="https://motorhometools.co.uk/assets/og-image.png">
     <meta name="twitter:image:alt" content="Motorhome Tools">
-    <meta name="theme-color" content="#1e5f74">
+    <meta name="theme-color" content="#1e4f43">
     <link rel="icon" href="assets/favicon.svg?v=20260915logos" type="image/svg+xml">
     <link rel="icon" href="assets/favicon-32.png?v=20260915logos" type="image/png" sizes="32x32">
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260915logos" sizes="180x180">
@@ -134,21 +134,21 @@
             <h2 id="habits-title">People and trip</h2>
             <p class="lede tight">Trip days start from the Water page if you have already used it. Cooking scales with people; heating is for the whole van.</p>
             <div class="field-grid">
-              <label class="field" for="adults">
+              <label class="field">
                 <span>Adults</span>
                 <span class="field-control">
                   <input id="adults" type="number" inputmode="numeric" min="0" max="20" step="1" value="2">
                   <em>people</em>
                 </span>
               </label>
-              <label class="field" for="children">
+              <label class="field">
                 <span>Children <span class="sr-only">(optional)</span></span>
                 <span class="field-control">
                   <input id="children" type="number" inputmode="numeric" min="0" max="20" step="1" value="0">
                   <em>people</em>
                 </span>
               </label>
-              <label class="field" for="tripDays">
+              <label class="field">
                 <span>Trip length</span>
                 <span class="field-control">
                   <input id="tripDays" type="number" inputmode="decimal" min="0.5" max="90" step="0.5" value="2">
@@ -156,8 +156,8 @@
                 </span>
               </label>
               <div class="field">
-                <span>Season <span class="sr-only">(optional)</span></span>
-                <div id="seasons" class="choice-row" role="group" aria-label="Season">
+                <span id="season-label">Season <span class="sr-only">(optional)</span></span>
+                <div id="seasons" class="choice-row" role="group" aria-labelledby="season-label">
                   <button type="button" data-season="summer" aria-pressed="false">Summer</button>
                   <button type="button" data-season="mild" aria-pressed="false">Mild</button>
                   <button type="button" data-season="winter" aria-pressed="false">Winter</button>
@@ -169,7 +169,7 @@
             <h2 class="field-heading">Cooking</h2>
             <p class="field-hint">Light is a kettle and one pan. Normal is everyday hob meals. Heavy is oven, grill or a long simmer.</p>
             <div class="field-grid">
-              <label class="field" for="mealsPerDay">
+              <label class="field">
                 <span>Meals per day</span>
                 <span class="field-control">
                   <input id="mealsPerDay" type="number" inputmode="decimal" min="0" max="6" step="0.5" value="2">
@@ -177,8 +177,8 @@
                 </span>
               </label>
               <div class="field">
-                <span>How much cooking</span>
-                <div id="cooking-styles" class="choice-row" role="group" aria-label="Cooking style">
+                <span id="cooking-style-label">How much cooking</span>
+                <div id="cooking-styles" class="choice-row" role="group" aria-labelledby="cooking-style-label">
                   <button type="button" data-cooking="light" aria-pressed="false">Light</button>
                   <button type="button" data-cooking="normal" aria-pressed="false">Normal</button>
                   <button type="button" data-cooking="heavy" aria-pressed="false">Heavy</button>
@@ -190,15 +190,15 @@
             <p class="field-hint">Hours the space heater is actually burning. Off / Low / Medium / High set 0, 2, 6 or 12 hours. Winter heating is usually the biggest use.</p>
             <div class="field-grid">
               <div class="field">
-                <span>Heater use</span>
-                <div id="heating-levels" class="choice-row" role="group" aria-label="Heating level">
+                <span id="heating-level-label">Heater use</span>
+                <div id="heating-levels" class="choice-row" role="group" aria-labelledby="heating-level-label">
                   <button type="button" data-heating="off" aria-pressed="false">Off</button>
                   <button type="button" data-heating="low" aria-pressed="false">Low</button>
                   <button type="button" data-heating="medium" aria-pressed="false">Medium</button>
                   <button type="button" data-heating="high" aria-pressed="false">High</button>
                 </div>
               </div>
-              <label class="field" for="heatingHours">
+              <label class="field">
                 <span>Heating hours per day</span>
                 <span class="field-control">
                   <input id="heatingHours" type="number" inputmode="decimal" min="0" max="24" step="0.5" value="0">
@@ -216,7 +216,7 @@
               </span>
             </label>
             <div id="fridge-fields" class="field-grid" hidden>
-              <label class="field" for="fridgeHoursPerDay">
+              <label class="field">
                 <span>Hours on gas per day</span>
                 <span class="field-control">
                   <input id="fridgeHoursPerDay" type="number" inputmode="decimal" min="0" max="24" step="1" value="24">
@@ -236,14 +236,14 @@
             <div id="boiler-fields" hidden>
               <div class="field-grid">
                 <div class="field">
-                  <span>Hot water use</span>
-                  <div id="boiler-levels" class="choice-row" role="group" aria-label="Hot water level">
+                  <span id="boiler-level-label">Hot water use</span>
+                  <div id="boiler-levels" class="choice-row" role="group" aria-labelledby="boiler-level-label">
                     <button type="button" data-boiler="light" aria-pressed="false">Light</button>
                     <button type="button" data-boiler="normal" aria-pressed="false">Normal</button>
                     <button type="button" data-boiler="heavy" aria-pressed="false">Heavy</button>
                   </div>
                 </div>
-                <label class="field" for="boilerHours">
+                <label class="field">
                   <span>Burner hours per day</span>
                   <span class="field-control">
                     <input id="boilerHours" type="number" inputmode="decimal" min="0" max="12" step="0.5" value="1.5">
@@ -257,18 +257,18 @@
             <h2 class="field-heading">Bottle size</h2>
             <p class="field-hint">Butane (blue bottles) is the usual UK leisure gas in mild weather. Propane (red bottles) keeps working better in the cold and frost. The sizes below are Calor leisure bottles. The number is the gas inside, not the empty metal weight.</p>
             <div class="field">
-              <span>Which gas</span>
-              <div id="gas-types" class="choice-row" role="group" aria-label="Gas type">
+              <span id="gas-type-label">Which gas</span>
+              <div id="gas-types" class="choice-row" role="group" aria-labelledby="gas-type-label">
                 <button type="button" data-gas="butane" aria-pressed="false">Butane</button>
                 <button type="button" data-gas="propane" aria-pressed="false">Propane</button>
               </div>
             </div>
             <div class="field">
-              <span>Common UK sizes</span>
-              <div id="bottles" class="preset-row" role="group" aria-label="Bottle size"></div>
+              <span id="bottle-size-label">Common UK sizes</span>
+              <div id="bottles" class="preset-row" role="group" aria-labelledby="bottle-size-label"></div>
             </div>
             <div class="field-grid">
-              <label class="field" for="bottleKg">
+              <label class="field">
                 <span>Gas in the bottle</span>
                 <span class="field-control">
                   <input id="bottleKg" type="number" inputmode="decimal" min="1" max="47" step="0.1" value="7">

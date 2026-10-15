@@ -42,3 +42,4 @@ EXPECTED comes from `water/assets/gas-calc.js` `calcGas` and the formatters in `
 - Heating, fridge and boiler are off in both cases above. Turning heating on (0.18 kg/h) dwarfs the cooking line. Do not compare a winter preset with these figures.
 - A saved Water profile can change adults and trip length on Gas. Use a fresh context for the default row.
 - The bottle picker at `/water/bottles.html` is still a coming-soon page. It is not this calculator.
+- Each field has one label. A number label wraps the input and does not also use `for`. A choice row is named once, with `aria-labelledby` on the group.
