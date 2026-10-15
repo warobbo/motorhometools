@@ -55,7 +55,7 @@ Each feature file starts with an H1 and one paragraph, then exactly four H2 sect
 - [Cassette](./cassette.md) — https://motorhometools.co.uk/water/cassette.html
 - [Coming soon](./coming-soon.md) — route note, plus hot water, bottles, winterising and top-up
 - [Guides](./guides.md) — https://motorhometools.co.uk/guides/
-- [About and legal](./about-legal.md) — About, Privacy, Cookies, Disclaimer
+- [About and legal](./about-legal.md) — About, Privacy, Cookies, Disclaimer, Contact, Accessibility
 - [Payload and Tyres (external)](./external-payload.md) — https://motorhomepayload.co.uk/
 
 ## Not public
@@ -102,5 +102,7 @@ Dotfiles and dot-folders are not pages. A path segment that starts with `.` retu
 | https://motorhometools.co.uk/privacy.html | Privacy | [about-legal.md](./about-legal.md) |
 | https://motorhometools.co.uk/cookies.html | Cookies | [about-legal.md](./about-legal.md) |
 | https://motorhometools.co.uk/disclaimer.html | Disclaimer | [about-legal.md](./about-legal.md) |
+| https://motorhometools.co.uk/contact.html | Contact form. Posts to `/api/contact` | [about-legal.md](./about-legal.md) |
+| https://motorhometools.co.uk/accessibility.html | Accessibility statement | [about-legal.md](./about-legal.md) |
 | https://motorhomepayload.co.uk/ | Payload calculator, other repo | [external-payload.md](./external-payload.md) |
 | https://motorhomepayload.co.uk/tyres.html | Tyres page, other repo | [external-payload.md](./external-payload.md) |

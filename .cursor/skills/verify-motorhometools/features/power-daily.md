@@ -48,3 +48,4 @@ EXPECTED comes from `power/assets/calc.js` (`applianceWh`, `calcTotals`, `applyI
 - Totals stuck on `0` mean the calculator script did not run.
 - Editing Daily Power changes what Battery and Solar read from the same profile. The drive script checks that on purpose, in one context, then uses a new context for the default Battery and Solar figures.
 - Hours above 24 are brought back to 24 and the row says so. Do not expect the typed 30 to stay in the Wh figure. The explanation note is removed if a later input event sees the already-clamped 24. Fill 30 once.
+- Each appliance field has one label. The label wraps the number. It does not also use a `for` attribute.

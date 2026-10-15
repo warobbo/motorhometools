@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Contact | Motorhome Tools</title>
+    <meta name="description" content="Send a message to Motorhome Tools. A person reads it. A reply is not automatic.">
+    <meta name="robots" content="index,follow">
+    <meta name="author" content="Motorhome Tools">
+    <meta name="theme-color" content="#1e4f43">
+    <link rel="canonical" href="https://motorhometools.co.uk/contact.html">
+    <meta property="og:title" content="Contact | Motorhome Tools">
+    <meta property="og:description" content="Send a message to Motorhome Tools. A person reads it. A reply is not automatic.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://motorhometools.co.uk/contact.html">
+    <meta property="og:locale" content="en_GB">
+    <meta property="og:site_name" content="Motorhome Tools">
+    <meta property="og:image" content="https://motorhometools.co.uk/assets/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Motorhome Tools">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://motorhometools.co.uk/assets/og-image.png">
+    <meta name="twitter:image:alt" content="Motorhome Tools">
+    <link rel="icon" href="assets/favicon.svg?v=20260915logo" type="image/svg+xml">
+    <link rel="icon" href="assets/favicon-32.png?v=20260915logo" type="image/png" sizes="32x32">
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260915logo" sizes="180x180">
+    <link rel="stylesheet" href="assets/styles.css?v=20261015contact">
+  </head>
+  <body>
+    <a class="skip-link" href="#contact">Skip to the form</a>
+
+    <header class="site-header wrap">
+      <a class="site-brand" href="/">
+        <img class="site-logo" src="assets/logo.svg?v=20260915logo" width="44" height="44" alt="Motorhome Tools">
+        <span class="eyebrow">Motorhome Tools</span>
+      </a>
+      <h1>Contact</h1>
+      <p class="lede">Send a message to Motorhome Tools. A person reads it. A reply is not automatic.</p>
+    </header>
+
+    <main id="contact" class="site-main wrap legal">
+      <form class="ask-form" id="contact-form" action="/api/contact" method="post" novalidate>
+        <div class="hp" inert>
+          <label for="contact-website">Website</label>
+          <input id="contact-website" type="text" name="website" tabindex="-1" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="contact-name">Name <span class="sr-only">(optional)</span></label>
+          <input id="contact-name" name="name" type="text" maxlength="80" autocomplete="name">
+        </div>
+        <div class="field">
+          <label for="contact-email">Email if a reply would help <span class="sr-only">(optional)</span></label>
+          <input id="contact-email" name="email" type="email" maxlength="200" autocomplete="email" inputmode="email">
+          <p class="ask-hint">Optional. Leave it blank if you do not want a reply.</p>
+        </div>
+        <div class="field">
+          <label for="contact-message">Message</label>
+          <textarea id="contact-message" name="message" maxlength="2000" rows="6" required></textarea>
+        </div>
+        <button class="ask-submit" id="contact-submit" type="submit">Send message</button>
+      </form>
+      <p class="ask-status" id="contact-status" role="status" aria-live="polite"></p>
+      <noscript>
+        <p>Without JavaScript, use the Send message button. The next page says whether the message was received.</p>
+      </noscript>
+    </main>
+
+    <footer class="site-footer wrap">
+      <section class="footer-hubs" aria-labelledby="footer-hubs-title">
+        <h2 id="footer-hubs-title">More calculators</h2>
+        <nav class="footer-links" aria-label="More calculators">
+          <a href="https://motorhomepayload.co.uk/" target="_blank" rel="noopener noreferrer">Payload</a>
+          <a href="https://motorhomepayload.co.uk/tyres.html" target="_blank" rel="noopener noreferrer">Tyres</a>
+          <a href="/power/">Power</a>
+          <a href="/water/">Water</a>
+        </nav>
+        <p>Planning estimates only. We don’t invent tyre pressures, weights or legal advice.</p>
+      </section>
+      <nav class="footer-links" aria-label="Site">
+        <a href="/about/" rel="author">About</a>
+      </nav>
+      <nav class="legal-links" aria-label="Legal">
+        <a href="contact.html" aria-current="page">Contact</a>
+        <span class="legal-sep" aria-hidden="true">·</span>
+        <a href="privacy.html">Privacy</a>
+        <span class="legal-sep" aria-hidden="true">·</span>
+        <a href="cookies.html">Cookies</a>
+        <span class="legal-sep" aria-hidden="true">·</span>
+        <a href="disclaimer.html">Disclaimer</a>
+        <span class="legal-sep" aria-hidden="true">·</span>
+        <a href="accessibility.html">Accessibility</a>
+      </nav>
+    </footer>
+    <script src="assets/contact.js?v=20261015contact"></script>
+  </body>
+</html>

@@ -285,7 +285,7 @@ test("GET /guides/ and Wave 2 pages return Payload, Power and Water", async func
     assert.equal(missing.headers.get("permissions-policy"), server.SECURITY_HEADERS["Permissions-Policy"]);
     assert.match(homeHtml, /<link rel="canonical" href="https:\/\/motorhometools\.co\.uk\/">/);
     assert.match(homeHtml, /<meta property="og:url" content="https:\/\/motorhometools\.co\.uk\/">/);
-    assert.match(homeHtml, /<meta property="og:image" content="https:\/\/motorhometools\.co\.uk\/assets\/icon-512\.png">/);
+    assert.match(homeHtml, /<meta property="og:image" content="https:\/\/motorhometools\.co\.uk\/assets\/og-image\.png">/);
     assert.match(homeHtml, /href="\/ask\/">shareable Ask page</);
     assert.match(homeHtml, /<h2 id="ask-title">Not sure\? Ask in plain English<\/h2>/);
     assert.match(homeHtml, /id="ask-answer"/);
@@ -546,7 +546,7 @@ test("homepage JSON-LD is an honest WebSite hub and Wave B OG tags stay", functi
   const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
   assert.match(html, /<link rel="canonical" href="https:\/\/motorhometools\.co\.uk\/">/);
   assert.match(html, /<meta property="og:url" content="https:\/\/motorhometools\.co\.uk\/">/);
-  assert.match(html, /<meta property="og:image" content="https:\/\/motorhometools\.co\.uk\/assets\/icon-512\.png">/);
+  assert.match(html, /<meta property="og:image" content="https:\/\/motorhometools\.co\.uk\/assets\/og-image\.png">/);
 
   const blocks = jsonLdBlocks(html);
   assert.equal(blocks.length, 1);

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Tiny static server for the Motorhome Tools front door, plus /api/ask
- * (unmatched capture and Payload-first co-pilot).
+ * (unmatched capture and Payload-first co-pilot) and /api/contact.
  */
 "use strict";
 
@@ -9,6 +9,7 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const handleAsk = require("./api/ask");
+const handleContact = require("./api/contact");
 
 const PORT = Number(process.env.PORT || 4173);
 const ROOT = __dirname;
@@ -267,6 +268,19 @@ const server = http.createServer(function (req, res) {
     return;
   }
 
+  if (urlPath === "/api/contact") {
+    Promise.resolve(handleContact(req, res)).catch(function (err) {
+      res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
+      res.end(JSON.stringify({
+        ok: false,
+        error: "server",
+        message: "Could not save that message."
+      }));
+      console.error("contact handler failed", err);
+    });
+    return;
+  }
+
   if (req.method !== "GET" && req.method !== "HEAD") {
     res.writeHead(405, { "Content-Type": "text/plain; charset=utf-8" });
     res.end("Method not allowed");
@@ -325,6 +339,7 @@ if (require.main === module) {
     console.log("  Ask:    http://localhost:" + PORT + "/ask/");
     console.log("  About:  http://localhost:" + PORT + "/about/");
     console.log("  Ask API: POST /api/ask");
+    console.log("  Contact API: POST /api/contact");
     console.log("  Notify: " + (process.env.ASK_NOTIFY_EMAIL ? "mailto fallback set" : "logs only"));
   });
 }

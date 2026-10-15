@@ -288,7 +288,8 @@ input:focus-visible {
   color: var(--muted);
 }
 
-.field input {
+.field input,
+.field textarea {
   width: 100%;
   max-width: 100%;
   min-height: 3rem;
@@ -299,6 +300,11 @@ input:focus-visible {
   color: inherit;
   font: inherit;
   font-size: 1.05rem;
+}
+
+.field textarea {
+  min-height: 8rem;
+  resize: vertical;
 }
 
 .ask-submit {

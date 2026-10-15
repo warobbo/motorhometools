@@ -45,3 +45,4 @@ EXPECTED comes from `water/assets/calc.js` `calcWater`, then the en-GB formatter
 - Grey water is not “all the fresh water”. Drinking and cassette flushes are left out of grey.
 - This profile is shared with Gas, Tanks and Cassette. A water edit changes those pages in the same browser.
 - Phone landscape (`844×390`) shows “Turn your phone upright” and marks the calculator inert.
+- Each number field has one label. The label wraps the input. It does not also use a `for` attribute. Shower length is named once, from `#shower-length-label`.

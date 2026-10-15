@@ -12,7 +12,13 @@
     <meta property="og:description" content="Pick people, trip length and habits to see fresh and grey water in litres for UK and EU motorhomes and campervans.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://motorhometools.co.uk/water/">
-    <meta property="og:image" content="https://motorhometools.co.uk/water/assets/icon-512.png">
+    <meta property="og:image" content="https://motorhometools.co.uk/assets/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Motorhome Tools">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://motorhometools.co.uk/assets/og-image.png">
+    <meta name="twitter:image:alt" content="Motorhome Tools">
     <meta name="theme-color" content="#1e5f74">
     <link rel="icon" href="assets/favicon.svg?v=20260915logos" type="image/svg+xml">
     <link rel="icon" href="assets/favicon-32.png?v=20260915logos" type="image/png" sizes="32x32">
@@ -156,28 +162,28 @@
             <h2 id="habits-title">People and trip</h2>
             <p class="lede tight">Children count as a bit less water than adults for showers and drinking. Washing up is for the whole van.</p>
             <div class="field-grid">
-              <label class="field" for="adults">
+              <label class="field">
                 <span>Adults</span>
                 <span class="field-control">
                   <input id="adults" type="number" inputmode="numeric" min="0" max="20" step="1" value="2">
                   <em>people</em>
                 </span>
               </label>
-              <label class="field" for="children">
+              <label class="field">
                 <span>Children <span class="sr-only">(optional)</span></span>
                 <span class="field-control">
                   <input id="children" type="number" inputmode="numeric" min="0" max="20" step="1" value="0">
                   <em>people</em>
                 </span>
               </label>
-              <label class="field" for="tripDays">
+              <label class="field">
                 <span>Trip length</span>
                 <span class="field-control">
                   <input id="tripDays" type="number" inputmode="decimal" min="0.5" max="90" step="0.5" value="2">
                   <em>days</em>
                 </span>
               </label>
-              <label class="field" for="freshTankLitres">
+              <label class="field">
                 <span>Fresh tank size (optional)</span>
                 <span class="field-control">
                   <input id="freshTankLitres" type="number" inputmode="decimal" min="0" max="500" step="5" value="100">
@@ -190,7 +196,7 @@
             <h2 class="field-heading">Showers</h2>
             <p class="field-hint">0.5 means one shower every other day. A typical motorhome shower is about 4 litres a minute.</p>
             <div class="field-grid">
-              <label class="field" for="showersPerPersonPerDay">
+              <label class="field">
                 <span>Showers per person per day</span>
                 <span class="field-control">
                   <input id="showersPerPersonPerDay" type="number" inputmode="decimal" min="0" max="5" step="0.1" value="0.5">
@@ -198,21 +204,21 @@
                 </span>
               </label>
               <div class="field">
-                <span>Shower length</span>
-                <div id="shower-styles" class="choice-row" role="group" aria-label="Shower length">
+                <span id="shower-length-label">Shower length</span>
+                <div id="shower-styles" class="choice-row" role="group" aria-labelledby="shower-length-label">
                   <button type="button" data-shower="short" aria-pressed="false">Short</button>
                   <button type="button" data-shower="normal" aria-pressed="false">Normal</button>
                   <button type="button" data-shower="long" aria-pressed="false">Long</button>
                 </div>
               </div>
-              <label class="field" for="showerMinutes">
+              <label class="field">
                 <span>Minutes per shower</span>
                 <span class="field-control">
                   <input id="showerMinutes" type="number" inputmode="decimal" min="0" max="20" step="0.5" value="1.5">
                   <em>min</em>
                 </span>
               </label>
-              <label class="field" for="showerLitres">
+              <label class="field">
                 <span>Litres per shower</span>
                 <span class="field-control">
                   <input id="showerLitres" type="number" inputmode="decimal" min="0" max="80" step="0.5" value="6">
@@ -223,14 +229,14 @@
 
             <h2 class="field-heading">Kitchen</h2>
             <div class="field-grid">
-              <label class="field" for="washUpLitresPerDay">
+              <label class="field">
                 <span>Washing up</span>
                 <span class="field-control">
                   <input id="washUpLitresPerDay" type="number" inputmode="decimal" min="0" max="80" step="0.5" value="5">
                   <em>L / day</em>
                 </span>
               </label>
-              <label class="field" for="drinkCookLitresPerPersonPerDay">
+              <label class="field">
                 <span>Drinking and cooking</span>
                 <span class="field-control">
                   <input id="drinkCookLitresPerPersonPerDay" type="number" inputmode="decimal" min="0" max="20" step="0.5" value="2.5">
@@ -246,14 +252,14 @@
               </span>
             </label>
             <div id="laundry-fields" class="field-grid" hidden>
-              <label class="field" for="laundryLoadsPerTrip">
+              <label class="field">
                 <span>Loads this trip</span>
                 <span class="field-control">
                   <input id="laundryLoadsPerTrip" type="number" inputmode="decimal" min="0" max="30" step="0.5" value="0">
                   <em>loads</em>
                 </span>
               </label>
-              <label class="field" for="laundryLitresPerLoad">
+              <label class="field">
                 <span>Litres per load</span>
                 <span class="field-control">
                   <input id="laundryLitresPerLoad" type="number" inputmode="decimal" min="0" max="80" step="1" value="15">
@@ -271,14 +277,14 @@
               </span>
             </label>
             <div id="cassette-fields" class="field-grid">
-              <label class="field" for="cassetteFlushesPerPersonPerDay">
+              <label class="field">
                 <span>Flushes per person per day</span>
                 <span class="field-control">
                   <input id="cassetteFlushesPerPersonPerDay" type="number" inputmode="decimal" min="0" max="20" step="1" value="5">
                   <em>/ day</em>
                 </span>
               </label>
-              <label class="field" for="cassetteLitresPerFlush">
+              <label class="field">
                 <span>Litres per flush</span>
                 <span class="field-control">
                   <input id="cassetteLitresPerFlush" type="number" inputmode="decimal" min="0" max="5" step="0.05" value="0.25">
@@ -458,11 +464,15 @@
       </nav>
       <p>Water Tools from Motorhome Tools. Water, gas, tanks and cassette now; more to follow. No accounts and no server-side data. These calculators live on Motorhome Tools.</p>
       <nav class="legal-links" aria-label="Legal">
+        <a href="https://motorhometools.co.uk/contact.html">Contact</a>
+        <span class="legal-sep" aria-hidden="true">·</span>
         <a href="https://motorhometools.co.uk/privacy.html">Privacy</a>
         <span class="legal-sep" aria-hidden="true">·</span>
         <a href="https://motorhometools.co.uk/cookies.html">Cookies</a>
         <span class="legal-sep" aria-hidden="true">·</span>
         <a href="https://motorhometools.co.uk/disclaimer.html">Disclaimer</a>
+        <span class="legal-sep" aria-hidden="true">·</span>
+        <a href="https://motorhometools.co.uk/accessibility.html">Accessibility</a>
       </nav>
     </footer>
 

@@ -244,9 +244,7 @@
   function field(item, key, label, suffix, min, max, step) {
     var id = key + "-" + item.id;
     return (
-      '<label class="field" for="' +
-      escapeHtml(id) +
-      '">' +
+      '<label class="field">' +
       "<span>" +
       label +
       "</span>" +

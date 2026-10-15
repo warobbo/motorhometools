@@ -14,3 +14,5 @@ services:
         sync: false
       - key: ASK_LOG_PATH
         sync: false
+      - key: CONTACT_LOG_PATH
+        sync: false
