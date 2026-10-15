@@ -15,7 +15,7 @@ Payload and Tyres are not features of this server. They are an external referenc
 - Node 22 (`package.json` engines: `>=22 <23`). From the repo root: `npm install`, `npm test`, `npm run build`, then `node server.js` on a chosen `PORT` (default `4173`).
 - The server listens on `0.0.0.0`. Drive `http://127.0.0.1:$PORT`.
 - Set `ASK_LOG_PATH` to a file under `/tmp/motorhometools-verify-run/$RUN_ID/` so Ask notes from this run do not mix with another run. Do not set or print `ASK_NOTIFY_EMAIL`.
-- Run `node .cursor/skills/verify-motorhometools/scripts/doctor.js --base http://127.0.0.1:$PORT --pages` and require every route below to return 200. The same doctor run requires `/.cursor/skills/verify-motorhometools/SKILL.md`, `/.gitignore` and `/.git/config` to return 404.
+- Run `node .cursor/skills/verify-motorhometools/scripts/doctor.js --base http://127.0.0.1:$PORT --pages` and require every route in `scripts/routes.js` to return 200. The same doctor run requires `/.cursor/skills/verify-motorhometools/SKILL.md`, `/.gitignore`, `/.git/config` and `/no-such-page` to return the branded Page not found HTML with status 404. Doctor prints the status only, never the body.
 - Calculator proofs use a fresh browser context (empty `localStorage`). Power tools share `powertools.systemProfile`. Water, Gas, Tanks and Cassette share `watertools.systemProfile`.
 - Never drive an instance that was not started by this verification run.
 
@@ -26,6 +26,8 @@ Payload and Tyres are not features of this server. They are an external referenc
 - Phone portrait is `390×844`. Phone landscape that must show the rotate gate is `844×390`. Desktop spot-check is `1280×900`.
 - Run the browser harness with `node .cursor/skills/verify-motorhometools/scripts/drive.js`.
 - Visible calculator text is en-GB formatted. Assert that text, not the raw float (`916.5` Wh is shown as `917`).
+- Below-the-fold images use `loading="lazy"` and explicit `width` and `height`. Logos, the home Payload icon, and the where-you-put-it diagram stay eager.
+- Pages that already have `og:title` also have `twitter:card` of `summary_large_image`, plus `twitter:title` and `twitter:description` copied from the Open Graph title and description.
 
 ## Proof and skip reporting
 
@@ -55,12 +57,13 @@ Each feature file starts with an H1 and one paragraph, then exactly four H2 sect
 - [Cassette](./cassette.md) — https://motorhometools.co.uk/water/cassette.html
 - [Coming soon](./coming-soon.md) — route note, plus hot water, bottles, winterising and top-up
 - [Guides](./guides.md) — https://motorhometools.co.uk/guides/
-- [About and legal](./about-legal.md) — About, Privacy, Cookies, Disclaimer
+- [About and legal](./about-legal.md) — About, Privacy, Cookies, Disclaimer, Terms of use
+- [Not found](./not-found.md) — branded 404 for unknown paths and hidden files
 - [Payload and Tyres (external)](./external-payload.md) — https://motorhomepayload.co.uk/
 
 ## Not public
 
-Dotfiles and dot-folders are not pages. A path segment that starts with `.` returns 404, the same response `/.gitignore` already had. That includes `/.cursor/**` (the verify skill and the rest of the agent folder), `/.git/config`, `/.env` and any other dot path. Doctor asserts these three and does not print a body:
+Dotfiles and dot-folders are not pages. A path segment that starts with `.` returns 404, the same branded Page not found HTML `/.gitignore` already returns. Unknown paths such as `/no-such-page` do the same. That includes `/.cursor/**` (the verify skill and the rest of the agent folder), `/.git/config`, `/.env` and any other dot path. Doctor asserts these three, plus `/no-such-page`, and does not print a body:
 
 - `/.cursor/skills/verify-motorhometools/SKILL.md`
 - `/.gitignore`
@@ -102,5 +105,7 @@ Dotfiles and dot-folders are not pages. A path segment that starts with `.` retu
 | https://motorhometools.co.uk/privacy.html | Privacy | [about-legal.md](./about-legal.md) |
 | https://motorhometools.co.uk/cookies.html | Cookies | [about-legal.md](./about-legal.md) |
 | https://motorhometools.co.uk/disclaimer.html | Disclaimer | [about-legal.md](./about-legal.md) |
+| https://motorhometools.co.uk/terms.html | Terms of use | [about-legal.md](./about-legal.md) |
+| Any unknown path, for example `/no-such-page` | Branded Page not found, HTTP 404 | [not-found.md](./not-found.md) |
 | https://motorhomepayload.co.uk/ | Payload calculator, other repo | [external-payload.md](./external-payload.md) |
 | https://motorhomepayload.co.uk/tyres.html | Tyres page, other repo | [external-payload.md](./external-payload.md) |

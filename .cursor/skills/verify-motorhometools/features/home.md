@@ -38,3 +38,4 @@ Preconditions:
 - `/` is served by this Node process together with `/api/ask`. There is no second local server for the home page.
 - The live Render service that serves this origin is the Node web service (README name `motorhometools-ask`). `render.yaml` calls the blueprint service `motorhometools`. Same repo, same `node server.js`.
 - A green home page does not prove a calculator. Open the tool and read its result elements.
+- The Power, Water and Tyres icons sit below the first screen. Each has `loading="lazy"` plus `width` and `height`. The logo and the Payload icon do not use lazy loading.

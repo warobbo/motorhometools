@@ -60,8 +60,9 @@ Worth driving when all of these are true:
 - The log contains `Motorhome Tools ready`.
 - `GET /` is 200, the body contains `Stop guessing your van`, and `X-Content-Type-Options` is `nosniff`.
 - `GET /api/ask` is JSON `{ "ok": true, "capture": true }`. Doctor prints whether a mailto address is set. It does not print the address.
-- `GET /.cursor/skills/verify-motorhometools/SKILL.md`, `GET /.gitignore` and `GET /.git/config` are 404. Doctor prints the status only, never the body. Any other dotfile or dot-folder is the same rule.
-- With `--pages`, every route in `scripts/routes.js` is 200 and contains its expected snippet, and `/power` and `/water` (no slash) are 301 to the slashed paths.
+- `GET /.cursor/skills/verify-motorhometools/SKILL.md`, `GET /.gitignore` and `GET /.git/config` are 404 HTML from `404.html`, with `<h1>Page not found</h1>`. Doctor prints the status only, never the body. Any other dotfile or dot-folder is the same rule.
+- `GET /no-such-page` is that same branded 404. Doctor prints `doctor missing 404 /no-such-page` and does not print the body.
+- With `--pages`, every route in `scripts/routes.js` is 200 and contains its expected snippet, including `/terms.html`, and `/power` and `/water` (no slash) are 301 to the slashed paths.
 
 Doctor does not click a calculator. A passing doctor is not proof of a result.
 
@@ -104,7 +105,7 @@ Worked results and the formula behind each EXPECTED value are in the feature fil
 
 A matched Ask stays on the page and shows a link. It does not navigate and it does not POST. An unmatched question posts to `/api/ask` and the server log gains a `[ask]` line. The script uses `best campsite near York` with the email left empty.
 
-Static pages (guides, about, legal, coming soon) are loaded by doctor `--pages`. Their feature files say what the H1 should be. Coming-soon pages must say `Coming soon` and must not show a calculated figure.
+Static pages (guides, about, legal, coming soon) are loaded by doctor `--pages`. Their feature files say what the H1 should be. Coming-soon pages must say `Coming soon` and must not show a calculated figure. Terms of use is a legal page: H1 `Terms of use`, no personal name, handle or email. Unknown paths are not in `scripts/routes.js`. Doctor checks `/no-such-page` separately and expects status 404.
 
 ## Evidence
 
@@ -156,7 +157,7 @@ Drive (Chrome, calculators, Ask, mobile widths):
   --log /tmp/motorhometools-verify-run/$RUN_ID/server.log
 ```
 
-`scripts/routes.js` is the page list doctor reads. It is not a separate command. When a page is added or removed, update `routes.js` and `features/README.md` together.
+`scripts/routes.js` is the page list doctor reads. It is not a separate command. When a page is added or removed, update `routes.js` and `features/README.md` together. `/terms.html` is on that list. `404.html` is not: unknown paths return it with status 404.
 
 ## Failure modes
 
@@ -169,6 +170,8 @@ Drive (Chrome, calculators, Ask, mobile widths):
 - **Ask log.** With `NODE_ENV=production` and no `ASK_LOG_PATH`, notes go to stdout only. Point `ASK_LOG_PATH` at the run’s scratch file.
 - **Cache.** CSS and JS are cached as immutable and the HTML uses a `?v=` query. A local fresh context avoids an old cached script. After a real deploy, bump `?v=` or the live site keeps the previous file.
 - **Payload and Tyres.** This server does not host those calculators. Ask may show a labelled rough payload estimate; do not score it as the other site. Follow the external feature file and stop.
+- **Plain 404.** Unknown paths and hidden paths return `404.html` with status 404 and `Content-Type: text/html; charset=utf-8`. A body of exactly `Not found` means the branded page was not served. Asset and legal links in that page are root-relative, so a miss under `/power/` or `/guides/` still loads the home stylesheet and the legal pages.
+- **Cards and images.** Pages with `og:title` also publish `twitter:card` `summary_large_image` plus matching `twitter:title` and `twitter:description`. Below-the-fold images use `loading="lazy"` and explicit `width` and `height`. Logos, the home Payload icon and the where-you-put-it diagram stay eager.
 
 ## Feature map
 
