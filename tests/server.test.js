@@ -91,7 +91,10 @@ test("dotfiles and dot-folders are not public", async function () {
       const response = await fetch("http://127.0.0.1:" + port + target, { redirect: "manual" });
       const body = await response.text();
       assert.equal(response.status, 404, target);
-      assert.equal(body, "Not found");
+      assert.equal(response.headers.get("content-type"), "text/html; charset=utf-8", target);
+      assert.match(body, /<h1>Page not found<\/h1>/, target);
+      assert.match(body, /Motorhome Tools/, target);
+      assert.doesNotMatch(body, /^Not found$/, target);
       assert.equal(response.headers.get("x-content-type-options"), "nosniff");
     }
 
@@ -103,11 +106,14 @@ test("dotfiles and dot-folders are not public", async function () {
     ]) {
       const encoded = await rawHttp(port, "GET", target);
       assert.equal(encoded.status, 404, target);
-      assert.equal(encoded.body, "Not found");
+      assert.match(encoded.head, /Content-Type: text\/html; charset=utf-8/i, target);
+      assert.match(encoded.body, /<h1>Page not found<\/h1>/, target);
     }
 
     const head = await rawHttp(port, "HEAD", "/.cursor/skills/verify-motorhometools/SKILL.md");
     assert.equal(head.status, 404);
+    assert.match(head.head, /Content-Type: text\/html; charset=utf-8/i);
+    assert.equal(head.body, "");
 
     for (const target of ["/", "/power/", "/water/", "/ask/", "/api/ask", "/assets/styles.css", "/sitemap.xml"]) {
       const ok = await fetch("http://127.0.0.1:" + port + target);
@@ -279,7 +285,25 @@ test("GET /guides/ and Wave 2 pages return Payload, Power and Water", async func
     assert.equal(askApi.headers.get("permissions-policy"), server.SECURITY_HEADERS["Permissions-Policy"]);
 
     const missing = await fetch("http://127.0.0.1:" + port + "/no-such-page");
+    const missingHtml = await missing.text();
     assert.equal(missing.status, 404);
+    assert.equal(missing.headers.get("content-type"), "text/html; charset=utf-8");
+    assert.match(missingHtml, /<h1>Page not found<\/h1>/);
+    assert.match(missingHtml, /<title>Page not found \| Motorhome Tools<\/title>/);
+    assert.doesNotMatch(missingHtml, /wayne|robinson|warobbo/i);
+    assert.match(missingHtml, /href="\/assets\/styles\.css\?v=/);
+    assert.match(missingHtml, /src="\/assets\/logo\.svg\?v=/);
+    assert.match(missingHtml, /href="\/privacy\.html"/);
+    assert.match(missingHtml, /href="\/terms\.html"/);
+    assert.doesNotMatch(missingHtml, /(?:href|src)="assets\//);
+    assert.doesNotMatch(missingHtml, /href="(?:privacy|cookies|disclaimer|terms)\.html"/);
+    for (const nested of ["/power/no-such-page", "/guides/no-such-page", "/water/no-such-page"]) {
+      const nestedMissing = await fetch("http://127.0.0.1:" + port + nested);
+      const nestedHtml = await nestedMissing.text();
+      assert.equal(nestedMissing.status, 404, nested);
+      assert.equal(nestedMissing.headers.get("content-type"), "text/html; charset=utf-8", nested);
+      assert.equal(nestedHtml, missingHtml, nested);
+    }
     assert.equal(missing.headers.get("referrer-policy"), "strict-origin-when-cross-origin");
     assert.equal(missing.headers.get("x-frame-options"), "SAMEORIGIN");
     assert.equal(missing.headers.get("permissions-policy"), server.SECURITY_HEADERS["Permissions-Policy"]);
@@ -335,6 +359,22 @@ test("GET /guides/ and Wave 2 pages return Payload, Power and Water", async func
     assert.equal(sitemap.headers.get("cache-control"), "public, max-age=300");
     assert.match(sitemapXml, /<loc>https:\/\/motorhometools\.co\.uk\/ask\/<\/loc>/);
     assert.match(sitemapXml, /<loc>https:\/\/motorhometools\.co\.uk\/about\/<\/loc>/);
+    assert.match(sitemapXml, /<loc>https:\/\/motorhometools\.co\.uk\/terms\.html<\/loc>/);
+    assert.doesNotMatch(sitemapXml, /404\.html/);
+
+    const notFoundFile = await fetch("http://127.0.0.1:" + port + "/404.html");
+    const notFoundFileHtml = await notFoundFile.text();
+    assert.equal(notFoundFile.status, 200);
+    assert.match(notFoundFileHtml, /<meta name="robots" content="noindex, nofollow">/);
+    assert.match(notFoundFileHtml, /<h1>Page not found<\/h1>/);
+
+    const termsPage = await fetch("http://127.0.0.1:" + port + "/terms.html");
+    const termsHtml = await termsPage.text();
+    assert.equal(termsPage.status, 200);
+    assert.match(termsHtml, /<h1>Terms of use<\/h1>/);
+    assert.match(termsHtml, /<title>Terms of use \| Motorhome Tools<\/title>/);
+    assert.doesNotMatch(termsHtml, /wayne|robinson|warobbo/i);
+    assert.doesNotMatch(termsHtml, /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i);
   } finally {
     await new Promise(function (resolve) { server.close(resolve); });
   }
@@ -722,6 +762,8 @@ test("hero images are preloaded and below-fold icons are lazy", function () {
   for (const name of ["power.svg", "water.svg", "tyres.svg"]) {
     const tag = imgTags(home).find(function (item) { return item.includes(name); });
     assert.match(tag, /loading="lazy"/, name);
+    assert.match(tag, /\bwidth="\d+"/, name);
+    assert.match(tag, /\bheight="\d+"/, name);
   }
 
   const powerPages = [
@@ -741,6 +783,8 @@ test("hero images are preloaded and below-fold icons are lazy", function () {
       }
       if (tag.includes("tool-glyph") || tag.includes("glyph-")) {
         assert.match(tag, /loading="lazy"/, rel + " " + tag);
+        assert.match(tag, /\bwidth="\d+"/, rel + " " + tag);
+        assert.match(tag, /\bheight="\d+"/, rel + " " + tag);
       }
     }
   }
@@ -765,9 +809,80 @@ test("hero images are preloaded and below-fold icons are lazy", function () {
       }
       if (tag.includes("tool-glyph") || tag.includes("glyph-")) {
         assert.match(tag, /loading="lazy"/, rel + " " + tag);
+        assert.match(tag, /\bwidth="\d+"/, rel + " " + tag);
+        assert.match(tag, /\bheight="\d+"/, rel + " " + tag);
       }
     }
   }
+});
+
+test("Open Graph pages also publish a Twitter summary card", function () {
+  const root = path.join(__dirname, "..");
+  let saw = 0;
+  for (const filePath of walkHtmlFiles(root, [])) {
+    const html = fs.readFileSync(filePath, "utf8");
+    const title = html.match(/<meta property="og:title" content="([^"]*)">/);
+    if (!title) {
+      assert.doesNotMatch(html, /name="twitter:/, path.relative(root, filePath));
+      continue;
+    }
+    const desc = html.match(/<meta property="og:description" content="([^"]*)">/);
+    assert.ok(desc, path.relative(root, filePath));
+    saw += 1;
+    assert.match(html, /<meta name="twitter:card" content="summary_large_image">/, path.relative(root, filePath));
+    assert.match(
+      html,
+      /<meta (?:property="og:image"|name="twitter:image") content="https:\/\/[^"]+">/,
+      path.relative(root, filePath)
+    );
+    assert.match(
+      html,
+      new RegExp('<meta name="twitter:title" content="' + title[1].replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + '">'),
+      path.relative(root, filePath)
+    );
+    assert.match(
+      html,
+      new RegExp('<meta name="twitter:description" content="' + desc[1].replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + '">'),
+      path.relative(root, filePath)
+    );
+  }
+  assert.ok(saw >= 26, "expected Open Graph pages, got " + saw);
+});
+
+test("legal footers link Terms next to Privacy and Disclaimer", function () {
+  const root = path.join(__dirname, "..");
+  let saw = 0;
+  for (const filePath of walkHtmlFiles(root, [])) {
+    const html = fs.readFileSync(filePath, "utf8");
+    if (!html.includes("disclaimer.html")) continue;
+    saw += 1;
+    const rel = path.relative(root, filePath);
+    assert.match(html, /terms\.html"[^>]*>Terms</, rel);
+    assert.match(html, /privacy\.html"[^>]*>Privacy</, rel);
+  }
+  assert.ok(saw >= 26, "expected legal footers, got " + saw);
+});
+
+test("below-fold images are lazy and declare width and height", function () {
+  const root = path.join(__dirname, "..");
+  let lazy = 0;
+  for (const filePath of walkHtmlFiles(root, [])) {
+    const rel = path.relative(root, filePath);
+    for (const tag of imgTags(fs.readFileSync(filePath, "utf8"))) {
+      const eager = tag.includes("logo.svg") || tag.includes("payload.svg") || tag.includes('fetchpriority="high"');
+      if (eager) {
+        assert.doesNotMatch(tag, /loading="lazy"/, rel + " " + tag);
+        assert.match(tag, /\bwidth="\d+"/, rel + " " + tag);
+        assert.match(tag, /\bheight="\d+"/, rel + " " + tag);
+        continue;
+      }
+      lazy += 1;
+      assert.match(tag, /loading="lazy"/, rel + " " + tag);
+      assert.match(tag, /\bwidth="\d+"/, rel + " " + tag);
+      assert.match(tag, /\bheight="\d+"/, rel + " " + tag);
+    }
+  }
+  assert.ok(lazy >= 40, "expected below-fold images, got " + lazy);
 });
 
 test("production build minifies client JS and the server serves that file", function () {

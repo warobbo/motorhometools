@@ -18,7 +18,17 @@ function sendJson(res, status, body) {
   res.end(JSON.stringify(body));
 }
 
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 function sendHtml(res, status, title, message) {
+  const safeTitle = escapeHtml(title);
+  const safeMessage = escapeHtml(message);
   const page = [
     "<!DOCTYPE html>",
     "<html lang=\"en-GB\">",
@@ -26,7 +36,7 @@ function sendHtml(res, status, title, message) {
     "<meta charset=\"utf-8\">",
     "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">",
     "<meta name=\"robots\" content=\"noindex\">",
-    "<title>" + title + " | Motorhome Tools</title>",
+    "<title>" + safeTitle + " | Motorhome Tools</title>",
     "<link rel=\"stylesheet\" href=\"/assets/styles.css\">",
     "</head>",
     "<body>",
@@ -35,10 +45,10 @@ function sendHtml(res, status, title, message) {
     "<img class=\"site-logo\" src=\"/assets/logo.svg\" width=\"44\" height=\"44\" alt=\"Motorhome Tools\">",
     "<span class=\"eyebrow\">Motorhome Tools</span>",
     "</a>",
-    "<h1>" + title + "</h1>",
+    "<h1>" + safeTitle + "</h1>",
     "</header>",
     "<main class=\"site-main wrap legal\">",
-    "<p>" + message + "</p>",
+    "<p>" + safeMessage + "</p>",
     "<p><a href=\"/contact.html\">Back to the contact form</a></p>",
     "</main>",
     "</body>",

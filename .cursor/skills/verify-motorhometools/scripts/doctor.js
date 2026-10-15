@@ -136,12 +136,28 @@ async function main() {
       const result = await request(base, hiddenPath, "manual");
       if (result.response.status !== 404) {
         bad(hiddenPath + " expected 404, got " + result.response.status);
+      } else if (!result.text.includes("<h1>Page not found</h1>")) {
+        bad(hiddenPath + " 404 is not the branded page");
+      } else if ((result.response.headers.get("content-type") || "") !== "text/html; charset=utf-8") {
+        bad(hiddenPath + " 404 is not HTML");
       } else {
         console.log("doctor hidden 404 " + hiddenPath);
       }
     } catch (err) {
       bad(hiddenPath + " " + err.message);
     }
+  }
+
+  try {
+    const missing = await request(base, "/no-such-page", "manual");
+    const type = missing.response.headers.get("content-type") || "";
+    if (missing.response.status !== 404 || !missing.text.includes("<h1>Page not found</h1>") || type !== "text/html; charset=utf-8") {
+      bad("/no-such-page expected 404 HTML containing the Page not found heading, got " + missing.response.status);
+    } else {
+      console.log("doctor missing 404 /no-such-page");
+    }
+  } catch (err) {
+    bad("/no-such-page " + err.message);
   }
 
   if (pages) {

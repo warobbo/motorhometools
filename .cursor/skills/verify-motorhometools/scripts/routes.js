@@ -37,6 +37,7 @@ const PAGES = [
   { path: "/privacy.html", expect: "<h1>Privacy</h1>", feature: "about-legal" },
   { path: "/cookies.html", expect: "<h1>Cookies</h1>", feature: "about-legal" },
   { path: "/disclaimer.html", expect: "<h1>Disclaimer</h1>", feature: "about-legal" },
+  { path: "/terms.html", expect: "<h1>Terms of use</h1>", feature: "about-legal" },
   { path: "/contact.html", expect: "<h1>Contact</h1>", feature: "about-legal" },
   { path: "/accessibility.html", expect: "<h1>Accessibility</h1>", feature: "about-legal" }
 ];

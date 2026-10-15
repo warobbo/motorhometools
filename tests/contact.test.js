@@ -260,6 +260,30 @@ test("a browser form POST returns an HTML result and logs the message", async fu
     const badHtml = await bad.text();
     assert.equal(bad.status, 400);
     assert.match(badHtml, /Write a message/);
+
+    const hostile = await fetch("http://127.0.0.1:" + port + "/api/contact", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Accept": "text/html"
+      },
+      body: new URLSearchParams({
+        name: "<script>alert(1)</script>",
+        message: "Hello <img src=x onerror=alert(1)> & friends"
+      })
+    });
+    const hostileHtml = await hostile.text();
+    assert.equal(hostile.status, 200);
+    assert.doesNotMatch(hostileHtml, /<script>alert/);
+    assert.doesNotMatch(hostileHtml, /onerror/);
+    assert.doesNotMatch(hostileHtml, /Hello <img/);
+    const hostileLine = logs.find(function (item) {
+      return item.indexOf("[contact]") === 0 && item.indexOf("onerror") !== -1;
+    });
+    assert.ok(hostileLine);
+    const hostileRecord = JSON.parse(hostileLine.slice("[contact] ".length));
+    assert.equal(hostileRecord.message, "Hello <img src=x onerror=alert(1)> & friends");
+    assert.equal(hostileRecord.name, "<script>alert(1)</script>");
   } finally {
     console.log = originalLog;
     contact.resetRateLimit();

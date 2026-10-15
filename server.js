@@ -228,6 +228,26 @@ const DIRECTORY_REDIRECTS = {
   "/water/index.html": "/water/"
 };
 
+const NOT_FOUND_PAGE = path.join(ROOT, "404.html");
+
+function sendNotFound(req, res) {
+  fs.readFile(NOT_FOUND_PAGE, function (err, data) {
+    if (err || !data) {
+      res.writeHead(404, {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": HTML_CACHE
+      });
+      res.end(req.method === "HEAD" ? undefined : "Not found");
+      return;
+    }
+    res.writeHead(404, {
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": HTML_CACHE
+    });
+    res.end(req.method === "HEAD" ? undefined : data);
+  });
+}
+
 const server = http.createServer(function (req, res) {
   applySecurityHeaders(res);
 
@@ -289,15 +309,13 @@ const server = http.createServer(function (req, res) {
 
   const filePath = resolvePublicFile(urlPath);
   if (!filePath) {
-    res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
-    res.end("Not found");
+    sendNotFound(req, res);
     return;
   }
 
   fs.stat(filePath, function (statErr, stat) {
     if (statErr || !stat.isFile()) {
-      res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
-      res.end("Not found");
+      sendNotFound(req, res);
       return;
     }
 
@@ -317,8 +335,7 @@ const server = http.createServer(function (req, res) {
 
     fs.readFile(filePath, function (err, data) {
       if (err) {
-        res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
-        res.end("Not found");
+        sendNotFound(req, res);
         return;
       }
       res.writeHead(200, headers);
