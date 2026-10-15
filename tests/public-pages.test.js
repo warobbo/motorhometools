@@ -225,6 +225,32 @@ test("Water pages use the site theme colour", function () {
   }
 });
 
+test("homepage states the tyre-pressure disclaimer once, in the footer", function () {
+  const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+  const normalized = html.replace(/\u2019/g, "'").replace(/&rsquo;|&#8217;/gi, "'");
+  const hits = normalized.match(/invent tyre pressures/gi) || [];
+  assert.equal(
+    hits.length,
+    1,
+    "invent tyre pressures appears " + hits.length + " times in index.html"
+  );
+  const headEnd = normalized.indexOf("</head>");
+  assert.ok(headEnd !== -1);
+  const head = normalized.slice(0, headEnd);
+  assert.equal((head.match(/invent tyre pressures/gi) || []).length, 0);
+  const footerStart = normalized.indexOf("<footer");
+  const footerEnd = normalized.indexOf("</footer>");
+  assert.ok(footerStart !== -1 && footerEnd > footerStart);
+  const footer = normalized.slice(footerStart, footerEnd);
+  assert.equal((footer.match(/invent tyre pressures/gi) || []).length, 1);
+  assert.match(
+    footer,
+    /Planning estimates only\. We don't invent tyre pressures, weights or legal advice\./
+  );
+  const body = normalized.slice(headEnd, footerStart);
+  assert.equal((body.match(/invent tyre pressures/gi) || []).length, 0);
+});
+
 test("sitemap lists contact and accessibility and dates this release", function () {
   const xml = fs.readFileSync(path.join(root, "sitemap.xml"), "utf8");
   assert.match(xml, /<loc>https:\/\/motorhometools\.co\.uk\/contact\.html<\/loc>/);

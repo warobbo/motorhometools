@@ -10,6 +10,7 @@ The front door at https://motorhometools.co.uk/ introduces the hubs, asks a ques
 - `home-ask` is the same Ask box as `/ask/`.
 - `home-guides` links the three payload guides and the full guide index.
 - `home-route` states that a route planner is not live.
+- `home-disclaimer` is the footer line “Planning estimates only. We don’t invent tyre pressures, weights or legal advice.” That sentence appears once on this page.
 - `home-mobile` keeps the Payload card inside a 390px-wide portrait screen.
 
 ## How to get to it (user POV)
@@ -30,6 +31,7 @@ Preconditions:
 - **Power and Water.** “Power” links to `/power/`. “Water” links to `/water/`.
 - **Tyres.** The quiet line links to `https://motorhomepayload.co.uk/tyres.html` in a new tab. It does not show a pressure.
 - **Route.** The footer says `Route planner — coming soon.` There is no map and no route URL.
+- **Disclaimer.** Under More calculators, one line reads `Planning estimates only. We don’t invent tyre pressures, weights or legal advice.` The hero, Ask box, Payload, Power, Water and Tyres cards, meta description, Open Graph, Twitter and JSON-LD do not repeat that sentence. Tyres describes a lookup for non-original wheels.
 - **Mobile width.** At 390×844 the Payload card is wider than 280px and no wider than the viewport. Screenshot `home-mobile-390.png`.
 - **Proof.** `results.json` records `home mobile h1` and `home mobile payload card width`.
 
@@ -39,3 +41,4 @@ Preconditions:
 - The live Render service that serves this origin is the Node web service (README name `motorhometools-ask`). `render.yaml` calls the blueprint service `motorhometools`. Same repo, same `node server.js`.
 - A green home page does not prove a calculator. Open the tool and read its result elements.
 - The Power, Water and Tyres icons sit below the first screen. Each has `loading="lazy"` plus `width` and `height`. The logo and the Payload icon do not use lazy loading.
+- A second “invent tyre pressures” on `/` fails `npm test` (`tests/public-pages.test.js`). Keep that sentence in the footer line only.
