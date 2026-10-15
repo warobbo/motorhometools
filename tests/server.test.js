@@ -291,6 +291,19 @@ test("GET /guides/ and Wave 2 pages return Payload, Power and Water", async func
     assert.match(missingHtml, /<h1>Page not found<\/h1>/);
     assert.match(missingHtml, /<title>Page not found \| Motorhome Tools<\/title>/);
     assert.doesNotMatch(missingHtml, /wayne|robinson|warobbo/i);
+    assert.match(missingHtml, /href="\/assets\/styles\.css\?v=/);
+    assert.match(missingHtml, /src="\/assets\/logo\.svg\?v=/);
+    assert.match(missingHtml, /href="\/privacy\.html"/);
+    assert.match(missingHtml, /href="\/terms\.html"/);
+    assert.doesNotMatch(missingHtml, /(?:href|src)="assets\//);
+    assert.doesNotMatch(missingHtml, /href="(?:privacy|cookies|disclaimer|terms)\.html"/);
+    for (const nested of ["/power/no-such-page", "/guides/no-such-page", "/water/no-such-page"]) {
+      const nestedMissing = await fetch("http://127.0.0.1:" + port + nested);
+      const nestedHtml = await nestedMissing.text();
+      assert.equal(nestedMissing.status, 404, nested);
+      assert.equal(nestedMissing.headers.get("content-type"), "text/html; charset=utf-8", nested);
+      assert.equal(nestedHtml, missingHtml, nested);
+    }
     assert.equal(missing.headers.get("referrer-policy"), "strict-origin-when-cross-origin");
     assert.equal(missing.headers.get("x-frame-options"), "SAMEORIGIN");
     assert.equal(missing.headers.get("permissions-policy"), server.SECURITY_HEADERS["Permissions-Policy"]);
@@ -347,6 +360,13 @@ test("GET /guides/ and Wave 2 pages return Payload, Power and Water", async func
     assert.match(sitemapXml, /<loc>https:\/\/motorhometools\.co\.uk\/ask\/<\/loc>/);
     assert.match(sitemapXml, /<loc>https:\/\/motorhometools\.co\.uk\/about\/<\/loc>/);
     assert.match(sitemapXml, /<loc>https:\/\/motorhometools\.co\.uk\/terms\.html<\/loc>/);
+    assert.doesNotMatch(sitemapXml, /404\.html/);
+
+    const notFoundFile = await fetch("http://127.0.0.1:" + port + "/404.html");
+    const notFoundFileHtml = await notFoundFile.text();
+    assert.equal(notFoundFile.status, 200);
+    assert.match(notFoundFileHtml, /<meta name="robots" content="noindex, nofollow">/);
+    assert.match(notFoundFileHtml, /<h1>Page not found<\/h1>/);
 
     const termsPage = await fetch("http://127.0.0.1:" + port + "/terms.html");
     const termsHtml = await termsPage.text();
@@ -810,6 +830,11 @@ test("Open Graph pages also publish a Twitter summary card", function () {
     assert.ok(desc, path.relative(root, filePath));
     saw += 1;
     assert.match(html, /<meta name="twitter:card" content="summary_large_image">/, path.relative(root, filePath));
+    assert.match(
+      html,
+      /<meta (?:property="og:image"|name="twitter:image") content="https:\/\/[^"]+">/,
+      path.relative(root, filePath)
+    );
     assert.match(
       html,
       new RegExp('<meta name="twitter:title" content="' + title[1].replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + '">'),

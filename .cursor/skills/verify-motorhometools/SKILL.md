@@ -170,7 +170,7 @@ Drive (Chrome, calculators, Ask, mobile widths):
 - **Ask log.** With `NODE_ENV=production` and no `ASK_LOG_PATH`, notes go to stdout only. Point `ASK_LOG_PATH` at the run’s scratch file.
 - **Cache.** CSS and JS are cached as immutable and the HTML uses a `?v=` query. A local fresh context avoids an old cached script. After a real deploy, bump `?v=` or the live site keeps the previous file.
 - **Payload and Tyres.** This server does not host those calculators. Ask may show a labelled rough payload estimate; do not score it as the other site. Follow the external feature file and stop.
-- **Plain 404.** Unknown paths and hidden paths return `404.html` with status 404 and `Content-Type: text/html; charset=utf-8`. A body of exactly `Not found` means the branded page was not served.
+- **Plain 404.** Unknown paths and hidden paths return `404.html` with status 404 and `Content-Type: text/html; charset=utf-8`. A body of exactly `Not found` means the branded page was not served. Asset and legal links in that page are root-relative, so a miss under `/power/` or `/guides/` still loads the home stylesheet and the legal pages.
 - **Cards and images.** Pages with `og:title` also publish `twitter:card` `summary_large_image` plus matching `twitter:title` and `twitter:description`. Below-the-fold images use `loading="lazy"` and explicit `width` and `height`. Logos, the home Payload icon and the where-you-put-it diagram stay eager.
 
 ## Feature map

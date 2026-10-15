@@ -32,3 +32,4 @@ This page does no maths. There is no INPUT / EXPECTED / ACTUAL row.
 - Status stays 404 for unknown paths. A 200 with the same heading on `/no-such-page` means the server served `404.html` as a normal page.
 - `/404.html` itself is a real file and returns 200 with `noindex`. Do not add it to `sitemap.xml` or to `scripts/routes.js`.
 - Doctor must not print the 404 body. A hidden file’s contents must not appear in the doctor log.
+- Asset and legal links in `404.html` are root-relative (`/assets/...`, `/privacy.html`). A relative `assets/styles.css` on `/power/missing` would load the Power stylesheet, and `privacy.html` would point at `/power/privacy.html`.
